@@ -1,0 +1,120 @@
+import Link from "next/link"
+import { requerirPermiso } from "@/lib/auth"
+import { puede } from "@/lib/permisos"
+import { formatearPesos } from "@/lib/formato"
+import { obtenerLiquidaciones, obtenerProduccionPendiente, obtenerProfesionales, resumirProduccion } from "@/lib/liquidaciones"
+import { PorcentajeProfesional } from "@/components/liquidaciones/PorcentajeProfesional"
+import { TablaLiquidaciones } from "@/components/liquidaciones/TablaLiquidaciones"
+
+export default async function LiquidacionesPage() {
+  const usuario = await requerirPermiso("liquidaciones.ver")
+  const gestionar = puede(usuario.rol, "liquidaciones.gestionar")
+  // Un dentista solo ve lo suyo
+  const soloYo = gestionar ? undefined : usuario.id
+
+  const [profesionales, produccion, liquidaciones] = await Promise.all([
+    obtenerProfesionales(),
+    obtenerProduccionPendiente(soloYo),
+    obtenerLiquidaciones(soloYo),
+  ])
+
+  // Profesionales a mostrar: los dentistas + quien tenga producción pendiente
+  const ids = new Set([...profesionales.map((p) => p.id), ...produccion.map((p) => p.profesional_id)])
+  const lista = [...ids]
+    .filter((id) => !soloYo || id === soloYo)
+    .map((id) => {
+      const perfil = profesionales.find((p) => p.id === id)
+      const propia = produccion.filter((p) => p.profesional_id === id)
+      return {
+        id,
+        nombre: perfil?.nombre_completo ?? propia[0]?.profesional_nombre ?? "—",
+        activo: perfil?.activo ?? true,
+        porcentaje: perfil ? perfil.porcentaje_liquidacion : (propia[0]?.porcentaje ?? null),
+        ...resumirProduccion(propia),
+      }
+    })
+    .sort((a, b) => b.aPagar - a.aPagar || a.nombre.localeCompare(b.nombre))
+
+  const porPagar = liquidaciones.filter((l) => l.estado === "EMITIDA").reduce((s, l) => s + l.total, 0)
+
+  return (
+    <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{gestionar ? "Liquidaciones" : "Mis liquidaciones"}</h1>
+          <p className="text-sm font-medium text-gray-500">
+            Se liquida el % de cada profesional sobre lo que evolucionó, solo cuando la prestación está al 100% y pagada al 100%.
+          </p>
+        </div>
+        {porPagar > 0 && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-2 text-amber-800">
+            <p className="text-[11px] font-black uppercase tracking-wider">Liquidaciones emitidas por pagar</p>
+            <p className="text-xl font-black">{formatearPesos(porPagar)}</p>
+          </div>
+        )}
+      </div>
+
+      {/* PROFESIONALES */}
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-[11px] font-black uppercase tracking-wider text-gray-500">
+            <tr>
+              <th className="text-left px-4 py-3">Profesional</th>
+              <th className="text-left px-4 py-3">% liquidación</th>
+              <th className="text-right px-4 py-3">Listo para liquidar</th>
+              <th className="text-right px-4 py-3">En espera</th>
+              <th className="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center font-semibold text-gray-400">
+                  No hay dentistas registrados.
+                </td>
+              </tr>
+            )}
+            {lista.map((p) => (
+              <tr key={p.id} className="border-t border-gray-100 align-top">
+                <td className="px-4 py-3">
+                  <p className="font-extrabold text-gray-900">{p.nombre}</p>
+                  {!p.activo && <p className="text-xs font-semibold text-gray-400">Usuario desactivado</p>}
+                </td>
+                <td className="px-4 py-3">
+                  {gestionar ? (
+                    <PorcentajeProfesional profesionalId={p.id} porcentaje={p.porcentaje} />
+                  ) : (
+                    <span className="font-black">{p.porcentaje !== null ? `${p.porcentaje}%` : "Sin configurar"}</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <p className={`text-lg font-black ${p.aPagar > 0 ? "text-emerald-700" : "text-gray-300"}`}>{formatearPesos(p.aPagar)}</p>
+                  <p className="text-xs text-gray-500">
+                    {p.liquidables.length} tramo(s) · producción {formatearPesos(p.baseLiquidable)}
+                  </p>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <p className="font-bold text-amber-700">{formatearPesos(p.esperaAPagar)}</p>
+                  <p className="text-xs text-gray-500">{p.enEspera.length} sin terminar o sin pagar</p>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <Link
+                    href={`/liquidaciones/profesional/${p.id}`}
+                    className="inline-block px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 whitespace-nowrap"
+                  >
+                    {gestionar ? "Ver / liquidar →" : "Ver detalle →"}
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-extrabold text-gray-900">Historial de liquidaciones</h2>
+        <TablaLiquidaciones liquidaciones={liquidaciones} mostrarProfesional={gestionar} />
+      </section>
+    </div>
+  )
+}

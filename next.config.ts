@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
     agentFeedback: true,
+    // Permite subir archivos de hasta 10 MB (radiografías) en las Server Actions.
+    // Por defecto Next.js solo acepta 1 MB.
+    serverActions: {
+      bodySizeLimit: "11mb",
+    },
   },
-  cacheComponents: true,
-  partialPrefetching: true,
   turbopack: {
     rules: {
       "*.css": {
