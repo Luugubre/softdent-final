@@ -1,6 +1,6 @@
 export const BUCKET_ARCHIVOS = "archivos-pacientes"
 
-export const TAMANO_MAXIMO_BYTES = 10 * 1024 * 1024
+export const TAMANO_MAXIMO_BYTES = 4 * 1024 * 1024
 
 export const TIPOS_PERMITIDOS = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const
 

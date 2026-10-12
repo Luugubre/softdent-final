@@ -13,7 +13,7 @@ export default async function DetalleCajaPage({ params }: { params: Promise<{ id
   const caja = await obtenerCaja(id)
   if (!caja) notFound()
 
-  const [movimientos, metodos, clinica] = await Promise.all([obtenerMovimientos(id), obtenerMetodosPago(false), obtenerParametro("clinica.nombre", "SoftDent")])
+  const [movimientos, metodos, clinica] = await Promise.all([obtenerMovimientos(id), obtenerMetodosPago(false), obtenerParametro("clinica.nombre", "Clínica SoftDent")])
   const totales = totalesPorMetodo(movimientos)
   const nombre = (c: string) => metodos.find((m) => m.codigo === c)?.nombre ?? c
 

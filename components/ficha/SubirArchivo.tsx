@@ -27,7 +27,7 @@ export function SubirArchivo({ pacienteId }: { pacienteId: string }) {
     if (!archivo) return
 
     if (archivo.size > TAMANO_MAXIMO_BYTES) {
-      setMensaje({ ok: false, texto: "El archivo supera los 10 MB." })
+      setMensaje({ ok: false, texto: "El archivo supera los 4 MB." })
       ev.target.value = ""
       return
     }
@@ -75,7 +75,7 @@ export function SubirArchivo({ pacienteId }: { pacienteId: string }) {
                 required
                 className="block w-full text-sm font-medium text-gray-700 file:mr-3 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-bold file:text-blue-700 hover:file:bg-blue-100"
               />
-              <p className="mt-1 text-[11px] font-medium text-gray-400">JPG, PNG, WEBP o PDF · máximo 10 MB</p>
+              <p className="mt-1 text-[11px] font-medium text-gray-400">JPG, PNG, WEBP o PDF · máximo 4 MB</p>
             </div>
             <div>
               <label htmlFor="categoria" className={labelClass}>

@@ -51,7 +51,7 @@ export default async function ImprimirPresupuestoPage({
 
   const parametro = (clave: string, porDefecto = "") => parametros.find((p) => p.clave === clave)?.valor?.trim() || porDefecto
   const clinica = {
-    nombre: parametro("clinica.nombre", "SoftDent"),
+    nombre: parametro("clinica.nombre", "Clínica SoftDent"),
     rut: parametro("clinica.rut"),
     direccion: parametro("clinica.direccion"),
     telefono: parametro("clinica.telefono"),

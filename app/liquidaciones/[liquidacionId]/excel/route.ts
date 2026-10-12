@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ liq
     return new Response("No tienes permiso para ver esta liquidación.", { status: 403 })
   }
 
-  const clinica = await obtenerParametro("clinica.nombre", "SoftDent")
+  const clinica = await obtenerParametro("clinica.nombre", "Clínica SoftDent")
   const libro = libroLiquidacion(liquidacion, detalle, clinica)
   const nombre = liquidacion.profesional?.nombre_completo ?? "profesional"
   return respuestaExcel(libro, `liquidacion-${String(liquidacion.numero).padStart(6, "0")}-${nombre}.xlsx`)

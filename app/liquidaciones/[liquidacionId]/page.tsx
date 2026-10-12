@@ -22,7 +22,7 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
   if (!gestionar && l.profesional_id !== usuario.id) redirect("/sin-permiso")
 
   const estado = ESTADO_LIQUIDACION[l.estado]
-  const clinica = await obtenerParametro("clinica.nombre", "SoftDent")
+  const clinica = await obtenerParametro("clinica.nombre", "Clínica SoftDent")
   const baseProfesional = l.base_profesional ?? l.total
   const porcentajeClinica = l.porcentaje_clinica ?? 100 - l.porcentaje
 

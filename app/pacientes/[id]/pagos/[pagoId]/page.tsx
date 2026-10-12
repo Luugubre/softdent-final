@@ -17,7 +17,7 @@ export default async function ComprobantePage({ params }: { params: Promise<{ id
   if (!pago || !paciente || pago.paciente_id !== id) notFound()
 
   const anulado = pago.estado === "ANULADO"
-  const clinica = await obtenerParametro("clinica.nombre", "SoftDent")
+  const clinica = await obtenerParametro("clinica.nombre", "Clínica SoftDent")
 
   return (
     <div className="space-y-4">

@@ -127,7 +127,7 @@ export async function subirArchivo(pacienteId: string, formData: FormData): Prom
   const descripcion = texto(formData, "descripcion") || null
 
   if (!(archivo instanceof File) || archivo.size === 0) return { ok: false, mensaje: "Selecciona un archivo." }
-  if (archivo.size > TAMANO_MAXIMO_BYTES) return { ok: false, mensaje: "El archivo supera los 10 MB." }
+  if (archivo.size > TAMANO_MAXIMO_BYTES) return { ok: false, mensaje: "El archivo supera los 4 MB." }
   if (!(TIPOS_PERMITIDOS as readonly string[]).includes(archivo.type)) {
     return { ok: false, mensaje: "Formato no permitido. Usa JPG, PNG, WEBP o PDF." }
   }

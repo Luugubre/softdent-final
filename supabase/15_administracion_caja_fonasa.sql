@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS public.parametros_sistema (
 ALTER TABLE public.parametros_sistema ENABLE ROW LEVEL SECURITY;
 
 INSERT INTO public.parametros_sistema (clave, valor, descripcion, grupo, tipo, minimo, maximo) VALUES
-  ('clinica.nombre', 'Clínica Dental SoftDent', 'Nombre de la clínica (comprobantes, hoja de ruta, liquidaciones)', 'Clínica', 'TEXTO', NULL, NULL),
+  ('clinica.nombre', 'Clínica SoftDent', 'Nombre de la clínica (comprobantes, hoja de ruta, liquidaciones)', 'Clínica', 'TEXTO', NULL, NULL),
   ('clinica.rut', '', 'RUT de la clínica', 'Clínica', 'TEXTO', NULL, NULL),
   ('clinica.direccion', '', 'Dirección de la clínica', 'Clínica', 'TEXTO', NULL, NULL),
   ('clinica.telefono', '', 'Teléfono de la clínica', 'Clínica', 'TEXTO', NULL, NULL),

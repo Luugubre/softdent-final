@@ -9,14 +9,14 @@ export type Catalogo = {
   precios: Record<string, Record<string, number>>
 }
 
-type Respuesta<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+type Respuesta = PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>
 
-async function todasLasFilas<T>(consulta: (desde: number, hasta: number) => Respuesta<T>): Promise<T[]> {
+async function todasLasFilas<T>(consulta: (desde: number, hasta: number) => Respuesta): Promise<T[]> {
   const filas: T[] = []
   for (let desde = 0; ; desde += 1000) {
     const { data, error } = await consulta(desde, desde + 999)
     if (error) throw new Error(error.message)
-    filas.push(...(data ?? []))
+    filas.push(...((data ?? []) as T[]))
     if (!data || data.length < 1000) break
   }
   return filas
@@ -46,7 +46,7 @@ export const obtenerCatalogo = cache(async (arancelIdsTexto: string): Promise<Ca
           .eq("activo", true)
           .order("nombre")
           .order("id")
-          .range(desde, hasta) as unknown as Respuesta<FilaPrestacion>
+          .range(desde, hasta) as unknown as Respuesta
     ),
     ids.length === 0
       ? Promise.resolve([] as FilaPrecio[])

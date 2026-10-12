@@ -23,7 +23,7 @@ export default async function HojaRutaPage({ searchParams }: { searchParams: Pro
     finanzas
   )
 
-  const nombreClinica = await obtenerParametro("clinica.nombre", "Clínica dental")
+  const nombreClinica = await obtenerParametro("clinica.nombre", "Clínica SoftDent")
   const porProfesional = new Map<string, CitaAgenda[]>()
   for (const c of citas) porProfesional.set(c.profesional_nombre, [...(porProfesional.get(c.profesional_nombre) ?? []), c])
 

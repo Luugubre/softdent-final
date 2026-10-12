@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const [liquidaciones, produccion, clinica, profesional] = await Promise.all([
     obtenerLiquidaciones(profesionalId),
     obtenerProduccionPendiente(profesionalId),
-    obtenerParametro("clinica.nombre", "SoftDent"),
+    obtenerParametro("clinica.nombre", "Clínica SoftDent"),
     profesionalId ? obtenerProfesional(profesionalId) : Promise.resolve(null),
   ])
 

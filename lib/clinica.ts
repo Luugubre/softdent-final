@@ -1,4 +1,4 @@
-export const NOMBRE_CLINICA = "Clínica Dental SoftDent"
+export const NOMBRE_CLINICA = "Clínica SoftDent"
 export const DIRECCION_CLINICA = ""
 
 export function telefonoWhatsapp(tel?: string | null): string | null {
