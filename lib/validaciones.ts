@@ -1,15 +1,9 @@
 import { z } from "zod"
 
-// ---------------------------------------------------------------------
-// RUT chileno
-// ---------------------------------------------------------------------
-
-/** "12.345.678-k" → "12345678K" */
 export function limpiarRut(rut: string): string {
   return rut.replace(/[^0-9kK]/g, "").toUpperCase()
 }
 
-/** Valida el dígito verificador (módulo 11) */
 export function validarRut(rut: string): boolean {
   const limpio = limpiarRut(rut)
   if (!/^\d{7,8}[0-9K]$/.test(limpio)) return false
@@ -28,13 +22,11 @@ export function validarRut(rut: string): boolean {
   return dv === esperado
 }
 
-/** Formato para guardar: "12345678-9" */
 export function normalizarRut(rut: string): string {
   const limpio = limpiarRut(rut)
   return `${limpio.slice(0, -1)}-${limpio.slice(-1)}`
 }
 
-/** Formato para mostrar: "12.345.678-9" */
 export function formatearRut(rut: string): string {
   const limpio = limpiarRut(rut)
   if (limpio.length < 2) return rut
@@ -42,11 +34,6 @@ export function formatearRut(rut: string): string {
   return `${cuerpo}-${limpio.slice(-1)}`
 }
 
-// ---------------------------------------------------------------------
-// Utilidades
-// ---------------------------------------------------------------------
-
-/** Edad en años desde "YYYY-MM-DD". null si la fecha es inválida. */
 export function calcularEdad(fecha: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha)
   if (!m) return null
@@ -61,10 +48,6 @@ function telefonoValido(tel: string): boolean {
   const digitos = tel.replace(/\D/g, "")
   return digitos.length >= 8 && digitos.length <= 12
 }
-
-// ---------------------------------------------------------------------
-// Opciones de los selects
-// ---------------------------------------------------------------------
 
 export const SEXOS = ["FEMENINO", "MASCULINO", "INTERSEXUAL", "NO_INFORMA"] as const
 
@@ -102,10 +85,6 @@ export const REFERENCIAS = [
   "Pasaba por fuera",
   "Otro",
 ] as const
-
-// ---------------------------------------------------------------------
-// Esquema del formulario (los nombres = columnas de la tabla pacientes)
-// ---------------------------------------------------------------------
 
 const textoOpcional = (max: number) =>
   z.string().trim().max(max, `Máximo ${max} caracteres`).optional()

@@ -16,7 +16,6 @@ export function FormLogin({ next }: { next: string }) {
     setError(null)
     startTransition(async () => {
       const res = await iniciarSesion(formData)
-      // Si el login es correcto, la acción redirige y no llega aquí
       if (res?.error) setError(res.error)
     })
   }

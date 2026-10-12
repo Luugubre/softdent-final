@@ -6,10 +6,7 @@ import { ESTILO_EVENTO, type EventoHistorial, type TipoEvento } from "@/types/hi
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
 
-// Eventos que puede ver un rol SIN acceso clínico (ej. recepcionista)
 const TIPOS_NO_CLINICOS: TipoEvento[] = ["PACIENTE", "CITA", "PAGO", "PRESUPUESTO"]
-
-// Página principal de la ficha: línea de tiempo de todo lo ocurrido con el paciente
 
 const FILTROS: { clave: "TODOS" | TipoEvento; etiqueta: string; clinico?: boolean }[] = [
   { clave: "TODOS", etiqueta: "Todas" },
@@ -47,7 +44,6 @@ export default async function ResumenPaciente({
   const { data, error } = await consulta
   const eventos = (data ?? []) as EventoHistorial[]
 
-  // Miniaturas de las imágenes subidas (URLs firmadas, válidas 1 hora)
   const rutasImagen = eventos
     .filter((e) => e.tipo === "ARCHIVO" && e.datos?.tipo_mime?.startsWith("image/") && e.datos?.ruta)
     .map((e) => e.datos!.ruta as string)
@@ -58,7 +54,6 @@ export default async function ResumenPaciente({
     firmadas?.forEach((f) => f.path && f.signedUrl && miniaturas.set(f.path, f.signedUrl))
   }
 
-  // Agrupar por día
   const porDia = new Map<string, EventoHistorial[]>()
   for (const e of eventos) {
     const dia = fechaLarga(e.fecha)
@@ -142,7 +137,6 @@ export default async function ResumenPaciente({
                             )}
                           </div>
                           {miniatura && (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={miniatura}
                               alt={e.titulo}

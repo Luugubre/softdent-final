@@ -89,7 +89,6 @@ export function EvolucionForm({ pacienteId, profesionalNombre }: { pacienteId: s
         </div>
         <div>
           <p className={labelClass}>Profesional</p>
-          {/* Se firma automáticamente con el usuario que inició sesión */}
           <p className="px-3 py-2.5 rounded-xl bg-gray-100 border border-gray-200 text-sm font-bold text-gray-800">
             Dr.(a) {profesionalNombre}
           </p>

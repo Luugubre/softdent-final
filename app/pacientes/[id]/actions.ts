@@ -17,7 +17,6 @@ import {
 
 type Resultado = { ok: boolean; mensaje: string; errores?: Record<string, string> }
 
-/** Refresca la ficha completa (layout + todas sus pestañas) */
 function refrescarFicha(pacienteId: string) {
   revalidatePath(`/pacientes/${pacienteId}`, "layout")
 }
@@ -30,10 +29,6 @@ async function pacienteActivo(pacienteId: string): Promise<boolean> {
   const { data } = await getSupabase().from("pacientes").select("activo").eq("id", pacienteId).maybeSingle()
   return !!data?.activo
 }
-
-// =====================================================================
-// ANTECEDENTES
-// =====================================================================
 
 export async function agregarAntecedente(pacienteId: string, formData: FormData): Promise<Resultado> {
   const usuario = await autorizar("antecedentes.registrar")
@@ -81,12 +76,7 @@ export async function darDeBajaAntecedente(antecedenteId: string, pacienteId: st
   return { ok: true, mensaje: "Antecedente dado de baja." }
 }
 
-// =====================================================================
-// EVOLUCIONES
-// =====================================================================
-
 export async function crearEvolucion(pacienteId: string, formData: FormData): Promise<Resultado> {
-  // La evolución queda firmada por el profesional que inició sesión
   const usuario = await autorizar("evoluciones.crear")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
 
@@ -127,10 +117,6 @@ export async function crearEvolucion(pacienteId: string, formData: FormData): Pr
   return { ok: true, mensaje: "Evolución registrada." }
 }
 
-// =====================================================================
-// RX Y MULTIMEDIA
-// =====================================================================
-
 export async function subirArchivo(pacienteId: string, formData: FormData): Promise<Resultado> {
   const usuario = await autorizar("archivos.subir")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -156,7 +142,6 @@ export async function subirArchivo(pacienteId: string, formData: FormData): Prom
   const extension = archivo.name.split(".").pop()?.toLowerCase() || "bin"
   const ruta = `${pacienteId}/${crypto.randomUUID()}.${extension}`
 
-  // 1) Subir a Storage
   const { error: errorSubida } = await supabase.storage
     .from(BUCKET_ARCHIVOS)
     .upload(ruta, archivo, { contentType: archivo.type, upsert: false })
@@ -166,7 +151,6 @@ export async function subirArchivo(pacienteId: string, formData: FormData): Prom
     return { ok: false, mensaje: "No se pudo subir el archivo." }
   }
 
-  // 2) Registrar en la tabla (el trigger lo agrega al historial)
   const { error } = await supabase.from("archivos_paciente").insert({
     paciente_id: pacienteId,
     categoria,
@@ -181,7 +165,6 @@ export async function subirArchivo(pacienteId: string, formData: FormData): Prom
   })
 
   if (error) {
-    // Si falla el registro, se borra el archivo para no dejar basura en Storage
     await supabase.storage.from(BUCKET_ARCHIVOS).remove([ruta])
     console.error("Error al registrar archivo:", error)
     return { ok: false, mensaje: "No se pudo registrar el archivo." }
@@ -190,10 +173,6 @@ export async function subirArchivo(pacienteId: string, formData: FormData): Prom
   refrescarFicha(pacienteId)
   return { ok: true, mensaje: "Archivo subido correctamente." }
 }
-
-// =====================================================================
-// GRUPO FAMILIAR (titular / cargas)
-// =====================================================================
 
 export async function asignarTitular(pacienteId: string, rutTitular: string): Promise<Resultado> {
   const usuario = await autorizar("pacientes.editar")

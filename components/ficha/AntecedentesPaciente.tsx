@@ -45,7 +45,6 @@ export function AntecedentesPaciente({
 
   return (
     <div className="space-y-6">
-      {/* NUEVO ANTECEDENTE */}
       {puedeRegistrar && (
       <form
         ref={formRef}
@@ -87,7 +86,6 @@ export function AntecedentesPaciente({
       </form>
       )}
 
-      {/* VIGENTES POR CATEGORÍA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {CATEGORIAS_ANTECEDENTE.map((cat) => {
           const items = vigentes.filter((a) => a.categoria === cat)
@@ -134,7 +132,6 @@ export function AntecedentesPaciente({
         })}
       </div>
 
-      {/* HISTORIAL */}
       {historial.length > 0 && (
         <details className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
           <summary className="cursor-pointer text-sm font-bold text-gray-700">

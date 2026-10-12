@@ -8,13 +8,12 @@ import { normalizarRut, validarRut } from "@/lib/validaciones"
 
 type Resultado = { ok: boolean; mensaje: string; errores?: Record<string, string> }
 
-const BANEO_INDEFINIDO = "876000h" // ~100 años: bloquea el inicio de sesión
+const BANEO_INDEFINIDO = "876000h"
 
 function texto(formData: FormData, campo: string) {
   return String(formData.get(campo) ?? "").trim()
 }
 
-/** Evita dejar el sistema sin administradores activos */
 async function quedariaSinAdmin(usuarioId: string): Promise<boolean> {
   const { count } = await getSupabase()
     .from("perfiles")
@@ -25,9 +24,6 @@ async function quedariaSinAdmin(usuarioId: string): Promise<boolean> {
   return (count ?? 0) === 0
 }
 
-// ---------------------------------------------------------------------
-// Crear usuario
-// ---------------------------------------------------------------------
 export async function crearUsuario(formData: FormData): Promise<Resultado> {
   if (!(await autorizar("usuarios.gestionar"))) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
 
@@ -49,7 +45,6 @@ export async function crearUsuario(formData: FormData): Promise<Resultado> {
 
   const supabase = getSupabase()
 
-  // 1) Crear la cuenta en Supabase Auth (ya confirmada, sin correo de verificación)
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -66,7 +61,6 @@ export async function crearUsuario(formData: FormData): Promise<Resultado> {
     }
   }
 
-  // 2) Crear el perfil con su rol
   const { error: errorPerfil } = await supabase.from("perfiles").insert({
     id: data.user.id,
     nombre_completo: nombre,
@@ -78,7 +72,7 @@ export async function crearUsuario(formData: FormData): Promise<Resultado> {
   })
 
   if (errorPerfil) {
-    await supabase.auth.admin.deleteUser(data.user.id) // deshacer
+    await supabase.auth.admin.deleteUser(data.user.id)
     const rutDuplicado = errorPerfil.code === "23505" && errorPerfil.message.includes("rut")
     return {
       ok: false,
@@ -91,9 +85,6 @@ export async function crearUsuario(formData: FormData): Promise<Resultado> {
   return { ok: true, mensaje: `Usuario ${nombre} creado. Ya puede iniciar sesión con su correo y contraseña.` }
 }
 
-// ---------------------------------------------------------------------
-// Cambiar rol
-// ---------------------------------------------------------------------
 export async function cambiarRol(usuarioId: string, rol: Rol): Promise<Resultado> {
   const admin = await autorizar("usuarios.gestionar")
   if (!admin) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -110,9 +101,6 @@ export async function cambiarRol(usuarioId: string, rol: Rol): Promise<Resultado
   return { ok: true, mensaje: "Rol actualizado." }
 }
 
-// ---------------------------------------------------------------------
-// Activar / desactivar usuario
-// ---------------------------------------------------------------------
 export async function cambiarEstadoUsuario(usuarioId: string): Promise<Resultado> {
   const admin = await autorizar("usuarios.gestionar")
   if (!admin) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -127,7 +115,6 @@ export async function cambiarEstadoUsuario(usuarioId: string): Promise<Resultado
     return { ok: false, mensaje: "Debe quedar al menos un administrador activo." }
   }
 
-  // Bloquea (o desbloquea) el inicio de sesión en Supabase Auth
   const { error: errorAuth } = await supabase.auth.admin.updateUserById(usuarioId, {
     ban_duration: activar ? "none" : BANEO_INDEFINIDO,
   })
@@ -140,9 +127,6 @@ export async function cambiarEstadoUsuario(usuarioId: string): Promise<Resultado
   return { ok: true, mensaje: activar ? "Usuario activado." : "Usuario desactivado." }
 }
 
-// ---------------------------------------------------------------------
-// Restablecer contraseña
-// ---------------------------------------------------------------------
 export async function restablecerContrasena(usuarioId: string, nueva: string): Promise<Resultado> {
   if (!(await autorizar("usuarios.gestionar"))) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
   if (nueva.length < 8) return { ok: false, mensaje: "La contraseña debe tener al menos 8 caracteres." }

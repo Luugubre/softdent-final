@@ -3,9 +3,6 @@
 import { IconoDental } from "@/lib/iconos-dentales"
 import { CARA_ETIQUETAS, caraDeZona, type Cara, type Zona } from "@/types/odontograma"
 
-// =====================================================================
-// Siluetas anatómicas (espacio 100 × 130, corona arriba y raíz abajo)
-// =====================================================================
 const SILUETAS = {
   incisivo: "M31 10 Q50 2 69 10 L74 54 L60 120 Q50 130 40 120 L26 54 Z",
   canino: "M50 2 L71 18 L75 54 L58 124 Q50 132 42 124 L25 54 L29 18 Z",
@@ -25,13 +22,10 @@ function tipoDiente(pieza: number): keyof typeof SILUETAS {
   const temporal = Math.floor(pieza / 10) >= 5
   if (n <= 2) return "incisivo"
   if (n === 3) return "canino"
-  if (temporal) return "molar" // los temporales 4 y 5 son molares
+  if (temporal) return "molar"
   return n <= 5 ? "premolar" : "molar"
 }
 
-// =====================================================================
-// Círculo de 5 caras (V, L, M, D, O)
-// =====================================================================
 const CARAS_PATHS: { zona: Zona; d?: string; letra: [number, number] }[] = [
   { zona: "arriba", d: "M 16 16 A 48 48 0 0 1 84 16 L 64 36 A 20 20 0 0 0 36 36 Z", letra: [50, 25] },
   { zona: "abajo", d: "M 84 84 A 48 48 0 0 1 16 84 L 36 64 A 20 20 0 0 0 64 64 Z", letra: [50, 79] },
@@ -94,9 +88,6 @@ export function CarasCirculo({
   )
 }
 
-// =====================================================================
-// Diente completo
-// =====================================================================
 export type IconoPieza = { tipo: string; color: string; malEstado?: boolean; titulo: string }
 export type Tinte = "normal" | "preexistencia" | "lesion" | "pendiente" | "realizado"
 
@@ -146,7 +137,6 @@ export function Diente({
       } ${seleccionado ? "bg-blue-50 ring-2 ring-blue-400" : "hover:bg-slate-50"}`}
       onContextMenu={onContextMenu}
     >
-      {/* Silueta */}
       <svg
         width={38}
         height={50}
@@ -166,7 +156,6 @@ export function Diente({
           </linearGradient>
         </defs>
 
-        {/* Los superiores se voltean: raíz arriba, corona hacia el plano oclusal */}
         <g transform={superior ? "translate(0,130) scale(1,-1)" : undefined} opacity={estado.ausente ? 0.35 : 1}>
           <path d={SILUETAS[tipo]} fill={`url(#${idGradiente})`} stroke={tinte.borde} strokeWidth={4} strokeLinejoin="round" />
           <path d={CUELLO[tipo]} fill="none" stroke="#d6cbb3" strokeWidth={2.5} />
@@ -181,12 +170,10 @@ export function Diente({
         )}
       </svg>
 
-      {/* Número FDI */}
       <span onClick={onClick} className="cursor-pointer text-[10px] font-black italic text-slate-400 leading-none">
         {pieza}
       </span>
 
-      {/* Caras */}
       <div className={estado.ausente ? "opacity-30 pointer-events-none" : ""}>
         <CarasCirculo pieza={pieza} colores={estado.caras} onClickCara={onClickCara} />
       </div>

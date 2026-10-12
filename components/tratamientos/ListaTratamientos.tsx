@@ -45,7 +45,7 @@ export function ListaTratamientos({
                 <div className={`h-full ${t.avance === 100 ? "bg-emerald-500" : "bg-blue-500"}`} style={{ width: `${t.avance}%` }} />
               </div>
               <p className="mt-1 text-[11px] font-bold text-gray-500">
-                {t.avance}% realizado · {t.cantidad} prestación{t.cantidad === 1 ? "" : "es"}
+                {t.avance}% realizado · {t.cantidad} {t.cantidad === 1 ? "prestación" : "prestaciones"}
               </p>
             </div>
 

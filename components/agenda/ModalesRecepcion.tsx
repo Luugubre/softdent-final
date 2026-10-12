@@ -8,9 +8,6 @@ import { diaSemana, fechaTitulo, hoyEnChile, sumarDias } from "@/lib/fechas-agen
 import { mensajeRecordatorio } from "@/lib/mensajes-agenda"
 import type { CitaAgenda, HoraLibre, ProfesionalAgenda } from "@/types/cita"
 
-// =====================================================================
-// ¿CUÁNDO HAY HORA? — próximas horas libres
-// =====================================================================
 export function ModalBuscarHora({
   profesionales,
   profesionalInicial,
@@ -127,9 +124,6 @@ export function ModalBuscarHora({
   )
 }
 
-// =====================================================================
-// RECORDAR CITAS (por defecto: próximo día hábil)
-// =====================================================================
 export function ModalRecordatorios({ profesionalId, onClose }: { profesionalId?: string; onClose: () => void }) {
   const hoy = hoyEnChile()
   const manana = sumarDias(hoy, 1)
@@ -147,7 +141,6 @@ export function ModalRecordatorios({ profesionalId, onClose }: { profesionalId?:
     }
   }, [fecha, profesionalId])
 
-  // Un mensaje por paciente (si tiene varias citas ese día, van juntas)
   const porPaciente = new Map<string, CitaAgenda[]>()
   for (const c of citas ?? []) porPaciente.set(c.paciente_id, [...(porPaciente.get(c.paciente_id) ?? []), c])
   const grupos = [...porPaciente.values()]
@@ -220,9 +213,6 @@ export function ModalRecordatorios({ profesionalId, onClose }: { profesionalId?:
   )
 }
 
-// =====================================================================
-// CITAS ANULADAS DEL PERÍODO
-// =====================================================================
 export function ModalAnuladas({ citas, mostrarFecha, onClose }: { citas: CitaAgenda[]; mostrarFecha: boolean; onClose: () => void }) {
   return (
     <Ventana titulo="Citas anuladas" subtitulo={`${citas.length} en el período`} icono="🗑" ancho="max-w-xl" onClose={onClose}>

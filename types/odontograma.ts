@@ -1,8 +1,3 @@
-// =====================================================================
-// Odontograma FDI: piezas, caras, tipos de hallazgo y colores
-// (sin dependencias del servidor: se usa también en el cliente)
-// =====================================================================
-
 export const CARAS = ["V", "L", "M", "D", "O"] as const
 export type Cara = (typeof CARAS)[number]
 
@@ -14,7 +9,6 @@ export const CARA_ETIQUETAS: Record<Cara, string> = {
   O: "Oclusal / Incisal",
 }
 
-// Disposición en pantalla (vista del profesional frente al paciente)
 export const ARCADAS = {
   PERMANENTE: {
     superior: [[18, 17, 16, 15, 14, 13, 12, 11], [21, 22, 23, 24, 25, 26, 27, 28]],
@@ -36,13 +30,12 @@ export function esSuperior(pieza: number) {
   return [1, 2, 5, 6].includes(Math.floor(pieza / 10))
 }
 
-/** Zona del dibujo → cara anatómica (depende del cuadrante) */
 export type Zona = "arriba" | "abajo" | "izquierda" | "derecha" | "centro"
 
 export function caraDeZona(pieza: number, zona: Zona): Cara {
   const cuadrante = Math.floor(pieza / 10)
   const superior = [1, 2, 5, 6].includes(cuadrante)
-  const ladoDerechoPaciente = [1, 4, 5, 8].includes(cuadrante) // se ve a la izquierda de la pantalla
+  const ladoDerechoPaciente = [1, 4, 5, 8].includes(cuadrante)
   switch (zona) {
     case "arriba":
       return superior ? "V" : "L"
@@ -57,9 +50,6 @@ export function caraDeZona(pieza: number, zona: Zona): Cara {
   }
 }
 
-// ---------------------------------------------------------------------
-// Tipos de hallazgo
-// ---------------------------------------------------------------------
 export type TipoHallazgo = "PREEXISTENCIA" | "LESION" | "AUSENTE"
 
 export const PREEXISTENCIAS = {
@@ -91,7 +81,6 @@ export const LESIONES = {
 export type CodigoPreexistencia = keyof typeof PREEXISTENCIAS
 export type CodigoLesion = keyof typeof LESIONES
 
-/** Ícono de un hallazgo (lesiones "defectuosas" se dibujan rayadas) */
 export function iconoHallazgo(tipo: TipoHallazgo, codigo: string): { tipo: string; malEstado: boolean } {
   if (tipo === "AUSENTE") return { tipo: "extraccion", malEstado: false }
   const lista = (tipo === "LESION" ? LESIONES : PREEXISTENCIAS) as Record<string, { icono: string }>
@@ -110,20 +99,14 @@ export function abrevHallazgo(tipo: TipoHallazgo, codigo: string) {
   return lista[codigo]?.abrev ?? codigo.slice(0, 2)
 }
 
-// ---------------------------------------------------------------------
-// Colores (leyenda)
-// ---------------------------------------------------------------------
 export const COLORES = {
-  PREEXISTENCIA: "#2563eb", // azul
-  LESION: "#dc2626", // rojo
-  PENDIENTE: "#f59e0b", // naranjo: prestación por realizar
-  REALIZADO: "#16a34a", // verde: prestación realizada
+  PREEXISTENCIA: "#2563eb",
+  LESION: "#dc2626",
+  PENDIENTE: "#f59e0b",
+  REALIZADO: "#16a34a",
   AUSENTE: "#9ca3af",
 } as const
 
-// ---------------------------------------------------------------------
-// Datos que vienen de la BD
-// ---------------------------------------------------------------------
 export type Hallazgo = {
   id: string
   paciente_id: string
@@ -152,6 +135,7 @@ export type ItemTratamiento = {
   id: string
   presupuesto_id: string
   prestacion_id: string
+  fase_id?: string | null
   pieza: number | null
   caras: Cara[]
   precio: number

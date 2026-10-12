@@ -10,6 +10,7 @@ import { ModalBloqueo } from "@/components/agenda/ModalBloqueo"
 import { ModalAnuladas, ModalBuscarHora, ModalRecordatorios } from "@/components/agenda/ModalesRecepcion"
 import { TarjetaCitaDia, TarjetaCitaSemana, type AccionesCita } from "@/components/agenda/TarjetaCita"
 import { enlaceWhatsapp } from "@/lib/clinica"
+import { ComoFunciona, Termino } from "@/components/ui/Ayuda"
 import { fechaTitulo, sumarDias } from "@/lib/fechas-agenda"
 import { mensajeInasistencia, mensajeRecordatorio } from "@/lib/mensajes-agenda"
 import { ESTADO_CITA, type Box, type CitaAgenda, type EstadoCita, type InfoPaciente, type PacienteBusqueda, type ProfesionalAgenda, type TipoAtencion } from "@/types/cita"
@@ -46,7 +47,6 @@ export function AgendaClinica(p: Props) {
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string; whatsapp?: string } | null>(null)
   const [, startTransition] = useTransition()
 
-  // Reloj para el semáforo de sala de espera + refresco automático cada minuto
   const [ahoraMs, setAhoraMs] = useState(() => Date.now())
   useEffect(() => {
     const reloj = setInterval(() => setAhoraMs(Date.now()), 30000)
@@ -66,7 +66,6 @@ export function AgendaClinica(p: Props) {
     return `/agenda?${q.toString()}`
   }
 
-  // ----- Citas -----
   const anuladas = citas.filter((c) => c.estado === "CANCELADA")
   const activas = citas.filter((c) => c.estado !== "CANCELADA" && c.estado !== "REAGENDADA")
   const filtradas = useMemo(() => {
@@ -81,7 +80,6 @@ export function AgendaClinica(p: Props) {
       ? fechaTitulo(fecha, { weekday: "long", day: "numeric", month: "short" })
       : `${fechaTitulo(dias[0], { day: "numeric", month: "short" })} – ${fechaTitulo(dias[dias.length - 1], { day: "numeric", month: "short" })}`
 
-  // ----- Acciones -----
   function abrirAgendar(cfg: Omit<ConfigAgendar, "clave"> = {}) {
     setAgendar({ clave: Date.now(), profesionalId: profesional, semana: fecha < hoy ? hoy : fecha, ...cfg })
   }
@@ -133,11 +131,15 @@ export function AgendaClinica(p: Props) {
 
   return (
     <div className="min-h-full bg-gray-50 text-gray-800 p-4 sm:p-6 md:p-10 pb-24">
-      {/* CABECERA */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          Agenda <span className="italic font-serif text-blue-600">Clínica</span>
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            📅 Agenda <span className="italic font-serif text-blue-600">Clínica</span>
+          </h1>
+          <p className="text-sm font-medium text-gray-500">
+            Citas del día o la semana. Haz clic en una cita para ver su detalle o cambiar su estado.
+          </p>
+        </div>
         <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-2">
           {permisos.gestionar && (
             <button onClick={() => setModal("recordatorios")} className={`${boton} border-emerald-200 text-emerald-700 hover:bg-emerald-50`}>
@@ -174,7 +176,34 @@ export function AgendaClinica(p: Props) {
         </div>
       </div>
 
-      {/* FILTROS */}
+      <div className="mb-6 space-y-3">
+        <ComoFunciona
+          titulo="¿Cómo se usa la agenda?"
+          pasos={[
+            <>Para una cita nueva presiona <strong>+ Agendar</strong>, busca al paciente y elige un horario libre.</>,
+            <>Cuando el paciente llega, márcalo <strong>En espera</strong>; al pasar al sillón, <strong>En box</strong>; al terminar, <strong>Atendido</strong>.</>,
+            <><strong>🔔 Recordar citas</strong> arma los mensajes de WhatsApp de las citas de mañana.</>,
+            <><strong>🔍 Buscar hora</strong> encuentra el próximo horario libre; <strong>🗒 Hoja de ruta</strong> imprime el día.</>,
+          ]}
+          reglas={[
+            <>Solo se agenda dentro del <Termino t="horario">horario del dentista</Termino>; fuera de él es <Termino t="sobrecupo" />.</>,
+            <>Un <Termino t="bloqueo" /> (🔒 Bloquear) impide agendar en ese período.</>,
+            <>Las citas no se borran: se anulan o se reprograman y queda el historial.</>,
+            <>Los horarios y boxes se configuran en <strong>⚙ Horarios</strong>.</>,
+          ]}
+        />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+            <Termino t="estado_cita">Colores</Termino>:
+          </span>
+          {(Object.keys(ESTADO_CITA) as EstadoCita[]).map((e) => (
+            <span key={e} className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${ESTADO_CITA[e].pill}`}>
+              {ESTADO_CITA[e].icono} {ESTADO_CITA[e].etiqueta}
+            </span>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6">
         <div className="bg-white border border-gray-200 rounded-full px-4 py-2.5 shadow-sm flex items-center gap-2">
           <span>👥</span>
@@ -243,7 +272,6 @@ export function AgendaClinica(p: Props) {
         </div>
       </div>
 
-      {/* BUSCADOR + CONTADOR */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6">
         <div className="relative w-full sm:max-w-lg">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
@@ -294,7 +322,6 @@ export function AgendaClinica(p: Props) {
         </div>
       )}
 
-      {/* VISTA DÍA: línea de tiempo */}
       {vista === "dia" && (
         <div className="relative md:pl-[140px] pt-2">
           {filtradas.length > 0 && <div className="absolute left-[100px] top-6 bottom-0 w-[2px] bg-gradient-to-b from-blue-300 to-blue-50 hidden md:block" />}
@@ -325,7 +352,6 @@ export function AgendaClinica(p: Props) {
         </div>
       )}
 
-      {/* VISTA SEMANA: una columna por día */}
       {vista === "semana" && (
         <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${dias.length === 7 ? "lg:grid-cols-7" : "lg:grid-cols-6"} gap-3`}>
           {dias.map((d) => {
@@ -367,7 +393,6 @@ export function AgendaClinica(p: Props) {
         </div>
       )}
 
-      {/* MODALES */}
       {agendar && (
         <ModalAgendar
           config={agendar}

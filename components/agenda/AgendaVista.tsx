@@ -28,7 +28,7 @@ import {
 
 export type Vista = "dia" | "semana" | "mes"
 
-const PX = 1.2 // píxeles por minuto (15 min = 18 px)
+const PX = 1.2
 const PASO = 15
 const OCULTAS_POR_DEFECTO = ["CANCELADA", "REAGENDADA"]
 
@@ -39,7 +39,7 @@ type Columna = {
   titulo: string
   subtitulo?: string
   citas: CitaAgenda[]
-  tramos: [number, number][] | null // null = sin horario que mostrar
+  tramos: [number, number][] | null
   bloqueos: { b: BloqueoAgenda; desde: number; hasta: number }[]
 }
 
@@ -67,7 +67,6 @@ export function AgendaVista(props: Props) {
   const [detalle, setDetalle] = useState<CitaAgenda | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
 
-  // ----- URL (vista, fecha y filtros viven en la dirección) -----
   function url(cambios: Record<string, string | undefined>) {
     const p = new URLSearchParams()
     const actual = { vista, fecha, profesional: filtros.profesional, box: filtros.box, estado: filtros.estado, ...cambios }
@@ -85,7 +84,6 @@ export function AgendaVista(props: Props) {
         ? `${fechaTitulo(dias[0], { day: "numeric", month: "short" })} – ${fechaTitulo(dias[6], { day: "numeric", month: "short", year: "numeric" })}`
         : fechaTitulo(fecha, { month: "long", year: "numeric" })
 
-  // ----- Citas visibles -----
   const visibles = filtros.estado ? citas : citas.filter((c) => !OCULTAS_POR_DEFECTO.includes(c.estado))
   const ocultas = citas.length - visibles.length
 
@@ -113,12 +111,11 @@ export function AgendaVista(props: Props) {
     })
   }
 
-  // ----- Columnas de la grilla (día: una por profesional; semana: una por día) -----
   const columnas = useMemo<Columna[]>(() => {
     const tramosDe = (profesionalId: string | undefined, dia: string): [number, number][] | null => {
       if (!profesionalId) return null
       const propios = horarios.filter((h) => h.profesional_id === profesionalId)
-      if (propios.length === 0) return diaSemana(dia) < 7 ? [[540, 1140]] : [] // sin configurar: 09 a 19, lunes a sábado
+      if (propios.length === 0) return diaSemana(dia) < 7 ? [[540, 1140]] : []
       return propios
         .filter((h) => h.dia_semana === diaSemana(dia))
         .map((h) => [horaAMinutos(h.hora_inicio), horaAMinutos(h.hora_fin)] as [number, number])
@@ -168,7 +165,6 @@ export function AgendaVista(props: Props) {
 
   return (
     <div className="space-y-4">
-      {/* CABECERA */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -263,7 +259,6 @@ export function AgendaVista(props: Props) {
         </div>
       )}
 
-      {/* CONTENIDO */}
       {vista === "mes" ? (
         <VistaMes
           dias={dias}
@@ -290,7 +285,6 @@ export function AgendaVista(props: Props) {
         />
       )}
 
-      {/* LEYENDA */}
       <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
         {ESTADOS_CITA.map((e) => (
           <span key={e} className={`px-2 py-0.5 rounded-full ${ESTADO_CITA[e].chip}`}>
@@ -308,7 +302,6 @@ export function AgendaVista(props: Props) {
         )}
       </div>
 
-      {/* MODALES */}
       {modal?.tipo === "agendar" && (
         <ModalAgendar
           config={modal.config}
@@ -374,9 +367,6 @@ function Filtro({
   )
 }
 
-// =====================================================================
-// GRILLA HORARIA (día y semana)
-// =====================================================================
 function Grilla({
   columnas,
   vista,
@@ -394,7 +384,6 @@ function Grilla({
   onSlot: (col: Columna, minuto: number) => void
   onCita: (c: CitaAgenda) => void
 }) {
-  // Rango de horas: 08:00 a 20:00, ampliado si hay horarios o citas fuera de eso
   let inicio = 480
   let fin = 1200
   for (const c of columnas) {
@@ -416,7 +405,6 @@ function Grilla({
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-auto max-h-[78vh]">
       <div className="flex min-w-max">
-        {/* Eje de horas */}
         <div className="w-14 shrink-0 sticky left-0 z-20 bg-white border-r border-gray-200">
           <div className="h-12 border-b border-gray-200 sticky top-0 bg-white z-10" />
           <div className="relative" style={{ height: alto }}>
@@ -443,7 +431,6 @@ function Grilla({
               </div>
 
               <div className="relative" style={{ height: alto }}>
-                {/* Slots de 15 min */}
                 {slots.map((m) => {
                   const enHorario = col.tramos === null || col.tramos.some(([a, b]) => m >= a && m < b)
                   const pasado = col.fecha < hoy || (esHoy && m + PASO <= ahoraMin)
@@ -461,7 +448,6 @@ function Grilla({
                   )
                 })}
 
-                {/* Bloqueos */}
                 {col.bloqueos.map(({ b, desde, hasta }) => {
                   const a = Math.max(desde, inicio)
                   const z = Math.min(hasta, fin)
@@ -481,7 +467,6 @@ function Grilla({
                   )
                 })}
 
-                {/* Citas */}
                 {col.citas.map((c) => {
                   const { carril, total } = lanes.get(c.id) ?? { carril: 0, total: 1 }
                   const alturaPx = Math.max(c.duracion_min * PX, 16)
@@ -513,7 +498,6 @@ function Grilla({
                   )
                 })}
 
-                {/* Hora actual */}
                 {esHoy && ahoraMin >= inicio && ahoraMin <= fin && (
                   <div className="absolute inset-x-0 z-[4] pointer-events-none" style={{ top: (ahoraMin - inicio) * PX }}>
                     <div className="h-0.5 bg-rose-500" />
@@ -529,7 +513,6 @@ function Grilla({
   )
 }
 
-/** Si dos citas se superponen (sobrecupo), se muestran lado a lado */
 function asignarCarriles(citas: CitaAgenda[]) {
   const orden = [...citas].sort((a, b) => a.minuto_inicio - b.minuto_inicio)
   const res = new Map<string, { carril: number; total: number }>()
@@ -560,9 +543,6 @@ function asignarCarriles(citas: CitaAgenda[]) {
   return res
 }
 
-// =====================================================================
-// VISTA MENSUAL
-// =====================================================================
 function VistaMes({
   dias,
   fecha,

@@ -1,9 +1,3 @@
--- =====================================================================
--- Varios tratamientos por paciente (cada uno con su odontograma y plan)
--- Pegar en Supabase → SQL Editor → Run (después de 07)
--- =====================================================================
-
--- 1) Se permite más de un tratamiento activo por paciente
 DROP INDEX IF EXISTS public.presupuestos_un_activo;
 
 ALTER TABLE public.presupuestos
@@ -15,7 +9,6 @@ ALTER TABLE public.presupuestos
 
 ALTER TABLE public.presupuestos ALTER COLUMN nombre SET DEFAULT 'Tratamiento';
 
--- Numerar los tratamientos que ya existían (1, 2, 3... por paciente)
 UPDATE public.presupuestos p
    SET numero = s.n
   FROM (SELECT id, row_number() OVER (PARTITION BY paciente_id ORDER BY created_at) AS n
@@ -26,7 +19,6 @@ ALTER TABLE public.presupuestos ALTER COLUMN numero SET NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS presupuestos_numero_key ON public.presupuestos (paciente_id, numero);
 CREATE INDEX IF NOT EXISTS presupuestos_paciente_idx ON public.presupuestos (paciente_id, created_at DESC);
 
--- Un tratamiento no se borra: se anula
 CREATE OR REPLACE FUNCTION public.presupuestos_no_borrar()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -38,8 +30,6 @@ DROP TRIGGER IF EXISTS presupuestos_no_borrar_trg ON public.presupuestos;
 CREATE TRIGGER presupuestos_no_borrar_trg BEFORE DELETE ON public.presupuestos
   FOR EACH ROW EXECUTE FUNCTION public.presupuestos_no_borrar();
 
-
--- 2) Arancel sugerido según la previsión del paciente
 CREATE OR REPLACE FUNCTION public.arancel_paciente(p_paciente uuid)
 RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT COALESCE(
@@ -50,8 +40,6 @@ RETURNS uuid LANGUAGE sql STABLE AS $$
   );
 $$;
 
-
--- 3) Crear tratamiento
 CREATE OR REPLACE FUNCTION public.crear_tratamiento(
   p_paciente    uuid,
   p_nombre      text,
@@ -65,7 +53,6 @@ DECLARE
   v_numero integer;
   v_id uuid;
 BEGIN
-  -- Bloquea al paciente para numerar sin choques
   PERFORM 1 FROM public.pacientes WHERE id = p_paciente AND activo FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'El paciente no existe o está deshabilitado.'; END IF;
 
@@ -97,8 +84,6 @@ BEGIN
 END;
 $$;
 
-
--- 4) Agregar prestación a UN tratamiento (reemplaza la función anterior)
 DROP FUNCTION IF EXISTS public.agregar_prestacion_paciente(uuid, uuid, integer, text[], uuid, text);
 
 CREATE OR REPLACE FUNCTION public.agregar_prestacion_tratamiento(
@@ -148,8 +133,6 @@ BEGIN
 END;
 $$;
 
-
--- 5) Finalizar / anular tratamiento
 CREATE OR REPLACE FUNCTION public.finalizar_tratamiento(p_presupuesto uuid, p_usuario uuid)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE
@@ -200,8 +183,6 @@ BEGIN
 END;
 $$;
 
-
--- 6) El historial de prestaciones indica a qué tratamiento pertenecen
 CREATE OR REPLACE FUNCTION public.historial_items_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE

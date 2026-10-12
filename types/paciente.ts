@@ -6,7 +6,7 @@ export type Paciente = {
   nombres: string
   apellidos: string
   nombre_social: string | null
-  fecha_nacimiento: string // "YYYY-MM-DD"
+  fecha_nacimiento: string
   sexo: "FEMENINO" | "MASCULINO" | "INTERSEXUAL" | "NO_INFORMA" | null
   genero: string | null
   telefono: string | null

@@ -1,8 +1,3 @@
-// =====================================================================
-// Datos de los íconos del odontograma (sin "use client": se pueden
-// usar tanto en el servidor como en el navegador)
-// =====================================================================
-
 export const ICONOS_PRESTACION = [
   { id: "restauracion", etiqueta: "Restauración (resina)" },
   { id: "incrustacion", etiqueta: "Incrustación" },
@@ -27,10 +22,8 @@ export const ICONOS_PRESTACION = [
 
 export type IconoPrestacion = (typeof ICONOS_PRESTACION)[number]["id"]
 
-/** Íconos que se representan pintando caras (si la prestación/hallazgo tiene caras) */
 export const ICONOS_DE_CARA = new Set(["restauracion", "amalgama", "caries", "sellante", "incrustacion"])
 
-/** Adivina el ícono a partir del nombre de la prestación */
 export function iconoPorNombre(nombre: string): string {
   const n = nombre.toLowerCase()
   const tiene = (...p: string[]) => p.some((x) => n.includes(x))

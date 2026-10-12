@@ -25,7 +25,6 @@ export type EventoHistorial = {
   fecha: string
 }
 
-/** Cómo se ve cada tipo de evento en la línea de tiempo y a qué sección lleva */
 export const ESTILO_EVENTO: Record<TipoEvento, { etiqueta: string; icono: string; color: string; seccion: string }> = {
   PACIENTE: { etiqueta: "Datos", icono: "👤", color: "bg-slate-100 text-slate-700 border-slate-300", seccion: "datos" },
   ANTECEDENTE: { etiqueta: "Antecedente", icono: "🩺", color: "bg-amber-50 text-amber-800 border-amber-300", seccion: "antecedentes" },

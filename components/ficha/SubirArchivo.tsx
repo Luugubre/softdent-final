@@ -33,7 +33,6 @@ export function SubirArchivo({ pacienteId }: { pacienteId: string }) {
     }
     if (archivo.type.startsWith("image/")) setVistaPrevia(URL.createObjectURL(archivo))
 
-    // Sugerir título a partir del nombre del archivo
     const titulo = formRef.current?.elements.namedItem("titulo") as HTMLInputElement | null
     if (titulo && !titulo.value) titulo.value = archivo.name.replace(/\.[^.]+$/, "")
   }
@@ -104,7 +103,6 @@ export function SubirArchivo({ pacienteId }: { pacienteId: string }) {
         </div>
 
         {vistaPrevia && (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={vistaPrevia} alt="Vista previa" className="h-36 w-36 rounded-xl object-cover border border-gray-200" />
         )}
       </div>

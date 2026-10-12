@@ -9,6 +9,7 @@ import { ESTADO_LIQUIDACION, METODO_LIQUIDACION, nombrePeriodo } from "@/types/l
 import { obtenerParametro } from "@/lib/catalogos"
 import { AccionesLiquidacion } from "@/components/liquidaciones/AccionesLiquidacion"
 import { BotonImprimir } from "@/components/pagos/BotonImprimir"
+import { BotonExcel } from "@/components/ui/BotonExcel"
 
 export default async function LiquidacionPage({ params }: { params: Promise<{ liquidacionId: string }> }) {
   const usuario = await requerirPermiso("liquidaciones.ver")
@@ -37,7 +38,10 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
         <Link href={`/liquidaciones/profesional/${l.profesional_id}`} className="text-sm font-bold text-blue-600 hover:underline">
           ← Volver al profesional
         </Link>
-        <BotonImprimir />
+        <div className="flex items-center gap-2">
+          <BotonExcel href={`/liquidaciones/${l.id}/excel`} />
+          <BotonImprimir />
+        </div>
       </div>
 
       {gestionar && (l.estado === "CALCULADA" || l.estado === "APROBADA") && <AccionesLiquidacion liquidacionId={l.id} estado={l.estado} />}

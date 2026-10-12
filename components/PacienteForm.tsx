@@ -17,7 +17,6 @@ type CampoProps = {
   children: React.ReactNode
 }
 
-// Fuera del formulario para que los inputs no se reinicien al escribir
 function Campo({ nombre, etiqueta, obligatorio, errores, children }: CampoProps) {
   const error = errores?.[nombre]?.[0]
   return (
@@ -32,11 +31,8 @@ function Campo({ nombre, etiqueta, obligatorio, errores, children }: CampoProps)
 }
 
 type Props = {
-  /** Si viene, el formulario edita a este paciente. Si no, crea uno nuevo. */
   paciente?: Paciente
-  /** Solo en modo edición: se llama al cancelar o al guardar (con el mensaje de éxito) */
   onCerrar?: (mensaje?: string) => void
-  /** Previsiones activas del catálogo de Administración (si no viene, se usa la lista fija) */
   previsiones?: readonly string[]
 }
 
@@ -124,7 +120,6 @@ export function PacienteForm({ paciente: p, onCerrar, previsiones = PREVISIONES 
         </div>
       )}
 
-      {/* IDENTIFICACIÓN */}
       <section className="space-y-4">
         <h3 className="text-sm font-black uppercase tracking-wider text-blue-700">Identificación</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -200,7 +195,6 @@ export function PacienteForm({ paciente: p, onCerrar, previsiones = PREVISIONES 
         </div>
       </section>
 
-      {/* CONTACTO */}
       <section className="space-y-4">
         <h3 className="text-sm font-black uppercase tracking-wider text-blue-700">Contacto</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -225,13 +219,11 @@ export function PacienteForm({ paciente: p, onCerrar, previsiones = PREVISIONES 
         </div>
       </section>
 
-      {/* PREVISIÓN Y OTROS */}
       <section className="space-y-4">
         <h3 className="text-sm font-black uppercase tracking-wider text-blue-700">Previsión y otros datos</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Campo nombre="prevision" etiqueta="Previsión" obligatorio errores={e}>
             <select id="prevision" name="prevision" defaultValue={p?.prevision ?? "Particular"} className={inputClass}>
-              {/* Si el valor guardado no está en la lista, igual se muestra */}
               {p?.prevision && !previsiones.includes(p.prevision) && (
                 <option value={p.prevision}>{p.prevision}</option>
               )}
@@ -260,7 +252,6 @@ export function PacienteForm({ paciente: p, onCerrar, previsiones = PREVISIONES 
         </div>
       </section>
 
-      {/* APODERADO (solo menores) */}
       {esMenor && (
         <section className="space-y-4 rounded-2xl bg-amber-50 border border-amber-200 p-4">
           <h3 className="text-sm font-black uppercase tracking-wider text-amber-800">
@@ -287,7 +278,6 @@ export function PacienteForm({ paciente: p, onCerrar, previsiones = PREVISIONES 
         </section>
       )}
 
-      {/* OBSERVACIONES */}
       <Campo nombre="observaciones" etiqueta="Observaciones" errores={e}>
         <textarea
           id="observaciones"

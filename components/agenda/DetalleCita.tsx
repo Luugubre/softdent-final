@@ -110,7 +110,6 @@ export function DetalleCita({
         )}
       </dl>
 
-      {/* ACCIONES */}
       {puedeGestionar && (
         <div className="flex flex-wrap gap-2">
           {ACCIONES.filter((a) => puedePasarA(cita.estado, a.estado)).map((a) => (
@@ -176,7 +175,6 @@ export function DetalleCita({
 
       {error && <p className="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-800">{error}</p>}
 
-      {/* TRAZABILIDAD */}
       <div>
         <p className="text-[11px] font-black uppercase tracking-wider text-gray-500 mb-1">Historial de la cita</p>
         {historial === null ? (

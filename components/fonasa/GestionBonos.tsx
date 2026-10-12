@@ -62,7 +62,6 @@ export function GestionBonos({ bonos, hoy }: { bonos: BonoFonasa[]; hoy: string 
       )}
 
       <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-        {/* REGISTRAR */}
         <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3 h-fit">
           <h2 className="text-lg font-extrabold text-gray-900">Registrar bono FONASA</h2>
           <label className="block">
@@ -108,7 +107,6 @@ export function GestionBonos({ bonos, hoy }: { bonos: BonoFonasa[]; hoy: string 
           </button>
         </section>
 
-        {/* LISTA */}
         <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-extrabold text-gray-900">Bonos ({pendientes.length} pendiente{pendientes.length === 1 ? "" : "s"})</h2>

@@ -27,7 +27,6 @@ async function todasLasFilas<T>(consulta: (desde: number, hasta: number) => Resp
 
 export type FiltrosAgenda = { profesional?: string; box?: string; estado?: EstadoCita }
 
-/** Citas entre dos días (incluidos), con fecha y hora de Chile */
 export async function obtenerCitas(desde: string, hasta: string, filtros: FiltrosAgenda = {}): Promise<CitaAgenda[]> {
   const supabase = getSupabase()
   return todasLasFilas<CitaAgenda>((a, b) => {
@@ -39,7 +38,6 @@ export async function obtenerCitas(desde: string, hasta: string, filtros: Filtro
   })
 }
 
-/** Bloqueos que tocan el rango (se pide con margen y se recorta por día en pantalla) */
 export async function obtenerBloqueos(desde: string, hasta: string): Promise<BloqueoAgenda[]> {
   const { data, error } = await getSupabase()
     .from("bloqueos_agenda")
@@ -94,7 +92,6 @@ export const obtenerPrestacionesAgenda = cache(async (): Promise<PrestacionAgend
   )
 })
 
-/** Por cobrar, deuda e inasistencias (últimos 12 meses) de cada paciente */
 export async function obtenerInfoPacientes(pacienteIds: string[], conFinanzas: boolean): Promise<Record<string, InfoPaciente>> {
   const info: Record<string, InfoPaciente> = {}
   const ids = [...new Set(pacienteIds)]

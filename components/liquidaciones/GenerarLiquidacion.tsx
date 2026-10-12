@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { generarLiquidacion } from "@/app/liquidaciones/actions"
 import { formatearPesos } from "@/lib/formato"
+import { Termino } from "@/components/ui/Ayuda"
 
 const campo = "w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
 const etiqueta = "block text-xs font-black uppercase tracking-wider text-gray-500 mb-1"
 const numero = (v: string) => Number(v.replace(/[^\d-]/g, "")) || 0
 
-/** Liquidación mensual: período, bonificación, ajuste (+/−) y descuento. El cálculo final lo hace la BD. */
 export function GenerarLiquidacion({
   profesionalId,
   periodo,
@@ -50,6 +50,12 @@ export function GenerarLiquidacion({
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
+      <div>
+        <h2 className="text-lg font-extrabold text-gray-900">🧮 Calcular liquidación del mes</h2>
+        <p className="text-xs font-semibold text-gray-500">
+          Elige el mes; los montos extra son opcionales. <Termino t="bonificacion">¿Qué es bonificación, ajuste y descuento?</Termino>
+        </p>
+      </div>
       <div className="grid gap-3 md:grid-cols-5">
         <label>
           <span className={etiqueta}>Período</span>
@@ -82,7 +88,9 @@ export function GenerarLiquidacion({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
         <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
           <div>
-            <dt className="text-[11px] font-black uppercase text-gray-500">Producción</dt>
+            <dt className="text-[11px] font-black uppercase text-gray-500">
+              <Termino t="produccion">Producción</Termino>
+            </dt>
             <dd className="font-bold">{formatearPesos(base)}</dd>
           </div>
           <div>

@@ -1,20 +1,10 @@
--- =====================================================================
--- Prestaciones y Aranceles · Supabase
--- Pegar en Supabase → SQL Editor → Run (después de 01 a 04)
--- =====================================================================
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
-CREATE EXTENSION IF NOT EXISTS btree_gist;   -- para impedir vigencias solapadas
-
--- Fecha de hoy en Chile (el servidor de Supabase está en UTC)
 CREATE OR REPLACE FUNCTION public.hoy_chile()
 RETURNS date LANGUAGE sql STABLE AS $$
   SELECT (now() AT TIME ZONE 'America/Santiago')::date;
 $$;
 
-
--- =====================================================================
--- 1. CATÁLOGOS: especialidades y categorías
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.especialidades (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nombre     text NOT NULL UNIQUE CHECK (length(trim(nombre)) > 0),
@@ -42,16 +32,11 @@ INSERT INTO public.categorias_prestaciones (nombre, orden) VALUES
   ('Implantología', 9), ('Ortodoncia', 10), ('Estética', 11), ('Urgencia', 12)
 ON CONFLICT (nombre) DO NOTHING;
 
-
--- =====================================================================
--- 2. ARANCELES (listas de precios)
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.aranceles (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nombre               text NOT NULL UNIQUE CHECK (length(trim(nombre)) > 0),
   tipo                 text NOT NULL CHECK (tipo IN ('PARTICULAR', 'FONASA', 'CONVENIO')),
   descripcion          text,
-  -- Convenios: descuento automático sobre el arancel base cuando no hay precio especial
   porcentaje_descuento numeric(5,2) NOT NULL DEFAULT 0 CHECK (porcentaje_descuento BETWEEN 0 AND 100),
   es_base              boolean NOT NULL DEFAULT false,
   activo               boolean NOT NULL DEFAULT true,
@@ -62,7 +47,6 @@ CREATE TABLE IF NOT EXISTS public.aranceles (
   CONSTRAINT aranceles_descuento_chk CHECK (tipo = 'CONVENIO' OR porcentaje_descuento = 0)
 );
 
--- Solo puede existir un arancel base
 CREATE UNIQUE INDEX IF NOT EXISTS aranceles_un_solo_base ON public.aranceles (es_base) WHERE es_base;
 
 DROP TRIGGER IF EXISTS aranceles_set_updated_at ON public.aranceles;
@@ -74,10 +58,6 @@ INSERT INTO public.aranceles (nombre, tipo, es_base, descripcion) VALUES
   ('FONASA', 'FONASA', false, 'Valores para pacientes FONASA')
 ON CONFLICT (nombre) DO NOTHING;
 
-
--- =====================================================================
--- 3. PRESTACIONES
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.prestaciones (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   codigo_interno  text NOT NULL UNIQUE,
@@ -98,7 +78,6 @@ CREATE TABLE IF NOT EXISTS public.prestaciones (
   CONSTRAINT prestaciones_duracion_chk CHECK (duracion_min BETWEEN 5 AND 480 AND duracion_min % 5 = 0)
 );
 
--- Duplicados: código FONASA único, y nombre único dentro de la misma especialidad
 CREATE UNIQUE INDEX IF NOT EXISTS prestaciones_codigo_fonasa_key
   ON public.prestaciones (codigo_fonasa) WHERE codigo_fonasa IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS prestaciones_nombre_especialidad_key
@@ -109,30 +88,24 @@ DROP TRIGGER IF EXISTS prestaciones_set_updated_at ON public.prestaciones;
 CREATE TRIGGER prestaciones_set_updated_at BEFORE UPDATE ON public.prestaciones
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
--- Profesionales habilitados (si no hay ninguno, todos los dentistas pueden realizarla)
 CREATE TABLE IF NOT EXISTS public.prestacion_profesionales (
   prestacion_id  uuid NOT NULL REFERENCES public.prestaciones(id) ON DELETE CASCADE,
   profesional_id uuid NOT NULL REFERENCES public.perfiles(id) ON DELETE CASCADE,
   PRIMARY KEY (prestacion_id, profesional_id)
 );
 
-
--- =====================================================================
--- 4. PRECIOS por prestación y arancel, con vigencia e historial
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.prestacion_precios (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   prestacion_id uuid NOT NULL REFERENCES public.prestaciones(id) ON DELETE RESTRICT,
   arancel_id    uuid NOT NULL REFERENCES public.aranceles(id) ON DELETE RESTRICT,
   precio        integer NOT NULL CHECK (precio > 0),
   vigente_desde date NOT NULL,
-  vigente_hasta date,                    -- NULL = vigente indefinidamente
+  vigente_hasta date,
   motivo        text,
   creado_por    uuid REFERENCES public.perfiles(id) ON DELETE SET NULL,
   created_at    timestamptz NOT NULL DEFAULT now(),
 
   CONSTRAINT precios_rango_chk CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde),
-  -- Regla: no pueden existir vigencias solapadas para la misma prestación y arancel
   CONSTRAINT precios_sin_solapamiento EXCLUDE USING gist (
     prestacion_id WITH =,
     arancel_id WITH =,
@@ -143,7 +116,6 @@ CREATE TABLE IF NOT EXISTS public.prestacion_precios (
 CREATE INDEX IF NOT EXISTS precios_busqueda_idx
   ON public.prestacion_precios (prestacion_id, arancel_id, vigente_desde DESC);
 
--- El historial de precios no se borra ni se reescribe: solo se puede cerrar la vigencia
 CREATE OR REPLACE FUNCTION public.precios_proteger()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -165,10 +137,6 @@ DROP TRIGGER IF EXISTS precios_proteger_trg ON public.prestacion_precios;
 CREATE TRIGGER precios_proteger_trg BEFORE UPDATE OR DELETE ON public.prestacion_precios
   FOR EACH ROW EXECUTE FUNCTION public.precios_proteger();
 
-
--- ---------------------------------------------------------------------
--- fijar_precio: registra un nuevo precio y cierra el anterior (atómico)
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.fijar_precio(
   p_prestacion_id uuid,
   p_arancel_id    uuid,
@@ -216,12 +184,6 @@ BEGIN
 END;
 $$;
 
-
--- ---------------------------------------------------------------------
--- precio_vigente: precio de una prestación en un arancel para una fecha.
--- Si el convenio no tiene precio especial, aplica su % de descuento
--- sobre el arancel base. Lo usarán presupuestos y pagos.
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.precio_vigente(
   p_prestacion_id uuid,
   p_arancel_id    uuid,
@@ -257,7 +219,6 @@ BEGIN
 END;
 $$;
 
--- Vista con el precio de hoy de cada prestación en cada arancel activo
 CREATE OR REPLACE VIEW public.v_precios_vigentes
 WITH (security_invoker = true) AS
 SELECT
@@ -273,10 +234,6 @@ FROM public.prestaciones p
 CROSS JOIN public.aranceles a
 WHERE a.activo;
 
-
--- =====================================================================
--- 5. SEGURIDAD
--- =====================================================================
 ALTER TABLE public.especialidades           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categorias_prestaciones  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.aranceles                ENABLE ROW LEVEL SECURITY;

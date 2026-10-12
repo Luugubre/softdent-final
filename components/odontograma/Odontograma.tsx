@@ -30,15 +30,12 @@ type ModalAbierto =
   | { tipo: "PREEXISTENCIA" | "LESION" | "INFO"; pieza: number }
   | null
 
-/** Calcula cómo se dibuja cada diente según sus hallazgos y prestaciones */
 function calcularEstado(pieza: number, hallazgos: Hallazgo[], items: ItemTratamiento[]): EstadoDiente {
   const estado: EstadoDiente = { caras: {}, iconos: [], ausente: false, tinte: "normal" }
   const pintar = (caras: Cara[], color: string) => caras.forEach((c) => (estado.caras[c] = color))
 
-  /** Pinta caras y/o agrega el ícono sobre el diente */
   const marcar = (tipoIcono: string, caras: Cara[], color: string, titulo: string, malEstado = false) => {
     if (caras.length) pintar(caras, color)
-    // Los íconos "de cara" (resina, caries...) con caras indicadas ya se ven en el círculo
     if (!(caras.length && ICONOS_DE_CARA.has(tipoIcono))) estado.iconos.push({ tipo: tipoIcono, color, malEstado, titulo })
   }
 
@@ -46,7 +43,6 @@ function calcularEstado(pieza: number, hallazgos: Hallazgo[], items: ItemTratami
   const prest = items.filter((i) => i.pieza === pieza)
   const iconoItem = (i: ItemTratamiento) => i.prestacion?.icono || iconoPorNombre(i.prestacion?.nombre ?? "")
 
-  // Orden = prioridad de dibujo (lo último queda encima)
   for (const h of propios.filter((h) => h.tipo === "PREEXISTENCIA")) {
     const ic = iconoHallazgo(h.tipo, h.codigo)
     marcar(ic.tipo, h.caras, COLORES.PREEXISTENCIA, etiquetaHallazgo(h.tipo, h.codigo))
@@ -89,15 +85,11 @@ export function Odontograma({
 }: {
   pacienteId: string
   hallazgos: Hallazgo[]
-  /** General: prestaciones de todos los tratamientos · Tratamiento: solo las suyas */
   items: ItemTratamiento[]
   avances: Avance[]
   permisos: Permisos
-  /** Tratamientos activos (para elegir dónde agregar desde el odontograma general) */
   tratamientos?: TratamientoOpcion[]
-  /** Si viene, este es el odontograma de UN tratamiento */
   tratamientoFijo?: TratamientoOpcion
-  /** Prestaciones por carpeta + precios (lo carga la página en el servidor) */
   catalogo?: Catalogo | null
 }) {
   const esGeneral = !tratamientoFijo
@@ -111,13 +103,11 @@ export function Odontograma({
   const [seleccionada, setSeleccionada] = useState<number | null>(null)
   const [menu, setMenu] = useState<{ pieza: number; x: number; y: number } | null>(null)
   const [modal, setModal] = useState<ModalAbierto>(null)
-  // Menú lateral de prestaciones: qué pieza (null = prestación general) y qué caras
   const [panel, setPanel] = useState<{ pieza: number | null; caras: Cara[] } | null>(null)
   const puedeAgregar = permisos.agregar && !!catalogo
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
   const [pendiente, startTransition] = useTransition()
 
-  // Cerrar el menú contextual al hacer clic fuera, con Escape o al hacer scroll
   useEffect(() => {
     if (!menu) return
     const cerrar = () => setMenu(null)
@@ -140,7 +130,6 @@ export function Odontograma({
   function clicIzquierdo(pieza: number) {
     setSeleccionada(pieza)
     setMenu(null)
-    // Clic en el diente = abre el menú lateral de prestaciones
     if (puedeAgregar) setPanel({ pieza, caras: [] })
     else setModal({ tipo: "INFO", pieza })
   }
@@ -149,7 +138,6 @@ export function Odontograma({
     setSeleccionada(pieza)
     setMenu(null)
     if (!puedeAgregar) return setModal({ tipo: "INFO", pieza })
-    // Si el panel ya está en esta pieza, la cara se suma/quita; si no, se abre con esa cara
     setPanel((prev) =>
       prev?.pieza === pieza
         ? { pieza, caras: prev.caras.includes(cara) ? prev.caras.filter((c) => c !== cara) : [...prev.caras, cara] }
@@ -161,7 +149,6 @@ export function Odontograma({
     e.preventDefault()
     e.stopPropagation()
     setSeleccionada(pieza)
-    // Que el menú no se salga de la pantalla
     const x = Math.min(e.clientX, window.innerWidth - 240)
     const y = Math.min(e.clientY, window.innerHeight - 300)
     setMenu({ pieza, x, y })
@@ -307,7 +294,6 @@ export function Odontograma({
         </p>
       )}
 
-      {/* MENÚ LATERAL (izquierda) + ARCADAS */}
       <div className="flex flex-col lg:flex-row gap-4 items-start">
         {panel && catalogo && (
           <PanelPrestaciones
@@ -333,7 +319,6 @@ export function Odontograma({
         </div>
       </div>
 
-      {/* LEYENDA */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold text-gray-600">
         {[
           ["Preexistencia", COLORES.PREEXISTENCIA],
@@ -371,7 +356,6 @@ export function Odontograma({
         </div>
       </details>
 
-      {/* MENÚ CONTEXTUAL (clic derecho) */}
       {menu && (
         <div
           className="fixed z-40 w-56 rounded-xl bg-white border border-gray-200 shadow-xl py-1"
@@ -399,7 +383,6 @@ export function Odontograma({
         </div>
       )}
 
-      {/* MODALES */}
       {modal && (modal.tipo === "PREEXISTENCIA" || modal.tipo === "LESION") && (
         <ModalHallazgo
           pacienteId={pacienteId}

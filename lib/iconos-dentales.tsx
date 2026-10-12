@@ -2,17 +2,6 @@
 
 import { useId } from "react"
 
-// Los datos y funciones (lista de íconos, iconoPorNombre) están en lib/iconos-datos.ts,
-// para poder usarlos también desde el servidor.
-
-// =====================================================================
-// Íconos del odontograma.
-// Se dibujan en el "espacio del diente": 100 × 130, con la corona arriba
-// (y 0-58) y la raíz abajo (y 58-130). En los dientes superiores el
-// diente completo se voltea, así que los íconos quedan en su lugar.
-// =====================================================================
-
-/** Ícono dibujado dentro del diente */
 export function IconoDental({ tipo, color, malEstado = false }: { tipo: string; color: string; malEstado?: boolean }) {
   const id = useId().replace(/:/g, "")
   const relleno = malEstado ? `url(#rayado-${id})` : color
@@ -26,7 +15,6 @@ export function IconoDental({ tipo, color, malEstado = false }: { tipo: string; 
   const trazo = { stroke: color, fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
 
   switch (tipo) {
-    // ---------------- Caras / corona ----------------
     case "restauracion":
       return <g>{patron}<rect x="33" y="17" width="34" height="26" rx="9" fill={relleno} /></g>
     case "amalgama":
@@ -46,7 +34,6 @@ export function IconoDental({ tipo, color, malEstado = false }: { tipo: string; 
     case "fractura":
       return <path d="M64 4 L44 30 L60 33 L36 66" {...trazo} strokeWidth="7" />
 
-    // ---------------- Raíz ----------------
     case "endodoncia":
       return <path d="M42 56 L40 122 M58 56 L60 122" {...trazo} strokeWidth="7" />
     case "perno":
@@ -82,7 +69,6 @@ export function IconoDental({ tipo, color, malEstado = false }: { tipo: string; 
     case "retenido":
       return <path d="M50 8 L50 104 M35 88 L50 106 L65 88" {...trazo} strokeWidth="8" />
 
-    // ---------------- Pieza completa ----------------
     case "fija":
       return (
         <g stroke={color} strokeLinecap="round">
@@ -154,7 +140,6 @@ export function IconoDental({ tipo, color, malEstado = false }: { tipo: string; 
 const SILUETA_MUESTRA =
   "M24 14 Q37 4 50 12 Q63 4 76 14 L80 52 L62 120 Q50 128 38 120 L20 52 Z"
 
-/** Miniatura del ícono sobre un diente gris, para leyendas y selectores */
 export function IconoMuestra({ tipo, color, size = 28, malEstado }: { tipo: string; color: string; size?: number; malEstado?: boolean }) {
   return (
     <svg width={size} height={size * 1.3} viewBox="-8 -8 116 146" className="shrink-0">

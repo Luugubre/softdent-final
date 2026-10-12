@@ -77,11 +77,20 @@ export default async function LayoutPaciente({
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-4 md:p-8 space-y-5">
-      <Link href="/pacientes" className="text-sm font-bold text-blue-600 hover:underline">
-        ← Volver al directorio
-      </Link>
+      <nav aria-label="Ruta" className="flex flex-wrap items-center gap-1 text-xs font-bold text-gray-400">
+        <Link href="/" className="hover:text-blue-600">
+          Inicio
+        </Link>
+        <span aria-hidden>›</span>
+        <Link href="/pacientes" className="hover:text-blue-600">
+          Pacientes
+        </Link>
+        <span aria-hidden>›</span>
+        <span className="text-gray-600">
+          {paciente.nombres} {paciente.apellidos}
+        </span>
+      </nav>
 
-      {/* ENCABEZADO */}
       <header className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-1">
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight uppercase">
@@ -140,7 +149,6 @@ export default async function LayoutPaciente({
       </header>
 
       <div className={`grid grid-cols-1 gap-5 items-start ${verClinico ? "lg:grid-cols-[260px_1fr]" : ""}`}>
-        {/* COLUMNA IZQUIERDA: resumen clínico (solo roles clínicos) */}
         {verClinico && (
         <aside className="space-y-3 lg:sticky lg:top-4">
           <TarjetaResumen
@@ -165,7 +173,6 @@ export default async function LayoutPaciente({
         </aside>
         )}
 
-        {/* COLUMNA DERECHA: navegación + contenido */}
         <main className="space-y-5 min-w-0">
           <NavPaciente pacienteId={id} verClinico={verClinico} />
           {children}

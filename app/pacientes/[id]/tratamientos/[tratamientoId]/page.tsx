@@ -2,12 +2,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
-import { obtenerHallazgos, obtenerItems, obtenerTratamiento } from "@/lib/tratamientos"
+import { obtenerFases, obtenerHallazgos, obtenerItems, obtenerTratamiento } from "@/lib/tratamientos"
 import { obtenerPaciente } from "@/lib/paciente"
 import { formatearFechaHora } from "@/lib/formato"
 import { Odontograma } from "@/components/odontograma/Odontograma"
 import { PlanTratamiento } from "@/components/odontograma/PlanTratamiento"
 import { AccionesTratamiento } from "@/components/tratamientos/AccionesTratamiento"
+import { FasesTratamiento } from "@/components/tratamientos/FasesTratamiento"
 import { ESTADO_TRATAMIENTO } from "@/types/tratamiento"
 import { obtenerCatalogo } from "@/lib/catalogo"
 
@@ -23,19 +24,19 @@ export default async function TratamientoPage({
   if (!tratamiento) notFound()
 
   const verClinico = puede(usuario.rol, "clinico.ver")
-  const [paciente, hallazgos, { items, avances }] = await Promise.all([
+  const [paciente, hallazgos, { items, avances }, fases] = await Promise.all([
     obtenerPaciente(id),
     verClinico ? obtenerHallazgos(id) : Promise.resolve([]),
     obtenerItems(id, tratamientoId),
+    obtenerFases(tratamientoId),
   ])
 
-  // Solo se trabaja sobre tratamientos activos de pacientes activos
   const editable = !!paciente?.activo && tratamiento.estado === "ACTIVO"
   const gestionar = editable && puede(usuario.rol, "presupuestos.gestionar")
+  const organizar = !!paciente?.activo && tratamiento.estado !== "ANULADO" && puede(usuario.rol, "presupuestos.gestionar")
   const estado = ESTADO_TRATAMIENTO[tratamiento.estado]
   const opcion = { id: tratamiento.id, numero: tratamiento.numero, nombre: tratamiento.nombre, arancel_id: tratamiento.arancel_id }
 
-  // Catálogo de prestaciones por carpeta, con los precios del arancel de este tratamiento
   const catalogo = verClinico && gestionar ? await obtenerCatalogo(tratamiento.arancel_id) : null
 
   return (
@@ -44,7 +45,6 @@ export default async function TratamientoPage({
         ← Todos los tratamientos
       </Link>
 
-      {/* ENCABEZADO DEL TRATAMIENTO */}
       <header className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Tratamiento N° {tratamiento.numero}</p>
@@ -64,10 +64,17 @@ export default async function TratamientoPage({
             <p className="text-sm font-semibold text-emerald-700">Finalizado el {formatearFechaHora(tratamiento.finalizado_en)}</p>
           )}
         </div>
-        {gestionar && <AccionesTratamiento pacienteId={id} tratamientoId={tratamiento.id} />}
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            href={`/pacientes/${id}/tratamientos/${tratamiento.id}/imprimir`}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50"
+          >
+            🖨 Imprimir presupuesto
+          </Link>
+          {gestionar && <AccionesTratamiento pacienteId={id} tratamientoId={tratamiento.id} />}
+        </div>
       </header>
 
-      {/* ODONTOGRAMA DEL TRATAMIENTO (solo roles clínicos) */}
       {verClinico && (
         <Odontograma
           pacienteId={id}
@@ -83,6 +90,10 @@ export default async function TratamientoPage({
         />
       )}
 
+      {(organizar || fases.length > 0) && (
+        <FasesTratamiento pacienteId={id} tratamientoId={tratamiento.id} fases={fases} items={items} puedeEditar={organizar} />
+      )}
+
       <PlanTratamiento
         pacienteId={id}
         items={items}
@@ -90,6 +101,8 @@ export default async function TratamientoPage({
         plan={{ nombre: tratamiento.nombre, arancel: tratamiento.arancel }}
         puedeEvolucionar={editable && puede(usuario.rol, "tratamientos.evolucionar")}
         puedeAnular={gestionar}
+        fases={fases}
+        puedeOrganizar={organizar}
       />
     </div>
   )

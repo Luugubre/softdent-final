@@ -1,8 +1,3 @@
--- =====================================================================
--- Íconos de prestaciones para el odontograma
--- Pegar en Supabase → SQL Editor → Run (después de 05 y 06)
--- =====================================================================
-
 ALTER TABLE public.prestaciones ADD COLUMN IF NOT EXISTS icono text;
 ALTER TABLE public.prestaciones DROP CONSTRAINT IF EXISTS prestaciones_icono_chk;
 ALTER TABLE public.prestaciones ADD CONSTRAINT prestaciones_icono_chk
@@ -12,7 +7,6 @@ ALTER TABLE public.prestaciones ADD CONSTRAINT prestaciones_icono_chk
     'blanqueamiento','rayos','otro','default'
   ));
 
--- 1) Íconos que venían definidos en el arancel anterior (CSV), por código DL-xxxx
 UPDATE public.prestaciones p
    SET icono = v.icono
   FROM (VALUES
@@ -175,7 +169,6 @@ UPDATE public.prestaciones p
   ) AS v(codigo, icono)
  WHERE p.codigo_interno = v.codigo AND p.icono IS NULL;
 
--- 2) Para el resto, se adivina por el nombre
 UPDATE public.prestaciones SET icono = CASE
     WHEN nombre ILIKE '%implante%' AND nombre ILIKE '%corona%' THEN 'implante_corona'
     WHEN nombre ILIKE '%implante%' THEN 'implante'
@@ -197,5 +190,4 @@ UPDATE public.prestaciones SET icono = CASE
     ELSE NULL END
  WHERE icono IS NULL;
 
--- Resumen
 SELECT icono, count(*) FROM public.prestaciones GROUP BY icono ORDER BY count(*) DESC;

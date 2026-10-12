@@ -15,7 +15,6 @@ export default async function TratamientosPage({ params }: { params: Promise<{ i
   const puedeCrear = !!paciente?.activo && puede(usuario.rol, "presupuestos.gestionar")
   const porPagar = tratamientos.filter((t) => t.estado !== "ANULADO").reduce((s, t) => s + t.porPagar, 0)
 
-  // Datos para el formulario de nuevo tratamiento
   let formulario = null
   if (puedeCrear) {
     const supabase = getSupabase()

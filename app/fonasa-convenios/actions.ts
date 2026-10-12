@@ -19,9 +19,6 @@ function refrescar(pacienteId?: string) {
   if (pacienteId) revalidatePath(`/pacientes/${pacienteId}`, "layout")
 }
 
-// ---------------------------------------------------------------------
-// Búsquedas
-// ---------------------------------------------------------------------
 export async function buscarPacientesFonasa(texto: string) {
   if (!(await autorizar("fonasa.gestionar"))) return []
   const q = limpiar(texto)
@@ -39,7 +36,6 @@ export async function buscarPacientesFonasa(texto: string) {
   return (data ?? []) as { id: string; nombres: string; apellidos: string; rut: string; prevision: string }[]
 }
 
-/** Prestaciones con código FONASA */
 export async function buscarPrestacionesFonasa(texto: string) {
   if (!(await autorizar("fonasa.gestionar"))) return []
   const q = limpiar(texto)
@@ -54,7 +50,6 @@ export async function buscarPrestacionesFonasa(texto: string) {
   return (data ?? []) as { id: string; nombre: string; codigo_fonasa: string; codigo_interno: string }[]
 }
 
-/** Prestaciones del plan del paciente con saldo (para aplicar el bono) */
 export async function itemsBonificables(pacienteId: string, prestacionId: string) {
   if (!(await autorizar("fonasa.gestionar")) || !UUID.test(pacienteId) || !UUID.test(prestacionId)) return []
   const { data } = await getSupabase()
@@ -67,9 +62,6 @@ export async function itemsBonificables(pacienteId: string, prestacionId: string
     .filter((i) => i.presupuesto?.estado !== "ANULADO" && i.precio > i.abonado)
 }
 
-// ---------------------------------------------------------------------
-// Bonos FONASA
-// ---------------------------------------------------------------------
 export async function registrarBono(d: {
   folio: string
   pacienteId: string
@@ -121,9 +113,6 @@ export async function anularBono(bonoId: string, motivo: string): Promise<Result
   return { ok: true, mensaje: "Bono anulado." }
 }
 
-// ---------------------------------------------------------------------
-// Convenios
-// ---------------------------------------------------------------------
 export async function crearConvenio(d: {
   nombre: string
   institucion: string

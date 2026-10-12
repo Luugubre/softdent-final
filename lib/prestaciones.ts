@@ -2,7 +2,6 @@ import { cache } from "react"
 import { getSupabase } from "@/lib/supabase"
 import type { Arancel, ItemCatalogo } from "@/types/prestacion"
 
-/** Catálogos que usan varias páginas del módulo */
 export const obtenerCatalogos = cache(async () => {
   const supabase = getSupabase()
   const [aranceles, categorias, especialidades] = await Promise.all([

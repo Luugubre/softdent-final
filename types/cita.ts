@@ -1,4 +1,3 @@
-// Estados de la cita. Las transiciones las valida también la BD (transicion_cita_valida).
 export const ESTADOS_CITA = [
   "AGENDADA",
   "CONFIRMADA",
@@ -14,9 +13,9 @@ export type EstadoCita = (typeof ESTADOS_CITA)[number]
 type Estilo = {
   etiqueta: string
   icono: string
-  pill: string // pastilla de estado (tarjeta día)
-  texto: string // color de texto suave (tarjeta semana)
-  tarjeta: string // bloque en la grilla
+  pill: string
+  texto: string
+  tarjeta: string
   chip: string
 }
 
@@ -102,12 +101,10 @@ export function puedePasarA(actual: EstadoCita, nuevo: EstadoCita) {
   return TRANSICIONES[actual].includes(nuevo)
 }
 
-/** Estados a los que se puede pasar desde el selector de la tarjeta (reprogramar va por su botón) */
 export function siguientesEstados(actual: EstadoCita): EstadoCita[] {
   return TRANSICIONES[actual].filter((e) => e !== "REAGENDADA")
 }
 
-/** Citas que ocupan el horario */
 export const ESTADOS_VIGENTES: EstadoCita[] = ["AGENDADA", "CONFIRMADA", "EN_ESPERA", "EN_ATENCION"]
 
 export const TIPOS_BLOQUEO = ["VACACIONES", "REUNION", "MANTENCION", "OTRO"] as const
@@ -121,7 +118,6 @@ export const TIPO_BLOQUEO: Record<TipoBloqueo, string> = {
 
 export const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] as const
 
-/** Una fila de la vista v_agenda */
 export type CitaAgenda = {
   id: string
   numero: number
@@ -144,8 +140,8 @@ export type CitaAgenda = {
   hora_fin_atencion: string | null
   recordatorio_enviado_en: string | null
   created_at: string
-  fecha: string // YYYY-MM-DD en Chile
-  hora_inicio: string // HH:MM
+  fecha: string
+  hora_inicio: string
   hora_fin: string
   minuto_inicio: number
   paciente_nombre: string
@@ -165,12 +161,11 @@ export type CitaAgenda = {
 
 export type TipoAtencion = { id: string; nombre: string; duracion_min: number }
 
-/** Datos extra por paciente que muestra la tarjeta */
 export type InfoPaciente = {
-  porCobrar: number // realizado y no pagado
-  deuda: number // saldo total de sus tratamientos
+  porCobrar: number
+  deuda: number
   totalTratamientos: number
-  inasistencias: number // últimos 12 meses
+  inasistencias: number
 }
 
 export type BloqueoAgenda = {
@@ -188,8 +183,8 @@ export type BloqueoAgenda = {
 export type HorarioAtencion = {
   id: string
   profesional_id: string
-  dia_semana: number // 1 = lunes
-  hora_inicio: string // "09:00:00"
+  dia_semana: number
+  hora_inicio: string
   hora_fin: string
 }
 
@@ -198,15 +193,12 @@ export type ProfesionalAgenda = { id: string; nombre_completo: string; especiali
 export type PrestacionAgenda = { id: string; codigo_interno: string; nombre: string; duracion_min: number }
 export type PacienteBusqueda = { id: string; nombres: string; apellidos: string; rut: string; telefono: string | null }
 
-/** Un bloque elegido al agendar */
 export type BloqueElegido = { fecha: string; hora: string; duracion: number; sobrecupo?: boolean }
 
-/** Disponibilidad de un dentista en una semana (para el selector de bloques) */
 export type DisponibilidadSemana = {
-  tramos: Record<string, [number, number][]> // fecha → tramos de atención en minutos
-  ocupadas: Record<string, [number, number][]> // fecha → citas vigentes
-  bloqueadas: Record<string, [number, number][]> // fecha → bloqueos
+  tramos: Record<string, [number, number][]>
+  ocupadas: Record<string, [number, number][]>
+  bloqueadas: Record<string, [number, number][]>
 }
 
-/** Opción encontrada por "Buscar hora" */
 export type HoraLibre = { fecha: string; hora: string; profesional_id: string; profesional_nombre: string }

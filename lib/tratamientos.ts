@@ -1,14 +1,13 @@
 import { cache } from "react"
 import { getSupabase } from "@/lib/supabase"
 import type { Avance, Hallazgo, ItemTratamiento } from "@/types/odontograma"
-import type { ResumenTratamiento, Tratamiento } from "@/types/tratamiento"
+import type { Fase, ResumenTratamiento, Tratamiento } from "@/types/tratamiento"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const SELECT_TRATAMIENTO =
   "*, arancel:aranceles(nombre), profesional:perfiles!presupuestos_profesional_id_fkey(nombre_completo)"
 
-/** Hallazgos del odontograma (son del paciente, no de un tratamiento) */
 export const obtenerHallazgos = cache(async (pacienteId: string): Promise<Hallazgo[]> => {
   const { data } = await getSupabase()
     .from("odontograma_hallazgos")
@@ -18,7 +17,6 @@ export const obtenerHallazgos = cache(async (pacienteId: string): Promise<Hallaz
   return (data ?? []) as Hallazgo[]
 })
 
-/** Prestaciones del paciente (de todos sus tratamientos, o de uno) con sus avances */
 export const obtenerItems = cache(async (pacienteId: string, tratamientoId?: string) => {
   const supabase = getSupabase()
   let consulta = supabase
@@ -43,7 +41,6 @@ export const obtenerItems = cache(async (pacienteId: string, tratamientoId?: str
   return { items, avances }
 })
 
-/** Lista de tratamientos con sus totales */
 export const obtenerTratamientos = cache(async (pacienteId: string): Promise<ResumenTratamiento[]> => {
   const supabase = getSupabase()
   const [{ data: tratamientos }, { data: items }] = await Promise.all([
@@ -81,4 +78,14 @@ export const obtenerTratamiento = cache(async (pacienteId: string, tratamientoId
     .eq("paciente_id", pacienteId)
     .maybeSingle()
   return data as Tratamiento | null
+})
+
+export const obtenerFases = cache(async (tratamientoId: string): Promise<Fase[]> => {
+  if (!UUID.test(tratamientoId)) return []
+  const { data } = await getSupabase()
+    .from("presupuesto_fases")
+    .select("id, presupuesto_id, numero, nombre, descripcion")
+    .eq("presupuesto_id", tratamientoId)
+    .order("numero")
+  return (data ?? []) as Fase[]
 })

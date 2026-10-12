@@ -24,7 +24,6 @@ export default async function AgendaPage({
   const gestionar = puede(usuario.rol, "agenda.gestionar")
   const finanzas = puede(usuario.rol, "pagos.ver")
 
-  // El dentista solo ve su propia agenda
   const profesional = verTodos ? (sp.profesional && UUID.test(sp.profesional) ? sp.profesional : undefined) : usuario.id
 
   const lunes = lunesDeLaSemana(fecha)
@@ -53,7 +52,6 @@ export default async function AgendaPage({
     finanzas
   )
 
-  // Semana de lunes a sábado (el domingo aparece solo si hay citas)
   const semana = Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i))
   const dias = vista === "dia" ? [fecha] : citas.some((c) => c.fecha === semana[6]) ? semana : semana.slice(0, 6)
 

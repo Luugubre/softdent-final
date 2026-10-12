@@ -2,7 +2,6 @@ import { cache } from "react"
 import { getSupabase } from "@/lib/supabase"
 import { CATALOGOS, type ItemCatalogo, type MetodoPagoCatalogo, type Parametro, type RegistroAuditoria, type TablaCatalogo } from "@/types/admin"
 
-/** Métodos de pago del catálogo (Administración) */
 export const obtenerMetodosPago = cache(async (soloActivos = true): Promise<MetodoPagoCatalogo[]> => {
   let q = getSupabase().from("metodos_pago").select("*").order("orden")
   if (soloActivos) q = q.eq("activo", true)
@@ -10,11 +9,9 @@ export const obtenerMetodosPago = cache(async (soloActivos = true): Promise<Meto
   return (data ?? []) as MetodoPagoCatalogo[]
 })
 
-/** Nombres de las previsiones activas (para la ficha del paciente) */
 export const obtenerPrevisiones = cache(async (): Promise<string[]> => {
   const { data } = await getSupabase().from("previsiones").select("nombre").eq("activo", true).order("nombre")
   const lista = (data ?? []).map((p) => p.nombre as string)
-  // "Particular" primero
   return lista.sort((a, b) => (a === "Particular" ? -1 : b === "Particular" ? 1 : a.localeCompare(b)))
 })
 
@@ -34,7 +31,6 @@ export const obtenerParametros = cache(async (): Promise<Parametro[]> => {
   return (data ?? []) as Parametro[]
 })
 
-/** Valor de un parámetro (con valor por defecto si aún no existe) */
 export async function obtenerParametro(clave: string, porDefecto = ""): Promise<string> {
   const lista = await obtenerParametros()
   return lista.find((p) => p.clave === clave)?.valor || porDefecto

@@ -7,6 +7,7 @@ import { calcularEdad, formatearRut } from "@/lib/validaciones"
 import type { Paciente } from "@/types/paciente"
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
+import { ComoFunciona, Encabezado, SeConfigura, Termino } from "@/components/ui/Ayuda"
 
 export default async function PacientesPage({
   searchParams,
@@ -26,7 +27,6 @@ export default async function PacientesPage({
     .limit(100)
 
   if (q) {
-    // Quitamos caracteres que rompen el filtro .or() de Supabase
     const texto = q.replace(/[,()%]/g, " ").trim()
     const rut = q.replace(/\./g, "").toUpperCase()
     consulta = consulta.or(
@@ -42,11 +42,39 @@ export default async function PacientesPage({
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Directorio de Pacientes</h1>
+      <Encabezado
+        icono="🧑‍⚕️"
+        titulo="Pacientes"
+        descripcion="Busca un paciente para abrir su ficha: datos, odontograma, tratamientos, evoluciones y pagos."
+        migas={[{ etiqueta: "Pacientes" }]}
+      />
+      <ComoFunciona
+        pasos={[
+          <>Busca por RUT, nombre o apellido y haz clic en <strong>Ver ficha</strong>.</>,
+          <>Dentro de la <Termino t="ficha" /> usa las pestañas: Ficha, Perfil, Tratamientos, Pagos y Odontograma.</>,
+          <>Para registrar a alguien nuevo abre <strong>➕ Registrar paciente nuevo</strong>.</>,
+        ]}
+        reglas={[
+          <>El RUT no se puede repetir. Para extranjeros se usa el documento.</>,
+          <>Un paciente no se borra: se <strong>deshabilita</strong> y se puede volver a habilitar.</>,
+          <>La <Termino t="prevision" /> define qué <Termino t="arancel" /> se le sugiere en sus tratamientos.</>,
+        ]}
+      />
 
-      {puedeEditar && <PacienteForm previsiones={await obtenerPrevisiones()} />}
+      {puedeEditar && (
+        <details open={pacientes.length === 0 && !q} className="group rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
+            <span className="text-base font-extrabold text-gray-900">➕ Registrar paciente nuevo</span>
+            <span className="text-xs font-bold text-blue-600 group-open:hidden">Abrir formulario ▾</span>
+            <span className="hidden text-xs font-bold text-blue-600 group-open:inline">Cerrar ▴</span>
+          </summary>
+          <div className="border-t border-gray-100 p-2">
+            <PacienteForm previsiones={await obtenerPrevisiones()} />
+          </div>
+        </details>
+      )}
+      {puedeEditar && <SeConfigura items={puede(usuario.rol, "administracion.gestionar") ? [{ que: "Opciones de previsión", etiqueta: "Administración › Previsiones", href: "/administracion#previsiones" }] : []} />}
 
-      {/* Buscador */}
       <form method="GET" className="flex gap-2 max-w-lg">
         <input
           type="text"
@@ -68,7 +96,6 @@ export default async function PacientesPage({
         </div>
       )}
 
-      {/* Tabla */}
       <div className="w-full bg-white shadow-sm rounded-2xl overflow-x-auto border border-gray-200">
         <table className="w-full divide-y divide-gray-200 text-left">
           <thead className="bg-gray-100">

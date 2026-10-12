@@ -87,7 +87,6 @@ export function GrupoFamiliar({
         </div>
       )}
 
-      {/* TITULAR */}
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
         <h2 className="text-xl font-extrabold text-gray-900">Titular</h2>
 
@@ -141,7 +140,6 @@ export function GrupoFamiliar({
         )}
       </section>
 
-      {/* CARGAS */}
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-2">
         <h2 className="text-xl font-extrabold text-gray-900">Cargas familiares</h2>
         {cargas.length === 0 ? (

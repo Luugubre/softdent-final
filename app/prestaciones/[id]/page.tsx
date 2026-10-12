@@ -36,7 +36,6 @@ export default async function PrestacionPage({ params }: { params: Promise<{ id:
   const preciosHoy = new Map(((vigentes ?? []) as PrecioVigente[]).map((v) => [v.arancel_id, v]))
   const hoy = hoyChile()
 
-  // Nombres de quienes registraron los precios
   const autoresIds = [...new Set(precios.map((x) => x.creado_por).filter(Boolean))] as string[]
   const autores = new Map<string, string>()
   if (autoresIds.length) {
@@ -49,11 +48,18 @@ export default async function PrestacionPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <Link href="/prestaciones" className="text-sm font-bold text-blue-600 hover:underline">
-        ← Volver a prestaciones
-      </Link>
+      <nav aria-label="Ruta" className="flex flex-wrap items-center gap-1 text-xs font-bold text-gray-400">
+        <Link href="/" className="hover:text-blue-600">
+          Inicio
+        </Link>
+        <span aria-hidden>›</span>
+        <Link href="/prestaciones" className="hover:text-blue-600">
+          Prestaciones
+        </Link>
+        <span aria-hidden>›</span>
+        <span className="text-gray-600">{p.nombre}</span>
+      </nav>
 
-      {/* ENCABEZADO */}
       <header className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-mono font-bold text-gray-500">
@@ -70,7 +76,6 @@ export default async function PrestacionPage({ params }: { params: Promise<{ id:
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {/* DATOS */}
         <DatosPrestacion
           prestacion={p}
           categoria={categoria?.nombre}
@@ -81,7 +86,6 @@ export default async function PrestacionPage({ params }: { params: Promise<{ id:
           especialidades={catalogos.especialidades.filter((x) => x.activo || x.id === p.especialidad_id)}
         />
 
-        {/* PROFESIONALES */}
         <ProfesionalesHabilitados
           prestacionId={p.id}
           dentistas={dentistas ?? []}
@@ -90,9 +94,13 @@ export default async function PrestacionPage({ params }: { params: Promise<{ id:
         />
       </div>
 
-      {/* PRECIOS POR ARANCEL */}
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
-        <h2 className="text-xl font-extrabold text-gray-900">Precios por arancel</h2>
+        <div>
+          <h2 className="text-xl font-extrabold text-gray-900">Precios por arancel</h2>
+          <p className="text-xs font-semibold text-gray-500">
+            El precio de esta prestación en cada lista de precios. Un cambio rige desde la fecha que indiques y no modifica los tratamientos ya creados.
+          </p>
+        </div>
 
         <div className="space-y-4">
           {catalogos.aranceles

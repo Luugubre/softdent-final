@@ -70,7 +70,6 @@ export function UsuarioForm() {
         <p className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-800">{resultado.mensaje}</p>
       )}
 
-      {/* Rol */}
       <div>
         <p className={labelClass}>Rol <span className="text-rose-600">*</span></p>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">

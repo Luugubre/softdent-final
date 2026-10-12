@@ -3,7 +3,6 @@
 import { CarasCirculo } from "@/components/odontograma/Diente"
 import { CARA_ETIQUETAS, type Cara } from "@/types/odontograma"
 
-/** Círculo de caras grande para elegir caras haciendo clic sobre ellas */
 export function SelectorCaras({
   pieza,
   valor,

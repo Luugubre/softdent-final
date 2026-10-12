@@ -14,7 +14,6 @@ export function BotonEstadoPaciente({
 }) {
   const [cargando, startTransition] = useTransition()
 
-  // Sin permiso: solo se muestra el estado, sin poder cambiarlo
   if (!puedeCambiar) {
     return (
       <span
@@ -31,7 +30,7 @@ export function BotonEstadoPaciente({
     let motivo: string | undefined
     if (activo) {
       const respuesta = window.prompt("Motivo para deshabilitar al paciente (opcional):")
-      if (respuesta === null) return // canceló
+      if (respuesta === null) return
       motivo = respuesta
     }
     startTransition(async () => {

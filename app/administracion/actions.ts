@@ -12,7 +12,7 @@ const mensajeBD = (e: { message?: string } | null, d: string) =>
   e?.message && !e.message.includes("violates") && !e.message.includes("schema cache") ? e.message : d
 
 function refrescar() {
-  revalidatePath("/", "layout") // los catálogos se usan en toda la app
+  revalidatePath("/", "layout")
 }
 
 export async function guardarCatalogo(

@@ -20,7 +20,6 @@ function Tarjeta({ titulo, valor, nota, estilo }: { titulo: string; valor: numbe
   )
 }
 
-/** Estado de la deuda de un tratamiento */
 function estadoDeuda(t: ResumenTratamiento) {
   if (t.habilitado === 0 && t.abonado === 0) return { etiqueta: "Sin cargos", estilo: "bg-gray-100 text-gray-500" }
   if (t.abonado >= t.total) return { etiqueta: "Pagada", estilo: "bg-emerald-100 text-emerald-800" }
@@ -60,7 +59,6 @@ export default async function PagosPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-6">
-      {/* RESUMEN DE DEUDA */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tarjeta
           titulo="Deuda actual"
@@ -74,16 +72,33 @@ export default async function PagosPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {puede(usuario.rol, "pagos.registrar") && (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-2 text-sm font-semibold ${
+            caja ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-300 bg-amber-50 text-amber-900"
+          }`}
+        >
+          <span>
+            {caja
+              ? `💰 Caja N° ${caja.numero} abierta: los pagos entrarán a esta caja.`
+              : "🔒 La caja está cerrada: no se pueden recibir pagos que entran a caja (efectivo, débito, transferencia…)."}
+          </span>
+          {!caja && puede(usuario.rol, "caja.gestionar") && (
+            <Link href="/caja" className="font-black underline">
+              Abrir caja →
+            </Link>
+          )}
+        </div>
+      )}
+
+      {puede(usuario.rol, "pagos.registrar") && (
         <RegistrarPago
           pacienteId={id}
           items={cobrables}
-          // Los bonos FONASA se registran desde el módulo FONASA
           metodos={metodos.filter((m) => m.codigo !== "BONO_FONASA").map((m) => ({ codigo: m.codigo, nombre: m.nombre, es_efectivo: m.es_efectivo, pide_referencia: m.pide_referencia, registra_en_caja: m.registra_en_caja }))}
           cajaAbierta={!!caja}
         />
       )}
 
-      {/* DEUDA POR TRATAMIENTO */}
       <section className="space-y-3">
         <h2 className="text-lg font-extrabold text-gray-900">Deuda por tratamiento</h2>
         {conCargos.length === 0 ? (
@@ -137,7 +152,6 @@ export default async function PagosPage({ params }: { params: Promise<{ id: stri
 
       <HistorialPagos pacienteId={id} pagos={pagos} puedeAnular={puede(usuario.rol, "pagos.anular")} />
 
-      {/* CUENTA CORRIENTE */}
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-extrabold text-gray-900">Cuenta corriente</h2>

@@ -5,10 +5,6 @@ import type { Antecedente } from "@/types/antecedente"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/**
- * Consultas compartidas entre el layout y las páginas de la ficha.
- * `cache` evita repetir la misma consulta dos veces en una misma carga.
- */
 export const obtenerPaciente = cache(async (id: string): Promise<Paciente | null> => {
   if (!UUID.test(id)) return null
   const { data } = await getSupabase().from("pacientes").select("*").eq("id", id).maybeSingle()

@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useTransition } from "react"
+import { Fragment, useState, useTransition } from "react"
 import { anularItem, evolucionarItem } from "@/app/pacientes/[id]/odontograma/actions"
+import { asignarFase } from "@/app/pacientes/[id]/tratamientos/actions"
+import type { Fase } from "@/types/tratamiento"
 import { formatearFechaHora, formatearPesos } from "@/lib/formato"
 import { ESTADO_ITEM_ETIQUETAS, PASOS_AVANCE, type Avance, type ItemTratamiento } from "@/types/odontograma"
 
@@ -29,6 +31,8 @@ export function PlanTratamiento({
   plan,
   puedeEvolucionar,
   puedeAnular,
+  fases = [],
+  puedeOrganizar = false,
 }: {
   pacienteId: string
   items: ItemTratamiento[]
@@ -36,6 +40,8 @@ export function PlanTratamiento({
   plan: { nombre: string; arancel: { nombre: string } | null } | null
   puedeEvolucionar: boolean
   puedeAnular: boolean
+  fases?: Fase[]
+  puedeOrganizar?: boolean
 }) {
   const [verAnulados, setVerAnulados] = useState(false)
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
@@ -50,6 +56,21 @@ export function PlanTratamiento({
   const abonado = activos.reduce((s, i) => s + i.abonado, 0)
   const porPagar = habilitado - abonado
   const porCobrar = activos.filter((i) => i.monto_habilitado - i.abonado > 0)
+  const conFases = fases.length > 0
+  const columnaFase = conFases && puedeOrganizar
+  const grupos = conFases
+    ? [
+        ...fases.map((f) => ({ clave: f.id, fase: f as Fase | null, items: visibles.filter((i) => i.fase_id === f.id) })),
+        { clave: "sin-fase", fase: null as Fase | null, items: visibles.filter((i) => !i.fase_id || !fases.some((f) => f.id === i.fase_id)) },
+      ].filter((g) => g.fase !== null || g.items.length > 0)
+    : [{ clave: "todas", fase: null as Fase | null, items: visibles }]
+
+  function cambiarFase(item: ItemTratamiento, faseId: string) {
+    startTransition(async () => {
+      const res = await asignarFase(pacienteId, item.id, faseId || null)
+      setAviso({ ok: res.ok, texto: res.mensaje })
+    })
+  }
 
   function evolucionar(item: ItemTratamiento, paso: number) {
     const nombre = item.prestacion?.nombre ?? "prestación"
@@ -91,7 +112,6 @@ export function PlanTratamiento({
         )}
       </div>
 
-      {/* RESUMEN */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tarjeta titulo="Total del plan" valor={total} />
         <Tarjeta titulo="Realizado (habilitado)" valor={habilitado} />
@@ -99,7 +119,6 @@ export function PlanTratamiento({
         <Tarjeta titulo="Por pagar" valor={porPagar} destacar={porPagar > 0} />
       </div>
 
-      {/* LISTO PARA COBRAR */}
       {porCobrar.length > 0 && (
         <div className="rounded-xl border-2 border-orange-300 bg-orange-50 p-4 space-y-2">
           <p className="text-sm font-black text-orange-800">💳 Listo para cobrar</p>
@@ -139,7 +158,6 @@ export function PlanTratamiento({
         </p>
       )}
 
-      {/* PRESTACIONES */}
       {visibles.length === 0 ? (
         <p className="py-6 text-center text-sm font-semibold text-gray-400">
           Aún no hay prestaciones. Agrégalas haciendo clic en un diente del odontograma de este tratamiento.
@@ -149,6 +167,7 @@ export function PlanTratamiento({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[11px] font-bold uppercase text-gray-500">
+                {columnaFase && <th className="py-2 pr-3">Fase</th>}
                 <th className="py-2 pr-3">Pieza</th>
                 <th className="py-2 pr-3">Prestación</th>
                 <th className="py-2 pr-3 text-right">Valor</th>
@@ -158,11 +177,60 @@ export function PlanTratamiento({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {visibles.map((i) => {
+              {grupos.map((g) => (
+                <Fragment key={g.clave}>
+                  {conFases && (
+                    <tr className="bg-blue-50/70">
+                      <td colSpan={columnaFase ? 7 : 6} className="px-2 py-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-black text-blue-900">
+                            {g.fase ? (
+                              <>
+                                <span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-blue-600 text-xs text-white">{g.fase.numero}</span>
+                                {g.fase.nombre}
+                                {g.fase.descripcion && <span className="ml-2 text-xs font-semibold text-blue-700">· {g.fase.descripcion}</span>}
+                              </>
+                            ) : (
+                              <span className="text-amber-800">Sin fase asignada</span>
+                            )}
+                          </p>
+                          <p className="text-xs font-black text-blue-900">
+                            {g.items.filter((i) => i.estado !== "ANULADO").length} prestación(es) · Subtotal{" "}
+                            {formatearPesos(g.items.filter((i) => i.estado !== "ANULADO").reduce((s, i) => s + i.precio, 0))}
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {conFases && g.items.length === 0 && (
+                    <tr>
+                      <td colSpan={columnaFase ? 7 : 6} className="py-3 text-center text-xs font-semibold text-gray-400">
+                        Sin prestaciones en esta fase todavía.
+                      </td>
+                    </tr>
+                  )}
+              {g.items.map((i) => {
                 const historial = avances.filter((a) => a.item_id === i.id)
                 const saldo = i.monto_habilitado - i.abonado
                 return (
                   <tr key={i.id} className={`align-top ${i.estado === "ANULADO" ? "opacity-50" : ""}`}>
+                    {columnaFase && (
+                      <td className="py-3 pr-3">
+                        <select
+                          value={i.fase_id ?? ""}
+                          disabled={pendiente || i.estado === "ANULADO"}
+                          onChange={(e) => cambiarFase(i, e.target.value)}
+                          className="max-w-[140px] rounded-lg border border-gray-300 px-1.5 py-1 text-xs font-bold text-gray-700"
+                        >
+                          <option value="">Sin fase</option>
+                          {fases.map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.numero}. {f.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    )}
                     <td className="py-3 pr-3 font-mono font-black text-gray-900">{i.pieza ?? "—"}</td>
                     <td className="py-3 pr-3">
                       <p className="font-bold text-gray-900">{i.prestacion?.nombre}</p>
@@ -234,6 +302,8 @@ export function PlanTratamiento({
                   </tr>
                 )
               })}
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>

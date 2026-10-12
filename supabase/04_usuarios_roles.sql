@@ -1,13 +1,3 @@
--- =====================================================================
--- Usuarios y roles · Supabase
--- Pegar en Supabase → SQL Editor → Run (después de 01, 02 y 03)
--- Roles: ADMINISTRADOR, DENTISTA, ASISTENTE, RECEPCIONISTA
--- =====================================================================
-
-
--- =====================================================================
--- 1. PERFILES (un perfil por cada usuario de Supabase Auth)
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.perfiles (
   id                   uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   nombre_completo      text NOT NULL,
@@ -15,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.perfiles (
   email                text NOT NULL UNIQUE,
   rol                  text NOT NULL,
   especialidad         text,
-  registro_profesional text,              -- N° de registro en Superintendencia de Salud (dentistas)
+  registro_profesional text,
   activo               boolean NOT NULL DEFAULT true,
   created_at           timestamptz NOT NULL DEFAULT now(),
   updated_at           timestamptz NOT NULL DEFAULT now(),
@@ -35,16 +25,11 @@ CREATE TRIGGER perfiles_set_updated_at
 
 ALTER TABLE public.perfiles ENABLE ROW LEVEL SECURITY;
 
--- Nombre de un usuario (lo usan los triggers del historial)
 CREATE OR REPLACE FUNCTION public.nombre_usuario(p_id uuid)
 RETURNS text LANGUAGE sql STABLE AS $$
   SELECT nombre_completo FROM public.perfiles WHERE id = p_id;
 $$;
 
-
--- =====================================================================
--- 2. AUTORÍA: quién hizo cada cosa
--- =====================================================================
 ALTER TABLE public.pacientes ADD COLUMN IF NOT EXISTS modificado_por uuid;
 ALTER TABLE public.pacientes DROP CONSTRAINT IF EXISTS pacientes_modificado_por_fkey;
 ALTER TABLE public.pacientes ADD CONSTRAINT pacientes_modificado_por_fkey
@@ -72,10 +57,6 @@ ALTER TABLE public.historial_paciente DROP CONSTRAINT IF EXISTS historial_usuari
 ALTER TABLE public.historial_paciente ADD CONSTRAINT historial_usuario_id_fkey
   FOREIGN KEY (usuario_id) REFERENCES public.perfiles(id) ON DELETE SET NULL;
 
-
--- =====================================================================
--- 3. HISTORIAL: ahora registra el usuario que hizo cada acción
--- =====================================================================
 DROP FUNCTION IF EXISTS public.registrar_evento(uuid, text, text, text, text, text, text, uuid, jsonb);
 
 CREATE OR REPLACE FUNCTION public.registrar_evento(
@@ -100,7 +81,6 @@ BEGIN
 END;
 $$;
 
--- Pacientes
 CREATE OR REPLACE FUNCTION public.historial_pacientes_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -155,7 +135,6 @@ BEGIN
 END;
 $$;
 
--- Antecedentes
 CREATE OR REPLACE FUNCTION public.historial_antecedentes_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -178,7 +157,6 @@ BEGIN
 END;
 $$;
 
--- Evoluciones
 CREATE OR REPLACE FUNCTION public.historial_evoluciones_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -191,7 +169,6 @@ BEGIN
 END;
 $$;
 
--- Archivos
 CREATE OR REPLACE FUNCTION public.historial_archivos_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -208,15 +185,3 @@ BEGIN
 END;
 $$;
 
-
--- =====================================================================
--- 4. PRIMER ADMINISTRADOR
--- Paso previo: en Supabase → Authentication → Users → "Add user" →
--- "Create new user", con tu correo y una contraseña, marcando "Auto Confirm User".
--- Luego cambia el correo y el nombre de abajo, descomenta y ejecuta:
--- =====================================================================
--- INSERT INTO public.perfiles (id, nombre_completo, email, rol)
--- SELECT id, 'Alexis Romero', email, 'ADMINISTRADOR'
---   FROM auth.users
---  WHERE email = 'tu-correo@ejemplo.cl'
--- ON CONFLICT (id) DO UPDATE SET rol = 'ADMINISTRADOR', activo = true;

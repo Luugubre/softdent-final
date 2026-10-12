@@ -19,13 +19,11 @@ function refrescar(prestacionId?: string) {
   if (prestacionId) revalidatePath(`/prestaciones/${prestacionId}`)
 }
 
-/** Convierte "15.000" o "$15000" en 15000 */
 function leerPesos(valor: string): number | null {
   const limpio = valor.replace(/[^\d]/g, "")
   return limpio ? Number(limpio) : null
 }
 
-/** Traduce errores de duplicados de la BD a mensajes por campo */
 function erroresDuplicado(mensaje: string): Record<string, string> | null {
   if (mensaje.includes("prestaciones_codigo_interno_key")) return { codigo_interno: "Ya existe una prestación con este código" }
   if (mensaje.includes("prestaciones_codigo_fonasa_key")) return { codigo_fonasa: "Este código FONASA ya está asignado a otra prestación" }
@@ -33,10 +31,6 @@ function erroresDuplicado(mensaje: string): Record<string, string> | null {
     return { nombre: "Ya existe una prestación con este nombre en la misma especialidad" }
   return null
 }
-
-// =====================================================================
-// PRESTACIONES
-// =====================================================================
 
 const prestacionSchema = z.object({
   codigo_interno: z
@@ -91,7 +85,6 @@ export async function crearPrestacion(formData: FormData): Promise<Resultado> {
 
   const supabase = getSupabase()
 
-  // Precios iniciales: el del arancel base es obligatorio
   const { data: aranceles } = await supabase.from("aranceles").select("id, es_base").eq("activo", true)
   const precios: { arancel_id: string; precio: number }[] = []
   const errores: Record<string, string> = {}
@@ -107,7 +100,6 @@ export async function crearPrestacion(formData: FormData): Promise<Resultado> {
   }
   if (Object.keys(errores).length > 0) return { ok: false, mensaje: "Revisa los precios.", errores }
 
-  // 1) Crear la prestación
   const { data, error } = await supabase
     .from("prestaciones")
     .insert({ ...resultado.data, creado_por: usuario.id })
@@ -121,7 +113,6 @@ export async function crearPrestacion(formData: FormData): Promise<Resultado> {
     return { ok: false, mensaje: "No se pudo crear la prestación." }
   }
 
-  // 2) Registrar los precios desde hoy
   for (const p of precios) {
     const { error: errorPrecio } = await supabase.rpc("fijar_precio", {
       p_prestacion_id: data.id,
@@ -190,10 +181,6 @@ export async function cambiarEstadoPrestacion(prestacionId: string): Promise<Res
   return { ok: true, mensaje: data.activo ? "Prestación desactivada." : "Prestación activada." }
 }
 
-// =====================================================================
-// PRECIOS
-// =====================================================================
-
 export async function fijarPrecio(prestacionId: string, arancelId: string, formData: FormData): Promise<Resultado> {
   const usuario = await autorizar("prestaciones.gestionar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -217,7 +204,6 @@ export async function fijarPrecio(prestacionId: string, arancelId: string, formD
 
   if (error) {
     if (error.code === "23P01") return { ok: false, mensaje: "Ese período se solapa con otro precio ya registrado." }
-    // Los mensajes de fijar_precio ya vienen en español
     return { ok: false, mensaje: error.message || "No se pudo registrar el precio." }
   }
 
@@ -225,16 +211,11 @@ export async function fijarPrecio(prestacionId: string, arancelId: string, formD
   return { ok: true, mensaje: "Precio registrado." }
 }
 
-// =====================================================================
-// PROFESIONALES HABILITADOS
-// =====================================================================
-
 export async function guardarProfesionales(prestacionId: string, profesionalIds: string[]): Promise<Resultado> {
   if (!(await autorizar("prestaciones.gestionar"))) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
 
   const supabase = getSupabase()
 
-  // Solo se aceptan dentistas activos
   const { data: validos } = await supabase
     .from("perfiles")
     .select("id")
@@ -256,10 +237,6 @@ export async function guardarProfesionales(prestacionId: string, profesionalIds:
   refrescar(prestacionId)
   return { ok: true, mensaje: ids.length ? "Profesionales habilitados actualizados." : "Ahora todos los dentistas pueden realizarla." }
 }
-
-// =====================================================================
-// CONFIGURACIÓN: aranceles, categorías y especialidades
-// =====================================================================
 
 export async function crearArancel(formData: FormData): Promise<Resultado> {
   if (!(await autorizar("prestaciones.gestionar"))) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }

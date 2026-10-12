@@ -1,4 +1,3 @@
-// Mensajes de WhatsApp de la agenda (texto plano, sin acceso a la BD)
 import { DIRECCION_CLINICA, NOMBRE_CLINICA } from "@/lib/clinica"
 import { fechaTitulo, hoyEnChile, sumarDias } from "@/lib/fechas-agenda"
 import type { BloqueElegido, CitaAgenda } from "@/types/cita"
@@ -15,7 +14,6 @@ function cuando(fecha: string) {
   return `el ${capitalizar(fechaLarga(fecha))}`
 }
 
-/** Recordatorio: si el paciente tiene varias citas ese día van en un solo mensaje */
 export function mensajeRecordatorio(citas: CitaAgenda[]) {
   const c0 = citas[0]
   let m = `Hola ${primerNombre(c0.paciente_nombres)}, te escribimos de ${NOMBRE_CLINICA} para recordar `

@@ -24,16 +24,12 @@ export const obtenerPago = cache(async (pagoId: string): Promise<Pago | null> =>
   return data as Pago | null
 })
 
-/** Resumen de la deuda del paciente (prestaciones no anuladas de tratamientos no anulados) */
 export function resumenDeuda(items: ItemTratamiento[]) {
   const vigentes = items.filter((i) => i.estado !== "ANULADO" && i.presupuesto?.estado !== "ANULADO")
   return {
     vigentes,
-    // Lo que ya se realizó y no se ha pagado
     deudaActual: vigentes.reduce((s, i) => s + Math.max(i.monto_habilitado - i.abonado, 0), 0),
-    // Pagado por adelantado (abonos sobre trabajo aún no realizado)
     anticipos: vigentes.reduce((s, i) => s + Math.max(i.abonado - i.monto_habilitado, 0), 0),
-    // Lo que falta pagar de todos los tratamientos
     saldoTratamientos: vigentes.reduce((s, i) => s + (i.precio - i.abonado), 0),
     totalAbonado: vigentes.reduce((s, i) => s + i.abonado, 0),
   }
@@ -41,11 +37,6 @@ export function resumenDeuda(items: ItemTratamiento[]) {
 
 export type Movimiento = { fecha: string; descripcion: string; cargo: number; abono: number; saldo: number }
 
-/**
- * Cuenta corriente: cargos (cada avance habilita un cobro) y abonos (pagos),
- * en orden cronológico. Un pago anulado aparece como abono y luego como
- * movimiento inverso (no se borra).
- */
 export function cuentaCorriente(items: ItemTratamiento[], avances: Avance[], pagos: Pago[]): Movimiento[] {
   const porId = new Map(items.map((i) => [i.id, i]))
   const movimientos: Omit<Movimiento, "saldo">[] = []

@@ -6,13 +6,11 @@ export type PrestacionCatalogo = { id: string; codigo_interno: string; nombre: s
 export type CarpetaPrestaciones = { id: string; nombre: string; prestaciones: PrestacionCatalogo[] }
 export type Catalogo = {
   carpetas: CarpetaPrestaciones[]
-  /** precios[arancelId][prestacionId] = precio vigente hoy */
   precios: Record<string, Record<string, number>>
 }
 
 type Respuesta<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>
 
-/** Trae TODAS las filas (la API de Supabase entrega máximo 1000 por consulta) */
 async function todasLasFilas<T>(consulta: (desde: number, hasta: number) => Respuesta<T>): Promise<T[]> {
   const filas: T[] = []
   for (let desde = 0; ; desde += 1000) {
@@ -24,11 +22,6 @@ async function todasLasFilas<T>(consulta: (desde: number, hasta: number) => Resp
   return filas
 }
 
-/**
- * Catálogo de prestaciones activas agrupado por carpeta (categoría),
- * con el precio de hoy en cada arancel pedido. Se carga en el servidor.
- * Misma regla que la BD: precio del arancel → si es convenio con %, base con descuento → si no, precio base.
- */
 export const obtenerCatalogo = cache(async (arancelIdsTexto: string): Promise<Catalogo> => {
   const supabase = getSupabase()
   const hoy = hoyChile()
@@ -69,12 +62,10 @@ export const obtenerCatalogo = cache(async (arancelIdsTexto: string): Promise<Ca
         ),
   ])
 
-  // Precios específicos por arancel
   const especificos: Record<string, Record<string, number>> = {}
   for (const f of filasPrecio) (especificos[f.arancel_id] ??= {})[f.prestacion_id] = f.precio
   const preciosBase = (base && especificos[base]) || {}
 
-  // Precio final por arancel pedido
   const precios: Record<string, Record<string, number>> = {}
   for (const arancelId of pedidos) {
     const descuento = Number(aranceles?.find((a) => a.id === arancelId)?.porcentaje_descuento ?? 0)
@@ -90,7 +81,6 @@ export const obtenerCatalogo = cache(async (arancelIdsTexto: string): Promise<Ca
     precios[arancelId] = mapa
   }
 
-  // Agrupar en carpetas
   const carpetas = new Map<string, CarpetaPrestaciones & { orden: number }>()
   for (const p of prestaciones) {
     if (!carpetas.has(p.categoria_id)) {

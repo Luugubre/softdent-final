@@ -20,13 +20,12 @@ import type { BloqueElegido, Box, CitaAgenda, DisponibilidadSemana, PacienteBusq
 const DURACIONES = [15, 30, 45, 60, 90, 120, 150, 180, 210, 240]
 const PASO = 15
 
-/** Cómo se abre el modal: nueva cita, reprogramación o desde "Buscar hora" */
 export type ConfigAgendar = {
-  clave: number // cambia en cada apertura para reiniciar el formulario
-  cita?: CitaAgenda // si viene, se reprograma esta cita
+  clave: number
+  cita?: CitaAgenda
   profesionalId?: string
   duracion?: number
-  semana?: string // cualquier día de la semana a mostrar
+  semana?: string
   bloques?: BloqueElegido[]
   paciente?: PacienteBusqueda | null
   motivo?: string
@@ -89,9 +88,6 @@ export function ModalAgendar({
   )
 }
 
-// =====================================================================
-// FORMULARIO
-// =====================================================================
 function Formulario({
   config,
   reprogramando,
@@ -118,7 +114,6 @@ function Formulario({
   const hoy = hoyEnChile()
   const visibles = puedeVerTodos ? profesionales : profesionales.filter((p) => p.id === usuarioId)
 
-  // ---------- Paciente ----------
   const inicialPaciente: PacienteBusqueda | null = reprogramando
     ? {
         id: reprogramando.paciente_id,
@@ -134,7 +129,6 @@ function Formulario({
   const [nuevo, setNuevo] = useState<null | { nombres: string; apellidos: string; rut: string; extranjero: boolean; fechaNacimiento: string; telefono: string; prevision: string }>(null)
   const [resumen, setResumen] = useState<Awaited<ReturnType<typeof resumenPacienteAgenda>>>(null)
 
-  // ---------- Motivo ----------
   const [motivo, setMotivo] = useState(config.motivo ?? reprogramando?.motivo ?? "")
   const [presupuestoId, setPresupuestoId] = useState<string>("")
   const [prestacion, setPrestacion] = useState<PrestacionAgenda | null>(null)
@@ -143,7 +137,6 @@ function Formulario({
   const [boxId, setBoxId] = useState(reprogramando?.box_id ?? "")
   const [tipoId, setTipoId] = useState("")
 
-  // ---------- Fecha y hora ----------
   const [profesionalId, setProfesionalId] = useState(
     config.profesionalId ?? reprogramando?.profesional_id ?? (puedeVerTodos ? "" : usuarioId) ?? ""
   )
@@ -157,7 +150,6 @@ function Formulario({
   const [pendiente, startTransition] = useTransition()
   const ahoraMin = partesChile(new Date().toISOString()).minutos
 
-  // Resumen del paciente (tratamientos activos, inasistencias)
   useEffect(() => {
     if (!paciente) {
       setResumen(null)
@@ -170,7 +162,6 @@ function Formulario({
     }
   }, [paciente])
 
-  // Buscador de pacientes
   useEffect(() => {
     if (paciente || busqueda.trim().length < 2) return setResultados([])
     let vigente = true
@@ -184,7 +175,6 @@ function Formulario({
     }
   }, [busqueda, paciente])
 
-  // Buscador de prestaciones
   useEffect(() => {
     if (filtroPrestacion.trim().length < 2) return setSugeridas([])
     let vigente = true
@@ -198,7 +188,6 @@ function Formulario({
     }
   }, [filtroPrestacion])
 
-  // Disponibilidad del especialista en la semana
   const pedido = useRef(0)
   useEffect(() => {
     if (!profesionalId) return setDispo(null)
@@ -220,11 +209,9 @@ function Formulario({
 
   const dias = useMemo(() => {
     const todos = Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i))
-    // El domingo solo se muestra si el especialista atiende ese día
     return dispo && (dispo.tramos[todos[6]]?.length ?? 0) > 0 ? todos : todos.slice(0, 6)
   }, [lunes, dispo])
 
-  // ---------- Reglas de cada bloque ----------
   function estadoSlot(fecha: string, hora: string, dur: number) {
     if (!dispo) return "cargando"
     const a = aMin(hora)
@@ -279,7 +266,6 @@ function Formulario({
     setBloques(validos.map((b) => ({ ...b, sobrecupo: b.sobrecupo || solapan(aMin(b.hora), aMin(b.hora) + d, dispo.ocupadas[b.fecha] ?? []) })))
   }
 
-  // ---------- Paciente nuevo ----------
   function registrarNuevo() {
     if (!nuevo) return
     setAviso(null)
@@ -293,7 +279,6 @@ function Formulario({
     })
   }
 
-  // ---------- Guardar ----------
   const profesional = profesionales.find((p) => p.id === profesionalId)
   const ordenados = [...bloques].sort((a, b) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`))
   const haySobrecupo = bloques.some((b) => b.sobrecupo)
@@ -398,7 +383,6 @@ function Formulario({
     >
       <div className="p-5 md:p-7 flex flex-col gap-5">
 
-        {/* 1. PACIENTE */}
         <section className={tarjeta}>
           <h3 className={tituloSeccion}>👤 1. Datos del paciente</h3>
           {nuevo ? (
@@ -518,7 +502,6 @@ function Formulario({
           )}
         </section>
 
-        {/* 2. MOTIVO */}
         <section className={tarjeta}>
           <h3 className={tituloSeccion}>📋 2. Motivo o tratamiento</h3>
           <div className="grid gap-3 md:grid-cols-2">
@@ -621,7 +604,6 @@ function Formulario({
           </div>
         </section>
 
-        {/* 3. FECHA Y HORA */}
         <section className={tarjeta}>
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-3">
             <h3 className={`${tituloSeccion} !mb-0`}>🕒 3. Fecha y hora</h3>
@@ -739,9 +721,6 @@ function Formulario({
   )
 }
 
-// =====================================================================
-// TICKET "¡Cita lista!" con envío por WhatsApp
-// =====================================================================
 function TicketCita({ ticket: t, onFinalizar }: { ticket: Ticket; onFinalizar: () => void }) {
   const mensaje = t.reprogramada
     ? mensajeCambioHora(t.reprogramada, t.bloques[0].fecha, t.bloques[0].hora, t.profesional)

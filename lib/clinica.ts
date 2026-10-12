@@ -1,9 +1,6 @@
-// Datos de la clínica que aparecen en los mensajes de WhatsApp y en la hoja de ruta.
-// Cámbialos por los de tu clínica.
 export const NOMBRE_CLINICA = "Clínica Dental SoftDent"
-export const DIRECCION_CLINICA = "" // ej: "Av. Siempre Viva 742, Santiago"
+export const DIRECCION_CLINICA = ""
 
-/** Normaliza teléfonos chilenos para wa.me (9 dígitos → 56XXXXXXXXX; 8 dígitos → 569XXXXXXXX) */
 export function telefonoWhatsapp(tel?: string | null): string | null {
   const n = (tel ?? "").replace(/\D/g, "")
   if (!n) return null

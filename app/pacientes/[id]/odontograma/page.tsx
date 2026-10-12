@@ -7,7 +7,6 @@ import { Odontograma } from "@/components/odontograma/Odontograma"
 import { ListaTratamientos } from "@/components/tratamientos/ListaTratamientos"
 import { obtenerCatalogo } from "@/lib/catalogo"
 
-// ODONTOGRAMA GENERAL: reúne los hallazgos del paciente y las prestaciones de TODOS sus tratamientos
 export default async function OdontogramaGeneralPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await requerirPermiso("clinico.ver")
   const { id } = await params
@@ -23,7 +22,6 @@ export default async function OdontogramaGeneralPage({ params }: { params: Promi
   const activos = tratamientos.filter((t) => t.estado === "ACTIVO")
   const puedeAgregar = activo && puede(usuario.rol, "presupuestos.gestionar")
 
-  // Catálogo con los precios de los aranceles de los tratamientos activos
   const catalogo = puedeAgregar ? await obtenerCatalogo([...new Set(activos.map((t) => t.arancel_id))].sort().join(",")) : null
 
   return (

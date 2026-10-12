@@ -2,7 +2,6 @@
 
 import { useEffect } from "react"
 
-/** Ventana modal con encabezado oscuro. No se cierra al hacer clic afuera (para no perder lo escrito). */
 export function Ventana({
   titulo,
   subtitulo,

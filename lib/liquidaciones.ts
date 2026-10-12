@@ -6,7 +6,6 @@ const UUID = /^[0-9a-f-]{36}$/i
 
 type Respuesta<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>
 
-/** PostgREST devuelve máximo 1000 filas por consulta: se pide por páginas */
 async function todasLasFilas<T>(consulta: (desde: number, hasta: number) => Respuesta<T>): Promise<T[]> {
   const filas: T[] = []
   for (let desde = 0; ; desde += 1000) {
@@ -25,7 +24,6 @@ const SELECT_LIQUIDACION = `*,
   anulador:perfiles!liquidaciones_anulado_por_fkey(nombre_completo),
   aprobador:perfiles!liquidaciones_aprobado_por_fkey(nombre_completo)`
 
-/** Dentistas (y cualquiera que tenga % configurado) */
 export const obtenerProfesionales = cache(async (): Promise<ProfesionalLiquidacion[]> => {
   const { data } = await getSupabase()
     .from("perfiles")
@@ -45,7 +43,6 @@ export const obtenerProfesional = cache(async (id: string): Promise<ProfesionalL
   return data as ProfesionalLiquidacion | null
 })
 
-/** Tramos evolucionados que todavía no se han liquidado */
 export const obtenerProduccionPendiente = cache(async (profesionalId?: string): Promise<Produccion[]> => {
   const supabase = getSupabase()
   return todasLasFilas<Produccion>((desde, hasta) => {
@@ -82,17 +79,14 @@ export const obtenerLiquidacion = cache(
   }
 )
 
-/** Fecha (Chile) en que un tramo pasó a ser liquidable */
 export function fechaChile(iso: string | null): string | null {
   return iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Santiago" }) : null
 }
 
-/** Monto que le corresponde al profesional por un tramo */
 export function montoProfesional(base: number, porcentaje: number | null): number {
   return porcentaje === null ? 0 : Math.round((base * porcentaje) / 100)
 }
 
-/** Por qué un tramo aún no se puede liquidar */
 export function motivoEspera(p: Produccion): string {
   const faltas: string[] = []
   if (p.progreso < 100) faltas.push(`falta evolucionar (va en ${p.progreso}%)`)
@@ -100,7 +94,6 @@ export function motivoEspera(p: Produccion): string {
   return faltas.join(" · ")
 }
 
-/** Resumen por profesional de lo pendiente */
 export function resumirProduccion(filas: Produccion[], hasta?: string) {
   const liquidables = filas.filter((f) => f.liquidable && (!hasta || (fechaChile(f.fecha_liquidable) ?? "") <= hasta))
   const posteriores = filas.filter((f) => f.liquidable && hasta && (fechaChile(f.fecha_liquidable) ?? "") > hasta)

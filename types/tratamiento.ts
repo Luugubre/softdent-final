@@ -27,8 +27,15 @@ export type ResumenTratamiento = Tratamiento & {
   habilitado: number
   abonado: number
   porPagar: number
-  avance: number // % ponderado por valor
+  avance: number
 }
 
-/** Para elegir tratamiento al agregar una prestación desde el odontograma general */
 export type TratamientoOpcion = { id: string; numero: number; nombre: string; arancel_id: string }
+
+export type Fase = {
+  id: string
+  presupuesto_id: string
+  numero: number
+  nombre: string
+  descripcion: string | null
+}

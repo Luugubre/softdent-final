@@ -47,9 +47,6 @@ export function Modal({ titulo, onClose, children }: { titulo: string; onClose: 
 
 type AlTerminar = (mensaje: { ok: boolean; texto: string }) => void
 
-// =====================================================================
-// Preexistencia / Lesión
-// =====================================================================
 export function ModalHallazgo({
   pacienteId,
   pieza,
@@ -124,9 +121,6 @@ export function ModalHallazgo({
   )
 }
 
-// =====================================================================
-// Ver información de la pieza
-// =====================================================================
 export function ModalInfo({
   pieza,
   hallazgos,

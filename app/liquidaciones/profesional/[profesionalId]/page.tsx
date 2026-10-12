@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { Encabezado, Termino } from "@/components/ui/Ayuda"
+import { BotonExcel } from "@/components/ui/BotonExcel"
 import { notFound, redirect } from "next/navigation"
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
@@ -46,7 +48,6 @@ export default async function ProfesionalLiquidacionPage({
   const mesActual = hoy.slice(0, 7)
   const { periodo: p } = await searchParams
   const periodo = p && /^\d{4}-(0[1-9]|1[0-2])$/.test(p) && p <= mesActual ? p : mesActual
-  // Fin del mes elegido (o hoy, si es el mes en curso)
   const [anio, mes] = periodo.split("-").map(Number)
   const finMes = new Date(Date.UTC(anio, mes, 0)).toISOString().slice(0, 10)
   const hasta = finMes < hoy ? finMes : hoy
@@ -63,18 +64,19 @@ export default async function ProfesionalLiquidacionPage({
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <Link href="/liquidaciones" className="text-sm font-bold text-blue-600 hover:underline">
-        ← Volver a liquidaciones
-      </Link>
-
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{profesional.nombre_completo}</h1>
-          <p className="text-sm font-semibold text-gray-500">
-            Porcentaje de liquidación: <strong className="text-gray-900">{pct !== null ? `${pct}%` : "sin configurar"}</strong>
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+      <Encabezado
+        icono="👩‍⚕️"
+        titulo={profesional.nombre_completo}
+        descripcion={
+          <>
+            <Termino t="porcentaje">Porcentaje de liquidación</Termino>:{" "}
+            <strong className="text-gray-900">{pct !== null ? `${pct}%` : "sin configurar (defínelo en la lista de Liquidaciones)"}</strong>
+          </>
+        }
+        migas={[{ href: "/liquidaciones", etiqueta: "Liquidaciones" }, { etiqueta: profesional.nombre_completo }]}
+        acciones={
+        <div className="flex flex-wrap items-center gap-3">
+          <BotonExcel href={`/liquidaciones/excel?profesional=${profesionalId}`} />
           <div className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-emerald-800">
             <p className="text-[11px] font-black uppercase tracking-wider">A liquidar</p>
             <p className="text-xl font-black">{formatearPesos(r.aPagar)}</p>
@@ -84,7 +86,8 @@ export default async function ProfesionalLiquidacionPage({
             <p className="text-xl font-black">{formatearPesos(r.esperaAPagar)}</p>
           </div>
         </div>
-      </div>
+        }
+      />
 
       {gestionar && (
         <GenerarLiquidacion
@@ -99,7 +102,6 @@ export default async function ProfesionalLiquidacionPage({
         />
       )}
 
-      {/* LISTO PARA LIQUIDAR */}
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-extrabold text-gray-900">✅ Listo para liquidar (hasta el {formatearFecha(hasta)})</h2>
@@ -153,7 +155,6 @@ export default async function ProfesionalLiquidacionPage({
         )}
       </section>
 
-      {/* EN ESPERA */}
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-extrabold text-gray-900">⏳ En espera</h2>

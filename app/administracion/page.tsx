@@ -3,6 +3,7 @@ import { obtenerAuditoria, obtenerCatalogo, obtenerMetodosPago, obtenerParametro
 import { formatearFechaHora } from "@/lib/formato"
 import { TablaCatalogo, TablaMetodosPago, TablaParametros } from "@/components/admin/TablasAdmin"
 import type { RegistroAuditoria } from "@/types/admin"
+import { ComoFunciona, Encabezado, Termino } from "@/components/ui/Ayuda"
 
 const NOMBRE_TABLA: Record<string, string> = {
   especialidades: "Especialidad",
@@ -15,7 +16,6 @@ const NOMBRE_TABLA: Record<string, string> = {
   convenios: "Convenio",
 }
 
-/** Qué cambió entre el valor anterior y el nuevo (sin fechas internas) */
 function cambios(r: RegistroAuditoria) {
   if (!r.anterior || !r.nuevo) return r.nuevo ? String(r.nuevo.nombre ?? r.nuevo.valor ?? r.registro_id) : ""
   return Object.keys(r.nuevo)
@@ -40,12 +40,42 @@ export default async function AdministracionPage() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Administración</h1>
-        <p className="text-sm font-medium text-gray-500">
-          Datos maestros, métodos de pago y parámetros del sistema. Un dato en uso no se elimina: se desactiva.
-        </p>
-      </div>
+      <Encabezado
+        icono="⚙️"
+        titulo="Administración"
+        descripcion="Las opciones generales del sistema: datos de la clínica, métodos de pago y las listas que aparecen en otras pantallas."
+        migas={[{ etiqueta: "Administración" }]}
+      >
+        <nav aria-label="Secciones" className="flex flex-wrap gap-2 text-xs font-bold">
+          {[
+            ["#parametros", "🔧 Parámetros"],
+            ["#metodos-pago", "💳 Métodos de pago"],
+            ["#previsiones", "🩺 Previsiones"],
+            ["#tipos_atencion", "🏷️ Tipos de atención"],
+            ["#especialidades", "🎓 Especialidades"],
+            ["#categorias_prestaciones", "🗂️ Categorías"],
+            ["#boxes", "🚪 Boxes"],
+            ["#auditoria", "🕵️ Registro de cambios"],
+          ].map(([href, etiqueta]) => (
+            <a key={href} href={href} className="rounded-full border border-gray-200 bg-white px-3 py-1 text-gray-700 hover:border-blue-300 hover:text-blue-700">
+              {etiqueta}
+            </a>
+          ))}
+        </nav>
+      </Encabezado>
+      <ComoFunciona
+        pasos={[
+          <>Usa los botones de arriba para saltar a la sección que quieres cambiar.</>,
+          <>En cada <Termino t="catalogo" />, escribe el nombre y presiona <strong>Agregar</strong>; usa <strong>Editar</strong> para corregir.</>,
+          <>En los <Termino t="parametro">parámetros</Termino>, cambia el valor y presiona el botón <strong>Guardar</strong> que aparece.</>,
+          <>Cada sección dice <strong>📍 dónde se usa</strong> ese dato en el resto del sistema.</>,
+        ]}
+        reglas={[
+          <>Nada se borra: lo que ya se usó se <strong>desactiva</strong> y deja de aparecer en las listas.</>,
+          <>Los parámetros solo aceptan valores dentro de su rango.</>,
+          <>Todo cambio queda en el <Termino t="auditoria" /> con tu nombre.</>,
+        ]}
+      />
 
       <TablaParametros parametros={parametros} />
       <TablaMetodosPago metodos={metodos} />
@@ -58,8 +88,13 @@ export default async function AdministracionPage() {
         <TablaCatalogo tabla="boxes" items={boxes} />
       </div>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
-        <h2 className="text-lg font-extrabold text-gray-900">🕵️ Registro de cambios</h2>
+      <section id="auditoria" className="scroll-mt-20 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
+        <div>
+          <h2 className="text-lg font-extrabold text-gray-900">🕵️ Registro de cambios</h2>
+          <p className="text-xs font-semibold text-gray-600">
+            Quién cambió qué configuración y cuándo. En “Cambio” se ve el valor anterior → el nuevo. Este registro no se puede editar.
+          </p>
+        </div>
         {auditoria.length === 0 ? (
           <p className="text-sm font-semibold text-gray-400">Aún no hay cambios registrados.</p>
         ) : (

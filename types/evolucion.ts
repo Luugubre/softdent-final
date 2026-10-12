@@ -1,7 +1,7 @@
 export type Evolucion = {
   id: string
   paciente_id: string
-  fecha_atencion: string // "YYYY-MM-DD"
+  fecha_atencion: string
   profesional_nombre: string
   profesional_id: string | null
   motivo: string | null

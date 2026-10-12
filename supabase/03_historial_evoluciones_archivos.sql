@@ -1,15 +1,3 @@
--- =====================================================================
--- Historial clínico (línea de tiempo) + Evoluciones + RX y Multimedia
--- Pegar en Supabase → SQL Editor → Run
--- Requiere haber ejecutado 01_pacientes.sql y 02_antecedentes.sql
--- =====================================================================
-
-
--- =====================================================================
--- 1. HISTORIAL DEL PACIENTE
--- Cada acción sobre el paciente deja un evento aquí, automáticamente,
--- mediante triggers. Es de solo inserción: no se edita ni se borra.
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.historial_paciente (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   paciente_id      uuid NOT NULL REFERENCES public.pacientes(id) ON DELETE RESTRICT,
@@ -46,7 +34,6 @@ CREATE TRIGGER historial_solo_insercion_trg
 
 ALTER TABLE public.historial_paciente ENABLE ROW LEVEL SECURITY;
 
--- Función común para registrar eventos (la usan todos los módulos)
 CREATE OR REPLACE FUNCTION public.registrar_evento(
   p_paciente_id uuid,
   p_tipo        text,
@@ -66,10 +53,6 @@ BEGIN
 END;
 $$;
 
-
--- =====================================================================
--- 2. EVENTOS DE PACIENTES (registro, edición, habilitar/deshabilitar)
--- =====================================================================
 CREATE OR REPLACE FUNCTION public.historial_pacientes_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -90,7 +73,6 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- Habilitar / deshabilitar
   IF NEW.activo IS DISTINCT FROM OLD.activo THEN
     IF NEW.activo THEN
       PERFORM public.registrar_evento(NEW.id, 'PACIENTE', 'HABILITADO', 'Paciente habilitado',
@@ -101,7 +83,6 @@ BEGIN
     END IF;
   END IF;
 
-  -- Cambio de titular (grupo familiar)
   IF NEW.titular_id IS DISTINCT FROM OLD.titular_id THEN
     PERFORM public.registrar_evento(NEW.id, 'PACIENTE', 'ACTUALIZADO',
       CASE WHEN NEW.titular_id IS NULL THEN 'Desvinculado de su titular' ELSE 'Asignado como carga familiar' END,
@@ -109,7 +90,6 @@ BEGIN
       NULL, 'pacientes', NEW.id);
   END IF;
 
-  -- Datos personales: lista de campos que cambiaron
   SELECT string_agg(etiquetas ->> n.key, ', ')
     INTO cambios
     FROM jsonb_each(to_jsonb(NEW)) AS n
@@ -130,10 +110,6 @@ CREATE TRIGGER historial_pacientes
   AFTER INSERT OR UPDATE ON public.pacientes
   FOR EACH ROW EXECUTE FUNCTION public.historial_pacientes_trg();
 
-
--- =====================================================================
--- 3. EVENTOS DE ANTECEDENTES (alta y baja)
--- =====================================================================
 CREATE OR REPLACE FUNCTION public.historial_antecedentes_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -161,17 +137,11 @@ CREATE TRIGGER historial_antecedentes
   AFTER INSERT OR UPDATE ON public.antecedentes
   FOR EACH ROW EXECUTE FUNCTION public.historial_antecedentes_trg();
 
-
--- =====================================================================
--- 4. EVOLUCIONES CLÍNICAS
--- Una evolución registrada no se modifica ni se borra: las correcciones
--- se registran como una nueva evolución.
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.evoluciones (
   id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   paciente_id        uuid NOT NULL REFERENCES public.pacientes(id) ON DELETE RESTRICT,
   fecha_atencion     date NOT NULL DEFAULT CURRENT_DATE,
-  profesional_nombre text NOT NULL,   -- temporal: se reemplaza por profesional_id cuando exista el login
+  profesional_nombre text NOT NULL,
   profesional_id     uuid,
   motivo             text,
   diagnostico        text,
@@ -218,13 +188,9 @@ CREATE TRIGGER historial_evoluciones
   AFTER INSERT ON public.evoluciones
   FOR EACH ROW EXECUTE FUNCTION public.historial_evoluciones_trg();
 
-
--- =====================================================================
--- 5. RX Y MULTIMEDIA (archivos en Supabase Storage)
--- =====================================================================
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
-  'archivos-pacientes', 'archivos-pacientes', false, 10485760,  -- 10 MB
+  'archivos-pacientes', 'archivos-pacientes', false, 10485760,
   ARRAY['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 )
 ON CONFLICT (id) DO NOTHING;
@@ -272,11 +238,6 @@ CREATE TRIGGER historial_archivos
   AFTER INSERT ON public.archivos_paciente
   FOR EACH ROW EXECUTE FUNCTION public.historial_archivos_trg();
 
-
--- =====================================================================
--- 6. CARGA INICIAL: eventos de lo que ya existía antes de este script
--- (solo se ejecuta si el historial está vacío)
--- =====================================================================
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.historial_paciente) THEN

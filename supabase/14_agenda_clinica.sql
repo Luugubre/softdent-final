@@ -1,23 +1,9 @@
--- =====================================================================
--- Agenda clínica v2 (estilo línea de tiempo)
--- Pegar en Supabase → SQL Editor → Run (después de 13_agenda.sql)
---
--- · Nuevo estado EN_ESPERA (paciente llegó, sala de espera) con hora de llegada
--- · Horas de inicio y fin de la atención
--- · Cita asociada a un tratamiento del paciente
--- · Registro de recordatorio enviado
--- · Agendar varios bloques de una vez (todas o ninguna)
--- · Buscar las próximas horas libres entre todos los dentistas
--- =====================================================================
-
--- 1. Columnas nuevas ----------------------------------------------------
 ALTER TABLE public.citas ADD COLUMN IF NOT EXISTS hora_llegada          timestamptz;
 ALTER TABLE public.citas ADD COLUMN IF NOT EXISTS hora_inicio_atencion  timestamptz;
 ALTER TABLE public.citas ADD COLUMN IF NOT EXISTS hora_fin_atencion     timestamptz;
 ALTER TABLE public.citas ADD COLUMN IF NOT EXISTS recordatorio_enviado_en timestamptz;
 ALTER TABLE public.citas ADD COLUMN IF NOT EXISTS presupuesto_id uuid REFERENCES public.presupuestos(id) ON DELETE SET NULL;
 
--- 2. Estado EN_ESPERA (hay que rehacer las reglas que listan estados) -----
 ALTER TABLE public.citas DROP CONSTRAINT IF EXISTS citas_estado_chk;
 ALTER TABLE public.citas ADD CONSTRAINT citas_estado_chk CHECK (estado IN
   ('AGENDADA', 'CONFIRMADA', 'EN_ESPERA', 'EN_ATENCION', 'REALIZADA', 'CANCELADA', 'NO_ASISTIO', 'REAGENDADA'));
@@ -47,8 +33,6 @@ RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
   END;
 $$;
 
-
--- 3. Vista de la agenda (se rehace para incluir las columnas nuevas) -----
 DROP VIEW IF EXISTS public.v_agenda;
 CREATE VIEW public.v_agenda WITH (security_invoker = true) AS
 SELECT
@@ -77,8 +61,6 @@ LEFT JOIN public.prestaciones pr ON pr.id = c.prestacion_id
 LEFT JOIN public.presupuestos ps ON ps.id = c.presupuesto_id
 LEFT JOIN public.perfiles cr ON cr.id = c.creado_por;
 
-
--- 4. Agendar (ahora con tratamiento) ------------------------------------
 DROP FUNCTION IF EXISTS public.agendar_cita(uuid, uuid, date, time, integer, uuid, uuid, uuid, text, boolean, text, uuid);
 
 CREATE OR REPLACE FUNCTION public.agendar_cita(
@@ -164,8 +146,6 @@ BEGIN
 END;
 $$;
 
--- Varios bloques de una vez: si uno falla, no se agenda ninguno
--- p_bloques: [{"fecha":"2026-10-12","hora":"10:00","duracion":30,"sobrecupo":false}, ...]
 CREATE OR REPLACE FUNCTION public.agendar_citas(
   p_paciente         uuid,
   p_profesional      uuid,
@@ -195,8 +175,6 @@ BEGIN
 END;
 $$;
 
-
--- 5. Reprogramar (misma lógica, con el nuevo agendar) --------------------
 CREATE OR REPLACE FUNCTION public.reagendar_cita(
   p_cita             uuid,
   p_fecha            date,
@@ -232,8 +210,6 @@ BEGIN
 END;
 $$;
 
-
--- 6. Cambiar estado (registra llegada e inicio/fin de la atención) --------
 CREATE OR REPLACE FUNCTION public.cambiar_estado_cita(p_cita uuid, p_estado text, p_usuario uuid, p_motivo text DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE
@@ -286,8 +262,6 @@ BEGIN
 END;
 $$;
 
-
--- 7. Horas disponibles (considera EN_ESPERA como ocupada) ------------------
 CREATE OR REPLACE FUNCTION public.horas_disponibles(
   p_profesional uuid, p_fecha date, p_duracion integer, p_box uuid DEFAULT NULL, p_excluir uuid DEFAULT NULL
 ) RETURNS TABLE (hora text) LANGUAGE sql STABLE AS $$
@@ -321,9 +295,6 @@ CREATE OR REPLACE FUNCTION public.horas_disponibles(
    ORDER BY 1;
 $$;
 
-
--- 8. "¿Cuándo hay hora?": próximas horas libres -------------------------
--- Hasta 3 opciones por dentista y día (sin solaparse), turno mañana (< 13:00) o tarde.
 CREATE OR REPLACE FUNCTION public.proximas_horas(
   p_duracion    integer,
   p_desde       date,

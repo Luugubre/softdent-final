@@ -11,13 +11,8 @@ import type { Catalogo, PrestacionCatalogo } from "@/lib/catalogo"
 import { CARA_ETIQUETAS, COLORES, type Cara } from "@/types/odontograma"
 import type { TratamientoOpcion } from "@/types/tratamiento"
 
-/** "Restauración" → "restauracion" (para filtrar sin tildes ni mayúsculas) */
 const normalizar = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
 
-/**
- * Menú lateral (a la izquierda del odontograma) con las prestaciones
- * ordenadas en carpetas. Se abre al hacer clic en un diente.
- */
 export function PanelPrestaciones({
   pacienteId,
   pieza,
@@ -51,7 +46,6 @@ export function PanelPrestaciones({
   const [error, setError] = useState<string | null>(null)
   const [guardando, startTransition] = useTransition()
 
-  // Filtro opcional dentro de las carpetas
   const q = normalizar(filtro.trim())
   const carpetas = useMemo(() => {
     if (!q) return catalogo.carpetas
@@ -103,7 +97,6 @@ export function PanelPrestaciones({
 
   return (
     <aside className="w-full lg:w-80 shrink-0 flex flex-col rounded-2xl border border-gray-200 bg-white shadow-lg overflow-hidden lg:max-h-[640px]">
-      {/* ENCABEZADO: pieza y caras */}
       <div className="bg-slate-900 text-white p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -136,7 +129,6 @@ export function PanelPrestaciones({
           </div>
         )}
 
-        {/* Tratamiento destino */}
         {opciones.length === 0 ? (
           <p className="rounded-xl bg-amber-400/20 p-2 text-xs font-semibold text-amber-200">
             El paciente no tiene tratamientos activos.{" "}
@@ -163,7 +155,6 @@ export function PanelPrestaciones({
         )}
       </div>
 
-      {/* PRESTACIÓN ELEGIDA: confirmar */}
       {elegida && (
         <div className="border-b border-gray-200 bg-blue-50 p-3 space-y-2">
           <div className="flex items-center gap-2">
@@ -199,7 +190,6 @@ export function PanelPrestaciones({
         </div>
       )}
 
-      {/* FILTRO */}
       <div className="p-3 border-b border-gray-100">
         <input
           value={filtro}
@@ -209,7 +199,6 @@ export function PanelPrestaciones({
         />
       </div>
 
-      {/* CARPETAS */}
       <div className="flex-1 overflow-y-auto bg-slate-50 p-2 space-y-1.5">
         {carpetas.length === 0 ? (
           <p className="p-3 text-xs font-semibold text-gray-400">

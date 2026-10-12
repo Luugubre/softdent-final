@@ -15,7 +15,6 @@ export const METODO_LIQUIDACION: Record<MetodoPagoLiquidacion, string> = {
   CHEQUE: "Cheque",
 }
 
-/** Una fila de la vista v_produccion_profesional (un tramo evolucionado por un profesional) */
 export type Produccion = {
   avance_id: string
   item_id: string
@@ -62,7 +61,7 @@ export type Liquidacion = {
   id: string
   numero: number
   profesional_id: string
-  periodo: string | null // "2026-10"
+  periodo: string | null
   fecha_corte: string
   porcentaje: number
   porcentaje_clinica: number | null
@@ -98,7 +97,6 @@ export type ProfesionalLiquidacion = {
   porcentaje_liquidacion: number | null
 }
 
-/** "2026-10" → "octubre 2026" */
 export function nombrePeriodo(periodo: string | null | undefined) {
   if (!periodo) return "—"
   const [a, m] = periodo.split("-").map(Number)

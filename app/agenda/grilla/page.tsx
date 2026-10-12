@@ -26,13 +26,11 @@ export default async function AgendaPage({
   const vista: Vista = sp.vista === "semana" || sp.vista === "mes" ? sp.vista : "dia"
   const fecha = fechaValida(sp.fecha) ? sp.fecha : hoy
   const filtros = {
-    // El dentista solo ve su propia agenda
     profesional: !puede(usuario.rol, "agenda.ver_todas") ? usuario.id : sp.profesional && UUID.test(sp.profesional) ? sp.profesional : undefined,
     box: sp.box && UUID.test(sp.box) ? sp.box : undefined,
     estado: ESTADOS_CITA.includes(sp.estado as EstadoCita) ? (sp.estado as EstadoCita) : undefined,
   }
 
-  // Días que se muestran
   let dias: string[]
   if (vista === "dia") dias = [fecha]
   else if (vista === "semana") {
@@ -60,7 +58,6 @@ export default async function AgendaPage({
   return (
     <div className="w-full min-h-screen bg-gray-50 p-4 md:p-6">
       <AgendaVista
-        // Al cambiar de vista o fecha se reinicia el estado (modales abiertos, avisos)
         key={`${vista}-${fecha}`}
         vista={vista}
         fecha={fecha}

@@ -5,16 +5,25 @@ import { useState, useTransition } from "react"
 import { abrirCaja, anularMovimiento, cerrarCaja, registrarMovimiento } from "@/app/caja/actions"
 import { formatearFechaHora, formatearPesos } from "@/lib/formato"
 import { ORIGEN_MOVIMIENTO, type Caja, type MetodoPagoCatalogo, type MovimientoCaja } from "@/types/admin"
+import { Termino } from "@/components/ui/Ayuda"
+import type { TerminoId } from "@/lib/glosario"
 
 const input = "w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
 const etiqueta = "block text-xs font-black uppercase tracking-wider text-gray-500 mb-1"
 const soloNumero = (v: string) => v.replace(/\D/g, "")
 const conPuntos = (v: string) => (v ? Number(v).toLocaleString("es-CL") : "")
 
-function Tarjeta({ titulo, valor, nota, estilo }: { titulo: string; valor: string; nota?: string; estilo: string }) {
+function Tarjeta({ titulo, valor, nota, estilo, ayuda }: { titulo: string; valor: string; nota?: string; estilo: string; ayuda?: TerminoId }) {
   return (
     <div className={`rounded-2xl border p-4 ${estilo}`}>
-      <p className="text-[11px] font-black uppercase tracking-wider opacity-70">{titulo}</p>
+      <div className="flex items-center gap-1">
+        <p className="text-[11px] font-black uppercase tracking-wider opacity-70">{titulo}</p>
+        {ayuda && (
+          <Termino t={ayuda} abajo>
+            <span className="sr-only">{titulo}</span>
+          </Termino>
+        )}
+      </div>
       <p className="text-2xl font-black">{valor}</p>
       {nota && <p className="text-[11px] font-semibold opacity-70">{nota}</p>}
     </div>
@@ -43,13 +52,10 @@ export function GestionCaja({
       if (r.ok) alTerminar?.()
     })
 
-  // Apertura
   const [inicial, setInicial] = useState("")
   const [nota, setNota] = useState("")
-  // Movimiento
   const efectivo = metodos.find((m) => m.es_efectivo)?.codigo ?? metodos[0]?.codigo ?? ""
   const [mov, setMov] = useState({ tipo: "EGRESO" as "INGRESO" | "EGRESO", monto: "", metodo: efectivo, descripcion: "" })
-  // Cierre
   const [contado, setContado] = useState("")
   const [justificacion, setJustificacion] = useState("")
 
@@ -59,7 +65,6 @@ export function GestionCaja({
     </p>
   )
 
-  // ---------------- CAJA CERRADA → APERTURA ----------------
   if (!caja) {
     return (
       <div className="space-y-4">
@@ -68,8 +73,15 @@ export function GestionCaja({
           <p className="text-5xl">🔒</p>
           <div>
             <h2 className="text-2xl font-black text-gray-900">Caja cerrada</h2>
-            <p className="text-sm font-medium text-gray-500">Abre la caja con el efectivo inicial para recibir pagos en efectivo y registrar movimientos.</p>
+            <p className="text-sm font-medium text-gray-500">
+              Mientras la caja esté cerrada <strong>no se pueden recibir pagos</strong> (salvo Bono FONASA). Ábrela al comenzar el turno.
+            </p>
           </div>
+          <ol className="text-left space-y-1 rounded-2xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-600">
+            <li>1. Cuenta el sencillo con que partes y escríbelo como <Termino t="monto_inicial" />.</li>
+            <li>2. Durante el día, los pagos de pacientes entran solos a la caja.</li>
+            <li>3. Al final, haz el <Termino t="arqueo" /> y cierra la caja.</li>
+          </ol>
           <div className="text-left space-y-3">
             <label className="block">
               <span className={etiqueta}>Monto inicial en efectivo</span>
@@ -93,7 +105,6 @@ export function GestionCaja({
     )
   }
 
-  // ---------------- CAJA ABIERTA ----------------
   const validos = movimientos.filter((m) => !m.anulado)
   const ingresos = validos.filter((m) => m.tipo === "INGRESO").reduce((s, m) => s + m.monto, 0)
   const egresos = validos.filter((m) => m.tipo === "EGRESO").reduce((s, m) => s + m.monto, 0)
@@ -104,17 +115,21 @@ export function GestionCaja({
       {avisoUI}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Tarjeta titulo="Monto inicial" valor={formatearPesos(caja.monto_inicial)} nota={`Caja N° ${caja.numero} · ${caja.abridor?.nombre_completo ?? ""}`} estilo="bg-white border-gray-200 text-gray-900" />
-        <Tarjeta titulo="Ingresos" valor={`+${formatearPesos(ingresos)}`} nota="Todos los métodos" estilo="bg-emerald-50 border-emerald-200 text-emerald-800" />
-        <Tarjeta titulo="Egresos" valor={`-${formatearPesos(egresos)}`} nota="Gastos, retiros, devoluciones" estilo="bg-rose-50 border-rose-200 text-rose-800" />
-        <Tarjeta titulo="Efectivo esperado" valor={formatearPesos(esperado)} nota="Base para el arqueo" estilo="bg-blue-50 border-blue-200 text-blue-900" />
+        <Tarjeta ayuda="monto_inicial" titulo="Monto inicial" valor={formatearPesos(caja.monto_inicial)} nota={`Caja N° ${caja.numero} · ${caja.abridor?.nombre_completo ?? ""}`} estilo="bg-white border-gray-200 text-gray-900" />
+        <Tarjeta ayuda="movimiento" titulo="Ingresos" valor={`+${formatearPesos(ingresos)}`} nota="Todos los métodos" estilo="bg-emerald-50 border-emerald-200 text-emerald-800" />
+        <Tarjeta ayuda="movimiento" titulo="Egresos" valor={`-${formatearPesos(egresos)}`} nota="Gastos, retiros, devoluciones" estilo="bg-rose-50 border-rose-200 text-rose-800" />
+        <Tarjeta ayuda="esperado" titulo="Efectivo esperado" valor={formatearPesos(esperado)} nota="Base para el arqueo" estilo="bg-blue-50 border-blue-200 text-blue-900" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* MOVIMIENTO MANUAL */}
         <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
-          <h3 className="text-lg font-extrabold text-gray-900">Registrar movimiento</h3>
-          <p className="text-xs font-medium text-gray-500">Los pagos de pacientes entran solos. Aquí van gastos menores, retiros u otros ingresos.</p>
+          <h3 className="text-lg font-extrabold text-gray-900">
+            Registrar <Termino t="movimiento">movimiento</Termino> manual
+          </h3>
+          <p className="text-xs font-medium text-gray-500">
+            Los pagos de pacientes entran solos: <strong>no los registres aquí</strong>. Esto es para gastos menores (insumos, locomoción), retiros
+            de dinero u otros ingresos que no son de pacientes.
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex bg-gray-100 rounded-xl p-1">
               {(["INGRESO", "EGRESO"] as const).map((t) => (
@@ -146,11 +161,13 @@ export function GestionCaja({
           </button>
         </section>
 
-        {/* ARQUEO Y CIERRE */}
         <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
-          <h3 className="text-lg font-extrabold text-gray-900">Arqueo y cierre</h3>
+          <h3 className="text-lg font-extrabold text-gray-900">
+            <Termino t="arqueo">Arqueo</Termino> y cierre
+          </h3>
           <p className="text-xs font-medium text-gray-500">
-            Cuenta el efectivo de la gaveta. Debería haber <strong>{formatearPesos(esperado)}</strong>.
+            Cuenta <strong>solo el efectivo</strong> de la gaveta (débito y transferencias no se cuentan). Debería haber{" "}
+            <strong>{formatearPesos(esperado)}</strong>. Si no cuadra, la <Termino t="diferencia" /> se debe justificar.
           </p>
           <label className="block">
             <span className={etiqueta}>Efectivo contado</span>
@@ -180,7 +197,6 @@ export function GestionCaja({
         </section>
       </div>
 
-      {/* MOVIMIENTOS */}
       <TablaMovimientos movimientos={movimientos} metodos={metodos} puedeAnular onAnular={(m) => {
         const motivo = window.prompt(`Motivo de la anulación de "${m.descripcion}":`)
         if (motivo?.trim()) ejecutar(() => anularMovimiento(m.id, motivo))

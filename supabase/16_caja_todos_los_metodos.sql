@@ -1,14 +1,3 @@
--- =====================================================================
--- 16 · Caja abierta para TODOS los métodos que entran a caja
--- ---------------------------------------------------------------------
--- Antes solo el efectivo exigía caja abierta: un pago con débito,
--- transferencia o cheque hecho con la caja cerrada quedaba registrado
--- pero no entraba a ninguna caja (no aparecía en arqueos ni resúmenes).
--- Ahora todo método marcado "Entra a caja" en Administración exige caja
--- abierta. Los marcados "no entra a caja" (ej. Bono FONASA) siguen igual.
--- Ejecutar después de 15. Se puede ejecutar más de una vez.
--- =====================================================================
-
 CREATE OR REPLACE FUNCTION public.registrar_pago(
   p_paciente   uuid,
   p_monto      integer,
@@ -40,8 +29,6 @@ BEGIN
   IF v_metodo.pide_referencia AND length(trim(COALESCE(p_referencia, ''))) = 0 THEN
     RAISE EXCEPTION '%', 'Ingresa el N° de operación o comprobante (' || v_metodo.nombre || ').';
   END IF;
-  -- Regla: todo método que entra a caja (efectivo, débito, crédito, transferencia, cheque…)
-  -- exige una caja abierta. Solo los marcados "no entra a caja" (ej. Bono FONASA) quedan fuera.
   IF v_metodo.registra_en_caja AND v_caja IS NULL THEN
     RAISE EXCEPTION '%', 'No hay una caja abierta: para recibir un pago con ' || v_metodo.nombre || ' abre la caja en el módulo Caja.';
   END IF;
@@ -74,7 +61,6 @@ BEGIN
     UPDATE public.presupuesto_items SET abonado = abonado + r.monto WHERE id = r.item_id;
   END LOOP;
 
-  -- Ingreso automático en la caja abierta
   IF v_caja IS NOT NULL AND v_metodo.registra_en_caja THEN
     INSERT INTO public.caja_movimientos (caja_id, tipo, origen, monto, metodo, descripcion, pago_id, registrado_por)
     VALUES (v_caja, 'INGRESO', 'PAGO', p_monto, p_metodo, 'Pago N° ' || v_numero || ' · ' || v_paciente, v_id, p_usuario);
@@ -113,7 +99,6 @@ BEGIN
     RAISE EXCEPTION '%', 'No se puede anular: este pago cubre prestaciones ya liquidadas al profesional (liquidación N° ' || v_liq || '). Si la liquidación aún no se paga, anúlala primero.';
   END IF;
 
-  -- Caja: si el movimiento está en la caja abierta se anula; si esa caja ya cerró, se registra un egreso de ajuste
   SELECT * INTO v_mov FROM public.caja_movimientos WHERE pago_id = p_pago AND NOT anulado LIMIT 1;
   IF FOUND THEN
     SELECT estado INTO v_estado_caja FROM public.cajas WHERE id = v_mov.caja_id;

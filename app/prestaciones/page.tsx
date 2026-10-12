@@ -8,6 +8,7 @@ import { PrestacionForm } from "@/components/prestaciones/PrestacionForm"
 import type { PrecioVigente, Prestacion } from "@/types/prestacion"
 import { IconoMuestra } from "@/lib/iconos-dentales"
 import { iconoPorNombre } from "@/lib/iconos-datos"
+import { ComoFunciona, Encabezado, Termino } from "@/components/ui/Ayuda"
 
 type Fila = Prestacion & {
   categoria: { nombre: string } | null
@@ -42,7 +43,6 @@ export default async function PrestacionesPage({
   const { data, error } = await consulta
   const prestaciones = (data ?? []) as Fila[]
 
-  // Precios de hoy para las prestaciones listadas
   const precios = new Map<string, PrecioVigente>()
   if (prestaciones.length > 0) {
     const { data: vigentes } = await supabase
@@ -57,27 +57,53 @@ export default async function PrestacionesPage({
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Prestaciones y aranceles</h1>
-        {gestionar && (
-          <Link
-            href="/prestaciones/configuracion"
-            className="px-4 py-2 rounded-xl text-sm font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
-          >
-            ⚙ Aranceles y categorías
-          </Link>
-        )}
-      </div>
+      <Encabezado
+        icono="🦷"
+        titulo="Prestaciones y precios"
+        descripcion="Catálogo de procedimientos de la clínica con su código, duración y precio en cada arancel."
+        migas={[{ etiqueta: "Prestaciones" }]}
+        acciones={
+          gestionar ? (
+            <Link
+              href="/prestaciones/configuracion"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
+            >
+              ⚙ Aranceles y categorías
+            </Link>
+          ) : null
+        }
+      />
+      <ComoFunciona
+        pasos={[
+          <>Busca una <Termino t="prestacion" /> por nombre o código y haz clic en ella para ver su detalle.</>,
+          <>En el detalle puedes editar sus <strong>Datos</strong> (incluido el <Termino t="codigo_fonasa" />) y sus <strong>Precios por arancel</strong>.</>,
+          <>Para crear una nueva, abre <strong>➕ Nueva prestación</strong> y escribe sus precios iniciales.</>,
+          <>Los <Termino t="arancel">aranceles</Termino> (listas de precios) se crean en <strong>⚙ Aranceles y categorías</strong>.</>,
+        ]}
+        reglas={[
+          <>Un cambio de precio <strong>no afecta</strong> los tratamientos ya creados: rige desde la fecha que indiques.</>,
+          <>Una prestación no se borra: se desactiva.</>,
+          <>Las columnas de la tabla muestran el precio de hoy en cada arancel.</>,
+        ]}
+      />
 
       {gestionar && (
-        <PrestacionForm
-          aranceles={arancelesActivos}
-          categorias={categorias.filter((c) => c.activo)}
-          especialidades={especialidades.filter((e) => e.activo)}
-        />
+        <details className="group rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
+            <span className="text-base font-extrabold text-gray-900">➕ Nueva prestación</span>
+            <span className="text-xs font-bold text-blue-600 group-open:hidden">Abrir formulario ▾</span>
+            <span className="hidden text-xs font-bold text-blue-600 group-open:inline">Cerrar ▴</span>
+          </summary>
+          <div className="border-t border-gray-100 p-2">
+            <PrestacionForm
+              aranceles={arancelesActivos}
+              categorias={categorias.filter((c) => c.activo)}
+              especialidades={especialidades.filter((e) => e.activo)}
+            />
+          </div>
+        </details>
       )}
 
-      {/* Filtros */}
       <form method="GET" className="flex flex-wrap gap-2">
         <input
           name="q"

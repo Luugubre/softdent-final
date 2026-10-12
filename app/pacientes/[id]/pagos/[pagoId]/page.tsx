@@ -21,7 +21,6 @@ export default async function ComprobantePage({ params }: { params: Promise<{ id
 
   return (
     <div className="space-y-4">
-      {/* Al imprimir solo se ve el comprobante */}
       <style>{`@media print {
         body * { visibility: hidden; }
         #comprobante, #comprobante * { visibility: visible; }

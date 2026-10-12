@@ -18,7 +18,6 @@ export async function iniciarSesion(formData: FormData): Promise<{ error: string
     return { error: "Correo o contraseña incorrectos." }
   }
 
-  // Debe tener perfil activo en el sistema
   const { data: perfil } = await getSupabase()
     .from("perfiles")
     .select("activo")
@@ -30,8 +29,7 @@ export async function iniciarSesion(formData: FormData): Promise<{ error: string
     return { error: "Tu usuario no está habilitado en el sistema. Contacta al administrador." }
   }
 
-  // Solo se permite volver a rutas internas
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/pacientes")
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/")
 }
 
 export async function cerrarSesion() {

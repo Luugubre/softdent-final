@@ -16,14 +16,9 @@ function limpiarCaras(caras: string[]): Cara[] {
   return [...new Set(caras)].filter((c): c is Cara => (CARAS as readonly string[]).includes(c))
 }
 
-/** Los RAISE EXCEPTION de la BD ya vienen en español */
 function mensajeBD(error: { message?: string } | null, porDefecto: string) {
   return error?.message && !error.message.includes("violates") ? error.message : porDefecto
 }
-
-// =====================================================================
-// HALLAZGOS
-// =====================================================================
 
 export async function registrarHallazgo(
   pacienteId: string,
@@ -80,10 +75,6 @@ export async function marcarSano(pacienteId: string, pieza: number): Promise<Res
   return { ok: true, mensaje: `Pieza ${pieza} marcada sana.` }
 }
 
-// =====================================================================
-// PRESTACIONES DEL PLAN
-// =====================================================================
-
 export async function agregarPrestacion(
   pacienteId: string,
   datos: { tratamientoId: string; prestacionId: string; pieza: number | null; caras: string[]; nota?: string }
@@ -91,7 +82,6 @@ export async function agregarPrestacion(
   const usuario = await autorizar("presupuestos.gestionar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
 
-  // El tratamiento debe ser de este paciente
   const { data: trat } = await getSupabase()
     .from("presupuestos")
     .select("id")
@@ -142,7 +132,6 @@ export async function anularItem(pacienteId: string, itemId: string, motivo: str
   if (!(await autorizar("presupuestos.gestionar"))) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
   if (!motivo.trim()) return { ok: false, mensaje: "Indica el motivo de la anulación." }
 
-  // Solo se puede anular si aún no tiene avances (no hay nada habilitado para cobrar)
   const { data, error } = await getSupabase()
     .from("presupuesto_items")
     .update({ estado: "ANULADO", motivo_anulacion: motivo.trim() })

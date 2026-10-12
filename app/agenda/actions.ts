@@ -43,9 +43,6 @@ function refrescar(pacienteId?: string) {
 
 const uuidONull = (v?: string | null) => (v && UUID.test(v) ? v : null)
 
-// =====================================================================
-// AGENDAR (uno o varios bloques)
-// =====================================================================
 export async function agendarCitas(datos: {
   pacienteId: string
   profesionalId: string
@@ -135,9 +132,6 @@ export async function cambiarEstadoCita(citaId: string, estado: EstadoCita, moti
   return { ok: true, mensaje: "Estado actualizado." }
 }
 
-// =====================================================================
-// DISPONIBILIDAD DE UNA SEMANA (para elegir bloques)
-// =====================================================================
 export async function disponibilidadSemana(
   profesionalId: string,
   lunes: string,
@@ -167,7 +161,7 @@ export async function disponibilidadSemana(
     res.tramos[d] =
       (horarios ?? []).length === 0
         ? dow < 7
-          ? [[540, 1140]] // sin horario configurado: 09:00 a 19:00, lunes a sábado
+          ? [[540, 1140]]
           : []
         : (horarios ?? [])
             .filter((h) => h.dia_semana === dow)
@@ -184,7 +178,6 @@ export async function disponibilidadSemana(
   return res
 }
 
-/** "¿Cuándo hay hora?" */
 export async function buscarHorasLibres(filtro: {
   duracion: number
   desde: string
@@ -204,9 +197,6 @@ export async function buscarHorasLibres(filtro: {
   return ((data ?? []) as HoraLibre[]).sort((a, b) => `${a.fecha}${a.hora}${a.profesional_nombre}`.localeCompare(`${b.fecha}${b.hora}${b.profesional_nombre}`))
 }
 
-// =====================================================================
-// PACIENTE, TRATAMIENTOS Y PRESTACIONES (para el modal de agendar)
-// =====================================================================
 export async function buscarPacientes(texto: string): Promise<(PacienteBusqueda & { activo: boolean })[]> {
   if (!(await autorizar("agenda.gestionar"))) return []
   const q = texto.trim().replace(/[,()%*\\"']/g, " ")
@@ -233,7 +223,6 @@ export async function buscarPacientes(texto: string): Promise<(PacienteBusqueda 
   return (data ?? []) as (PacienteBusqueda & { activo: boolean })[]
 }
 
-/** Registro rápido de paciente desde la agenda */
 export async function crearPacienteRapido(d: {
   nombres: string
   apellidos: string
@@ -275,7 +264,6 @@ export async function crearPacienteRapido(d: {
   return { ok: true, mensaje: "Paciente registrado.", paciente: data as PacienteBusqueda }
 }
 
-/** Tratamientos activos del paciente, inasistencias y deuda (al elegirlo en el modal) */
 export async function resumenPacienteAgenda(pacienteId: string) {
   if (!(await autorizar("agenda.gestionar")) || !UUID.test(pacienteId)) return null
   const supabase = getSupabase()
@@ -310,9 +298,6 @@ export async function buscarPrestaciones(texto: string): Promise<PrestacionAgend
   return (data ?? []) as PrestacionAgenda[]
 }
 
-// =====================================================================
-// RECORDATORIOS
-// =====================================================================
 export async function citasParaRecordar(fecha: string, profesionalId?: string | null): Promise<CitaAgenda[]> {
   if (!(await autorizar("agenda.gestionar")) || !FECHA.test(fecha)) return []
   let q = getSupabase().from("v_agenda").select("*").eq("fecha", fecha).in("estado", ["AGENDADA", "CONFIRMADA"])
@@ -336,9 +321,6 @@ export async function historialCita(citaId: string) {
   return obtenerHistorialCita(citaId)
 }
 
-// =====================================================================
-// BLOQUEOS
-// =====================================================================
 export async function crearBloqueo(datos: {
   tipo: string
   motivo: string
@@ -389,9 +371,6 @@ export async function eliminarBloqueo(bloqueoId: string): Promise<Resultado> {
   return { ok: true, mensaje: "Bloqueo eliminado." }
 }
 
-// =====================================================================
-// CONFIGURACIÓN: boxes y horarios
-// =====================================================================
 export async function crearBox(nombre: string): Promise<Resultado> {
   if (!(await autorizar("agenda.configurar"))) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
   if (!nombre.trim()) return { ok: false, mensaje: "Indica el nombre del box." }

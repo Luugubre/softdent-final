@@ -1,10 +1,3 @@
--- =====================================================================
--- Catálogo de prestaciones agrupado por carpeta (categoría), con el
--- precio del arancel indicado. Se devuelve como un solo JSON para que
--- cargue rápido y sin el límite de 1000 filas de la API.
--- Pegar en Supabase → SQL Editor → Run (después de 05 y 09)
--- =====================================================================
-
 CREATE OR REPLACE FUNCTION public.catalogo_prestaciones(p_arancel uuid)
 RETURNS jsonb LANGUAGE sql STABLE AS $$
   WITH base AS (SELECT id FROM public.aranceles WHERE es_base)

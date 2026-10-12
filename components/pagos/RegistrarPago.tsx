@@ -5,6 +5,7 @@ import { useMemo, useState, useTransition } from "react"
 import { registrarPago } from "@/app/pacientes/[id]/pagos/actions"
 import { formatearPesos } from "@/lib/formato"
 import { infoMetodo, type MetodoPagoOpcion } from "@/types/pago"
+import { Termino } from "@/components/ui/Ayuda"
 
 export type ItemCobrable = {
   id: string
@@ -17,12 +18,9 @@ export type ItemCobrable = {
   abonado: number
 }
 
-/** Lo que se puede cobrar hoy (realizado y no pagado) */
 const deudaDe = (i: ItemCobrable) => Math.max(i.habilitado - i.abonado, 0)
-/** Lo máximo que acepta la prestación (hasta su precio total) */
 const saldoDe = (i: ItemCobrable) => i.precio - i.abonado
 
-/** Reparte el monto: primero lo realizado (más antiguo primero) y lo que sobre, como abono anticipado */
 function distribuir(monto: number, items: ItemCobrable[]): Record<string, number> {
   const asignado: Record<string, number> = {}
   let resto = monto
@@ -124,7 +122,8 @@ export function RegistrarPago({
       <div className="px-5 py-3 bg-gray-900 text-white flex items-center justify-between gap-3 flex-wrap">
         <h2 className="font-extrabold">💳 Registrar pago</h2>
         <span className="text-xs font-semibold text-gray-300">
-          Deuda actual {formatearPesos(deudaTotal)} · Saldo de tratamientos {formatearPesos(saldoTotal)}
+          <Termino t="deuda" abajo>Deuda actual</Termino> {formatearPesos(deudaTotal)} · <Termino t="saldo" abajo>Saldo de tratamientos</Termino>{" "}
+          {formatearPesos(saldoTotal)}
         </span>
       </div>
 
@@ -132,7 +131,6 @@ export function RegistrarPago({
         <p className="p-5 text-sm font-semibold text-gray-500">El paciente no tiene saldos pendientes.</p>
       ) : (
         <div className="p-5 grid gap-5 lg:grid-cols-[1fr_320px]">
-          {/* DISTRIBUCIÓN POR PRESTACIÓN */}
           <div className="space-y-3 min-w-0">
             <div className="flex items-end gap-2 flex-wrap">
               <label className="space-y-1">
@@ -193,10 +191,11 @@ export function RegistrarPago({
             )}
           </div>
 
-          {/* MÉTODO Y DATOS */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <span className="block text-xs font-black uppercase tracking-wider text-gray-500">Método de pago</span>
+              <span className="block text-xs font-black uppercase tracking-wider text-gray-500">
+                <Termino t="metodo_pago" />
+              </span>
               <div className="grid grid-cols-2 gap-2">
                 {metodos.map(({ codigo: m, nombre }) => (
                   <button

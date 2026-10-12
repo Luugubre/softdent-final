@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { actualizarParametro, guardarCatalogo, guardarMetodoPago } from "@/app/administracion/actions"
 import { formatearFechaHora } from "@/lib/formato"
+import { Termino } from "@/components/ui/Ayuda"
 import { CATALOGOS, TIPOS_PREVISION, type ItemCatalogo, type MetodoPagoCatalogo, type Parametro, type TablaCatalogo } from "@/types/admin"
 
 const input = "rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -23,9 +24,6 @@ function useAviso() {
   return { ejecutar, pendiente, Aviso }
 }
 
-// =====================================================================
-// CATÁLOGO GENÉRICO (nombre único, se desactiva en vez de borrarse)
-// =====================================================================
 export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: ItemCatalogo[] }) {
   const meta = CATALOGOS[tabla]
   const [nuevo, setNuevo] = useState({ nombre: "", descripcion: "", tipo: "OTRA", duracion_min: 30 })
@@ -33,10 +31,16 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
   const { ejecutar, pendiente, Aviso } = useAviso()
 
   return (
-    <section className={caja}>
+    <section id={tabla} className={`${caja} scroll-mt-20`}>
       <div>
-        <h2 className="text-lg font-extrabold text-gray-900">{meta.titulo}</h2>
-        <p className="text-xs font-semibold text-gray-400">Lo usa: {meta.ayuda}</p>
+        <h2 className="text-lg font-extrabold text-gray-900">
+          <span aria-hidden className="mr-1.5">
+            {meta.icono}
+          </span>
+          {meta.titulo}
+        </h2>
+        <p className="text-xs font-semibold text-gray-600">{meta.que}</p>
+        <p className="text-[11px] font-bold text-blue-700">📍 Se usa en: {meta.ayuda}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -147,9 +151,6 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
   )
 }
 
-// =====================================================================
-// MÉTODOS DE PAGO
-// =====================================================================
 export function TablaMetodosPago({ metodos }: { metodos: MetodoPagoCatalogo[] }) {
   const vacio = { codigo: "", nombre: "", es_efectivo: false, pide_referencia: true, registra_en_caja: true, activo: true }
   const [nuevo, setNuevo] = useState(vacio)
@@ -157,11 +158,26 @@ export function TablaMetodosPago({ metodos }: { metodos: MetodoPagoCatalogo[] })
   const marca = (v: boolean) => (v ? "✔" : "—")
 
   return (
-    <section className={caja}>
+    <section id="metodos-pago" className={`${caja} scroll-mt-20`}>
       <div>
-        <h2 className="text-lg font-extrabold text-gray-900">Métodos de pago</h2>
-        <p className="text-xs font-semibold text-gray-400">Lo usan: Pagos, Caja y cuotas de convenios. “Efectivo” es lo que se cuenta en el arqueo.</p>
+        <h2 className="text-lg font-extrabold text-gray-900">💳 Métodos de pago</h2>
+        <p className="text-xs font-semibold text-gray-600">Las formas en que la clínica recibe dinero. Haz clic en ✔ / — para activar o desactivar cada opción.</p>
+        <p className="text-[11px] font-bold text-blue-700">📍 Se usa en: Pagos del paciente, Caja y cuotas de convenios</p>
       </div>
+      <dl className="grid gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 md:grid-cols-3">
+        <div>
+          <dt className="font-black text-gray-800">💵 Efectivo</dt>
+          <dd>Es dinero físico: se cuenta en el arqueo al cerrar la caja.</dd>
+        </div>
+        <div>
+          <dt className="font-black text-gray-800">🔢 Pide N° operación</dt>
+          <dd>Obliga a escribir el N° de voucher, transferencia o cheque.</dd>
+        </div>
+        <div>
+          <dt className="font-black text-gray-800">💰 Entra a caja</dt>
+          <dd>Exige caja abierta y se registra solo como ingreso. Desmárcalo si el dinero no pasa por recepción (ej. Bono FONASA).</dd>
+        </div>
+      </dl>
       <div className="flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 p-3">
         <input value={nuevo.codigo} onChange={(e) => setNuevo({ ...nuevo, codigo: e.target.value })} placeholder="CÓDIGO (ej: CHEQUE)" className={`${input} w-40 uppercase`} />
         <input value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} placeholder="Nombre" className={`${input} flex-1 min-w-32`} />
@@ -186,9 +202,9 @@ export function TablaMetodosPago({ metodos }: { metodos: MetodoPagoCatalogo[] })
             <tr>
               <th className="text-left py-2">Código</th>
               <th className="text-left py-2">Nombre</th>
-              <th className="py-2">Efectivo</th>
-              <th className="py-2">Pide N°</th>
-              <th className="py-2">Entra a caja</th>
+              <th className="py-2">💵 Efectivo</th>
+              <th className="py-2">🔢 Pide N°</th>
+              <th className="py-2">💰 Entra a caja</th>
               <th className="py-2"></th>
             </tr>
           </thead>
@@ -227,19 +243,36 @@ export function TablaMetodosPago({ metodos }: { metodos: MetodoPagoCatalogo[] })
   )
 }
 
-// =====================================================================
-// PARÁMETROS DEL SISTEMA
-// =====================================================================
+const USO_PARAMETRO: Record<string, { texto: string; pendiente?: boolean }> = {
+  "clinica.nombre": { texto: "Comprobantes, presupuestos, hoja de ruta, caja y liquidaciones" },
+  "clinica.rut": { texto: "Presupuesto impreso" },
+  "clinica.direccion": { texto: "Presupuesto impreso" },
+  "clinica.telefono": { texto: "Presupuesto impreso" },
+  "seguridad.intentos_login": { texto: "Bloqueo del login", pendiente: true },
+  "seguridad.minutos_bloqueo": { texto: "Bloqueo del login", pendiente: true },
+  "seguridad.minutos_inactividad": { texto: "Cierre de sesión automático", pendiente: true },
+  "agenda.horas_recordatorio": { texto: "Recordatorios automáticos", pendiente: true },
+  "agenda.duracion_defecto": { texto: "Duración sugerida al agendar", pendiente: true },
+  "liquidaciones.porcentaje_defecto": { texto: "% sugerido al crear un dentista", pendiente: true },
+  "deudas.dias_vencimiento": { texto: "Deuda vencida del paciente", pendiente: true },
+}
+
 export function TablaParametros({ parametros }: { parametros: Parametro[] }) {
   const [valores, setValores] = useState<Record<string, string>>(Object.fromEntries(parametros.map((p) => [p.clave, p.valor])))
   const { ejecutar, pendiente, Aviso } = useAviso()
   const grupos = [...new Set(parametros.map((p) => p.grupo))]
 
   return (
-    <section className={caja}>
+    <section id="parametros" className={`${caja} scroll-mt-20`}>
       <div>
-        <h2 className="text-lg font-extrabold text-gray-900">Parámetros del sistema</h2>
-        <p className="text-xs font-semibold text-gray-400">Cada cambio queda registrado (quién, cuándo y el valor anterior).</p>
+        <h2 className="text-lg font-extrabold text-gray-900">🔧 Parámetros del sistema</h2>
+        <p className="text-xs font-semibold text-gray-600">
+          Valores generales. Cambia el valor y presiona <strong>Guardar</strong> (aparece al modificar). Entre paréntesis está el rango
+          permitido.
+        </p>
+        <p className="text-[11px] font-bold text-gray-400">
+          Cada cambio queda en el <Termino t="auditoria">registro de cambios</Termino> (quién, cuándo y el valor anterior).
+        </p>
       </div>
       {Aviso}
       <div className="grid gap-4 md:grid-cols-2">
@@ -273,6 +306,13 @@ export function TablaParametros({ parametros }: { parametros: Parametro[] }) {
                         </button>
                       )}
                     </div>
+                    {USO_PARAMETRO[p.clave] && (
+                      <p className={`text-[11px] font-bold ${USO_PARAMETRO[p.clave].pendiente ? "text-amber-700" : "text-blue-700"}`}>
+                        {USO_PARAMETRO[p.clave].pendiente ? "⏳ Se usará en: " : "📍 Se usa en: "}
+                        {USO_PARAMETRO[p.clave].texto}
+                        {USO_PARAMETRO[p.clave].pendiente ? " (pendiente de implementar)" : ""}
+                      </p>
+                    )}
                     <p className="text-[10px] text-gray-400">
                       <span className="font-mono">{p.clave}</span> · actualizado {formatearFechaHora(p.updated_at)}
                     </p>

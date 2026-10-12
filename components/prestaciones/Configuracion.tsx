@@ -12,9 +12,6 @@ import { TIPOS_ARANCEL, TIPO_ARANCEL_ETIQUETAS, type TipoArancel } from "@/types
 const inputClass =
   "w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-white text-gray-900 text-sm font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
 
-// ---------------------------------------------------------------------
-// Nuevo arancel
-// ---------------------------------------------------------------------
 export function ArancelForm() {
   const [tipo, setTipo] = useState<TipoArancel>("CONVENIO")
   const [mensaje, setMensaje] = useState<{ ok: boolean; texto: string } | null>(null)
@@ -83,9 +80,6 @@ export function BotonEstadoArancel({ id, activo }: { id: string; activo: boolean
   )
 }
 
-// ---------------------------------------------------------------------
-// Categorías y especialidades
-// ---------------------------------------------------------------------
 type Catalogo = "categoria" | "especialidad"
 
 export function NuevoItemCatalogo({ catalogo }: { catalogo: Catalogo }) {

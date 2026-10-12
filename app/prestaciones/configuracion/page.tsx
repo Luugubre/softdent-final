@@ -3,6 +3,7 @@ import { requerirPermiso } from "@/lib/auth"
 import { obtenerCatalogos } from "@/lib/prestaciones"
 import { ArancelForm, BotonEstadoCatalogo, BotonEstadoArancel, NuevoItemCatalogo } from "@/components/prestaciones/Configuracion"
 import { TIPO_ARANCEL_ETIQUETAS, type ItemCatalogo } from "@/types/prestacion"
+import { ComoFunciona, Encabezado, Termino } from "@/components/ui/Ayuda"
 
 function ListaCatalogo({
   titulo,
@@ -35,12 +36,30 @@ export default async function ConfiguracionPrestaciones() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <Link href="/prestaciones" className="text-sm font-bold text-blue-600 hover:underline">
-        ← Volver a prestaciones
-      </Link>
-      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Aranceles y categorías</h1>
+      <Encabezado
+        icono="⚙️"
+        titulo="Aranceles y categorías"
+        descripcion="Las listas de precios de la clínica y cómo se agrupan las prestaciones."
+        migas={[{ href: "/prestaciones", etiqueta: "Prestaciones" }, { etiqueta: "Aranceles y categorías" }]}
+        acciones={
+          <Link href="/prestaciones" className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-100">
+            ← Volver a prestaciones
+          </Link>
+        }
+      />
+      <ComoFunciona
+        pasos={[
+          <>Un <Termino t="arancel" /> es una lista de precios: particular (base), FONASA o de un convenio.</>,
+          <>Crea un arancel nuevo con su tipo; si tiene descuento, el precio se calcula solo sobre el arancel base.</>,
+          <>Las categorías agrupan prestaciones (ej. Operatoria, Endodoncia) y sirven para filtrar.</>,
+        ]}
+        reglas={[
+          <>El arancel <strong>base</strong> no se puede desactivar.</>,
+          <>Los aranceles de convenio se crean solos desde <strong>FONASA y convenios</strong>.</>,
+          <>El arancel que se usa en un tratamiento depende de la <Termino t="prevision" /> o convenio del paciente.</>,
+        ]}
+      />
 
-      {/* ARANCELES */}
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900">Aranceles</h2>

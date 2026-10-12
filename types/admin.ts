@@ -1,13 +1,39 @@
-// =====================================================================
-// Administración (catálogos y parámetros), Caja, FONASA y Convenios
-// =====================================================================
-
 export const CATALOGOS = {
-  especialidades: { titulo: "Especialidades", ayuda: "Profesionales y prestaciones", conDescripcion: true },
-  categorias_prestaciones: { titulo: "Categorías de prestaciones", ayuda: "Carpetas del catálogo y reportes", conDescripcion: false },
-  boxes: { titulo: "Boxes de atención", ayuda: "Espacios físicos de la agenda", conDescripcion: false },
-  previsiones: { titulo: "Previsiones", ayuda: "Ficha del paciente y aranceles", conDescripcion: false },
-  tipos_atencion: { titulo: "Tipos de atención", ayuda: "Clasificación de citas en la agenda", conDescripcion: false },
+  especialidades: {
+    titulo: "Especialidades",
+    icono: "🎓",
+    que: "Áreas de la odontología (ortodoncia, endodoncia…).",
+    ayuda: "Ficha de cada dentista y de cada prestación",
+    conDescripcion: true,
+  },
+  categorias_prestaciones: {
+    titulo: "Categorías de prestaciones",
+    icono: "🗂️",
+    que: "Grupos para ordenar el catálogo de prestaciones.",
+    ayuda: "Filtro de Prestaciones y reportes",
+    conDescripcion: false,
+  },
+  boxes: {
+    titulo: "Boxes de atención",
+    icono: "🚪",
+    que: "Salas o sillones donde se atiende.",
+    ayuda: "Agenda (al agendar) — también en Horarios y boxes",
+    conDescripcion: false,
+  },
+  previsiones: {
+    titulo: "Previsiones",
+    icono: "🩺",
+    que: "Sistemas de salud que puede tener un paciente.",
+    ayuda: "Ficha del paciente; define el arancel sugerido",
+    conDescripcion: false,
+  },
+  tipos_atencion: {
+    titulo: "Tipos de atención",
+    icono: "🏷️",
+    que: "Clasificación de la cita y su duración sugerida.",
+    ayuda: "Agenda › Agendar cita",
+    conDescripcion: false,
+  },
 } as const
 export type TablaCatalogo = keyof typeof CATALOGOS
 
@@ -18,8 +44,8 @@ export type ItemCatalogo = {
   nombre: string
   activo: boolean
   descripcion?: string | null
-  tipo?: string | null // previsiones
-  duracion_min?: number | null // tipos de atención
+  tipo?: string | null
+  duracion_min?: number | null
 }
 
 export type MetodoPagoCatalogo = {
@@ -54,7 +80,6 @@ export type RegistroAuditoria = {
   usuario: { nombre_completo: string } | null
 }
 
-// ----- Caja -----
 export type Caja = {
   id: string
   numero: number
@@ -99,7 +124,6 @@ export type MovimientoCaja = {
 
 export type ResumenMetodo = { metodo: string; nombre: string; ingresos: number; egresos: number; cantidad: number }
 
-// ----- FONASA -----
 export const ESTADO_BONO = {
   PENDIENTE: { etiqueta: "Pendiente", estilo: "bg-amber-100 text-amber-800" },
   UTILIZADO: { etiqueta: "Utilizado", estilo: "bg-emerald-100 text-emerald-800" },
@@ -124,7 +148,6 @@ export type BonoFonasa = {
   prestacion: { nombre: string; codigo_fonasa: string | null } | null
 }
 
-// ----- Convenios -----
 export const TIPOS_CONVENIO = { EMPRESA: "Empresa", SINDICATO: "Sindicato", OTRO: "Otro" } as const
 
 export type Convenio = {

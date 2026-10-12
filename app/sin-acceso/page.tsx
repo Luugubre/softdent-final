@@ -1,6 +1,5 @@
 import { cerrarSesion } from "@/app/login/actions"
 
-// Se muestra cuando alguien inició sesión pero no tiene perfil activo en el sistema
 export default function SinAcceso() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">

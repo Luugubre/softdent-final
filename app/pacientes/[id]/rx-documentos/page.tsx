@@ -23,7 +23,6 @@ export default async function RxDocumentosPage({ params }: { params: Promise<{ i
 
   const archivos = (data ?? []) as ArchivoPaciente[]
 
-  // El bucket es privado: se generan enlaces temporales (1 hora)
   const urls = new Map<string, string>()
   if (archivos.length > 0) {
     const { data: firmadas } = await supabase.storage
@@ -64,7 +63,6 @@ export default async function RxDocumentosPage({ params }: { params: Promise<{ i
                 >
                   <div className="aspect-square bg-gray-900 flex items-center justify-center overflow-hidden">
                     {esImagen && url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={url} alt={a.titulo} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
                     ) : (
                       <span className="text-4xl">📄</span>

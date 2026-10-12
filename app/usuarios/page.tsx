@@ -5,6 +5,7 @@ import { formatearRut } from "@/lib/validaciones"
 import { UsuarioForm } from "@/components/usuarios/UsuarioForm"
 import { AccionesUsuario } from "@/components/usuarios/AccionesUsuario"
 import type { Perfil } from "@/types/perfil"
+import { ComoFunciona, Encabezado, Termino } from "@/components/ui/Ayuda"
 
 export default async function UsuariosPage() {
   const yo = await requerirPermiso("usuarios.gestionar")
@@ -18,9 +19,36 @@ export default async function UsuariosPage() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
-      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Usuarios y roles</h1>
+      <Encabezado
+        icono="🔐"
+        titulo="Usuarios y roles"
+        descripcion="Quién puede entrar al sistema y qué puede hacer cada uno según su rol."
+        migas={[{ etiqueta: "Usuarios y roles" }]}
+      />
+      <ComoFunciona
+        pasos={[
+          <>Abre <strong>➕ Crear usuario</strong>, completa nombre, correo, contraseña inicial y <Termino t="rol" />.</>,
+          <>Para los dentistas agrega especialidad y registro profesional: así aparecen en la agenda y en liquidaciones.</>,
+          <>Para cambiar el rol, <strong>restablecer la contraseña</strong> o desactivar a alguien, usa los botones de su fila.</>,
+          <>Revisa al final la <strong>Matriz de permisos</strong> para ver qué puede hacer cada rol.</>,
+        ]}
+        reglas={[
+          <>Un usuario no se borra: se <strong>desactiva</strong> y ya no puede entrar.</>,
+          <>No puedes cambiar tu propio rol ni desactivarte a ti mismo.</>,
+          <>Los permisos se validan siempre en el servidor, aunque se oculte un botón.</>,
+        ]}
+      />
 
-      <UsuarioForm />
+      <details className="group rounded-2xl border border-gray-200 bg-white shadow-sm" open={usuarios.length <= 1}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
+          <span className="text-base font-extrabold text-gray-900">➕ Crear usuario</span>
+          <span className="text-xs font-bold text-blue-600 group-open:hidden">Abrir formulario ▾</span>
+          <span className="hidden text-xs font-bold text-blue-600 group-open:inline">Cerrar ▴</span>
+        </summary>
+        <div className="border-t border-gray-100 p-2">
+          <UsuarioForm />
+        </div>
+      </details>
 
       {error && (
         <p className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-800">
@@ -28,7 +56,6 @@ export default async function UsuariosPage() {
         </p>
       )}
 
-      {/* LISTADO */}
       <div className="w-full bg-white shadow-sm rounded-2xl overflow-x-auto border border-gray-200">
         <table className="w-full divide-y divide-gray-200 text-left">
           <thead className="bg-gray-100">
@@ -70,7 +97,6 @@ export default async function UsuariosPage() {
         </table>
       </div>
 
-      {/* MATRIZ DE PERMISOS */}
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
         <h2 className="text-xl font-extrabold text-gray-900">Matriz de permisos</h2>
 

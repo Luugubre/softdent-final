@@ -1,13 +1,3 @@
--- =====================================================================
--- Odontograma (FDI) + Plan de tratamiento + Avances (25/50/75/100%)
--- Pegar en Supabase → SQL Editor → Run (después de 01 a 05)
--- =====================================================================
-
-
--- =====================================================================
--- 0. VALIDACIONES COMUNES
--- =====================================================================
--- Numeración FDI: permanentes 11-18, 21-28, 31-38, 41-48 · temporales 51-55, 61-65, 71-75, 81-85
 CREATE OR REPLACE FUNCTION public.pieza_fdi_valida(p integer)
 RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
   SELECT p IS NOT NULL AND (
@@ -16,12 +6,6 @@ RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
   );
 $$;
 
--- Caras: O (oclusal/incisal), M (mesial), D (distal), V (vestibular), L (lingual/palatino)
-
-
--- =====================================================================
--- 1. HALLAZGOS DEL ODONTOGRAMA (preexistencias, lesiones, ausencias)
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.odontograma_hallazgos (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   paciente_id uuid NOT NULL REFERENCES public.pacientes(id) ON DELETE RESTRICT,
@@ -45,11 +29,9 @@ CREATE TABLE IF NOT EXISTS public.odontograma_hallazgos (
 );
 
 CREATE INDEX IF NOT EXISTS hallazgos_paciente_idx ON public.odontograma_hallazgos (paciente_id, pieza);
--- Una pieza solo puede estar "ausente" una vez a la vez
 CREATE UNIQUE INDEX IF NOT EXISTS hallazgos_un_ausente
   ON public.odontograma_hallazgos (paciente_id, pieza) WHERE tipo = 'AUSENTE' AND vigente;
 
--- Regla: una pieza ausente no puede tener caries, restauraciones, etc.
 CREATE OR REPLACE FUNCTION public.hallazgos_validar()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -67,7 +49,6 @@ DROP TRIGGER IF EXISTS hallazgos_validar_trg ON public.odontograma_hallazgos;
 CREATE TRIGGER hallazgos_validar_trg BEFORE INSERT ON public.odontograma_hallazgos
   FOR EACH ROW EXECUTE FUNCTION public.hallazgos_validar();
 
--- Historial: no se borra ni se reescribe, solo se da de baja
 CREATE OR REPLACE FUNCTION public.hallazgos_proteger()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -89,7 +70,6 @@ CREATE TRIGGER hallazgos_proteger_trg BEFORE UPDATE OR DELETE ON public.odontogr
 
 ALTER TABLE public.odontograma_hallazgos ENABLE ROW LEVEL SECURITY;
 
--- Al historial del paciente
 CREATE OR REPLACE FUNCTION public.historial_hallazgos_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -113,7 +93,6 @@ DROP TRIGGER IF EXISTS historial_hallazgos ON public.odontograma_hallazgos;
 CREATE TRIGGER historial_hallazgos AFTER INSERT ON public.odontograma_hallazgos
   FOR EACH ROW EXECUTE FUNCTION public.historial_hallazgos_trg();
 
--- Marcar ausente: da de baja lo anterior de la pieza y registra la ausencia
 CREATE OR REPLACE FUNCTION public.marcar_pieza_ausente(p_paciente uuid, p_pieza integer, p_usuario uuid)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
@@ -132,7 +111,6 @@ BEGIN
 END;
 $$;
 
--- Marcar sano: da de baja todos los hallazgos vigentes de la pieza
 CREATE OR REPLACE FUNCTION public.marcar_pieza_sana(p_paciente uuid, p_pieza integer, p_usuario uuid)
 RETURNS void LANGUAGE plpgsql AS $$
 DECLARE
@@ -153,10 +131,6 @@ BEGIN
 END;
 $$;
 
-
--- =====================================================================
--- 2. PLAN DE TRATAMIENTO (presupuesto) Y SUS PRESTACIONES
--- =====================================================================
 CREATE TABLE IF NOT EXISTS public.presupuestos (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   paciente_id uuid NOT NULL REFERENCES public.pacientes(id) ON DELETE RESTRICT,
@@ -167,7 +141,6 @@ CREATE TABLE IF NOT EXISTS public.presupuestos (
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now()
 );
--- Un solo plan activo por paciente
 CREATE UNIQUE INDEX IF NOT EXISTS presupuestos_un_activo ON public.presupuestos (paciente_id) WHERE estado = 'ACTIVO';
 
 DROP TRIGGER IF EXISTS presupuestos_set_updated_at ON public.presupuestos;
@@ -181,11 +154,11 @@ CREATE TABLE IF NOT EXISTS public.presupuesto_items (
   prestacion_id     uuid NOT NULL REFERENCES public.prestaciones(id) ON DELETE RESTRICT,
   pieza             integer,
   caras             text[] NOT NULL DEFAULT '{}',
-  precio            integer NOT NULL CHECK (precio > 0),       -- se congela al agregar
+  precio            integer NOT NULL CHECK (precio > 0),
   progreso          integer NOT NULL DEFAULT 0,
   estado            text NOT NULL DEFAULT 'PENDIENTE',
-  monto_habilitado  integer NOT NULL DEFAULT 0,               -- lo que ya se puede cobrar
-  abonado           integer NOT NULL DEFAULT 0,               -- lo pagado (módulo Pagos)
+  monto_habilitado  integer NOT NULL DEFAULT 0,
+  abonado           integer NOT NULL DEFAULT 0,
   nota              text,
   profesional_id    uuid REFERENCES public.perfiles(id) ON DELETE SET NULL,
   creado_por        uuid REFERENCES public.perfiles(id) ON DELETE SET NULL,
@@ -214,7 +187,6 @@ DROP TRIGGER IF EXISTS items_no_borrar_trg ON public.presupuesto_items;
 CREATE TRIGGER items_no_borrar_trg BEFORE DELETE ON public.presupuesto_items
   FOR EACH ROW EXECUTE FUNCTION public.items_no_borrar();
 
--- Avances 25/50/75/100: cada uno habilita su parte del precio para cobrar
 CREATE TABLE IF NOT EXISTS public.item_avances (
   id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   item_id           uuid NOT NULL REFERENCES public.presupuesto_items(id) ON DELETE RESTRICT,
@@ -235,11 +207,6 @@ ALTER TABLE public.presupuestos      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.presupuesto_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.item_avances      ENABLE ROW LEVEL SECURITY;
 
-
--- ---------------------------------------------------------------------
--- Arancel que corresponde al paciente: FONASA si su previsión es FONASA,
--- si no, el arancel base.
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.arancel_paciente(p_paciente uuid)
 RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT COALESCE(
@@ -251,10 +218,6 @@ RETURNS uuid LANGUAGE sql STABLE AS $$
   );
 $$;
 
-
--- ---------------------------------------------------------------------
--- Agregar una prestación al plan del paciente (crea el plan si no existe)
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.agregar_prestacion_paciente(
   p_paciente   uuid,
   p_prestacion uuid,
@@ -307,12 +270,6 @@ BEGIN
 END;
 $$;
 
-
--- ---------------------------------------------------------------------
--- Evolucionar una prestación: 25 / 50 / 75 / 100 %
--- · habilita para cobro la parte proporcional del precio
--- · crea automáticamente la evolución clínica
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.evolucionar_item(
   p_item     uuid,
   p_progreso integer,
@@ -343,7 +300,6 @@ BEGIN
 
   SELECT * INTO v_prestacion FROM public.prestaciones WHERE id = it.prestacion_id;
 
-  -- Monto proporcional (el último tramo cuadra exacto con el precio)
   v_monto := round(it.precio * p_progreso / 100.0)::int - round(it.precio * it.progreso / 100.0)::int;
 
   v_texto := v_prestacion.nombre
@@ -371,10 +327,6 @@ BEGIN
 END;
 $$;
 
-
--- ---------------------------------------------------------------------
--- Historial: prestaciones agregadas / anuladas
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.historial_items_trg()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE

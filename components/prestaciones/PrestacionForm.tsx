@@ -39,7 +39,6 @@ type Props = {
   aranceles: Arancel[]
   categorias: ItemCatalogo[]
   especialidades: ItemCatalogo[]
-  /** Si viene, el formulario edita esta prestación */
   prestacion?: Prestacion
   onCerrar?: () => void
 }
@@ -157,7 +156,6 @@ export function PrestacionForm({ aranceles, categorias, especialidades, prestaci
         </Campo>
         <div className="md:col-span-1" />
 
-        {/* Ícono que se dibuja en el odontograma */}
         <div className="md:col-span-4">
           <p className={labelClass}>Ícono en el odontograma</p>
           <input type="hidden" name="icono" value={icono} />
@@ -195,7 +193,6 @@ export function PrestacionForm({ aranceles, categorias, especialidades, prestaci
         </div>
       </div>
 
-      {/* Precios iniciales (solo al crear; después se cambian en la ficha de la prestación) */}
       {!editando && (
         <section className="space-y-3 rounded-2xl bg-gray-50 border border-gray-200 p-4">
           <h3 className="text-sm font-black uppercase tracking-wider text-blue-700">Precios iniciales (vigentes desde hoy)</h3>

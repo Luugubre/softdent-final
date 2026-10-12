@@ -27,7 +27,6 @@ export async function registrarPago(
 
   const monto = Math.round(Number(datos.monto))
   if (!Number.isFinite(monto) || monto <= 0) return { ok: false, mensaje: "Ingresa un monto mayor a cero." }
-  // El método, si pide N° de operación y si exige caja abierta lo valida la BD
   if (!/^[A-Z_]{3,30}$/.test(datos.metodo)) return { ok: false, mensaje: "Selecciona el método de pago." }
 
   const detalle = datos.detalle
@@ -59,7 +58,6 @@ export async function anularPago(pacienteId: string, pagoId: string, motivo: str
   const usuario = await autorizar("pagos.anular")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
 
-  // El pago debe ser de este paciente
   const { data: pago } = await getSupabase().from("pagos").select("id").eq("id", pagoId).eq("paciente_id", pacienteId).maybeSingle()
   if (!pago) return { ok: false, mensaje: "Pago no encontrado." }
 

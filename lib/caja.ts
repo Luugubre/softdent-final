@@ -46,7 +46,6 @@ export async function resumenCaja(desde: string, hasta: string): Promise<Resumen
   return ((data ?? []) as ResumenMetodo[]).map((r) => ({ ...r, ingresos: Number(r.ingresos), egresos: Number(r.egresos), cantidad: Number(r.cantidad) }))
 }
 
-/** Totales de una caja agrupados por método (para el cierre y el detalle) */
 export function totalesPorMetodo(movs: MovimientoCaja[]) {
   const mapa = new Map<string, { ingresos: number; egresos: number }>()
   for (const m of movs) {

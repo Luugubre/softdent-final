@@ -5,6 +5,8 @@ import { obtenerMetodosPago } from "@/lib/catalogos"
 import { fechaValida, hoyEnChile, primeroDelMes } from "@/lib/fechas-agenda"
 import { formatearFechaHora, formatearPesos } from "@/lib/formato"
 import { GestionCaja } from "@/components/caja/GestionCaja"
+import { ComoFunciona, Encabezado, SeConfigura, Termino } from "@/components/ui/Ayuda"
+import { puede } from "@/lib/permisos"
 
 export default async function CajaPage({ searchParams }: { searchParams: Promise<{ desde?: string; hasta?: string }> }) {
   const usuario = await requerirPermiso("caja.gestionar")
@@ -27,11 +29,30 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-8">
-      <div>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Caja</h1>
-        <p className="text-sm font-medium text-gray-500">
-          Apertura, ingresos y egresos, arqueo y cierre. Los pagos de pacientes entran solos a la caja abierta; sin caja abierta no se reciben pagos (salvo los métodos marcados “no entra a caja”, como Bono FONASA).
-        </p>
+      <div className="space-y-3">
+        <Encabezado
+          icono="💰"
+          titulo="Caja"
+          descripcion="El dinero que entra y sale durante el turno: apertura, movimientos, arqueo y cierre."
+          migas={[{ etiqueta: "Caja" }]}
+        />
+        <ComoFunciona
+          pasos={[
+            <>Al comenzar el turno, <strong>abre la caja</strong> con el sencillo (<Termino t="monto_inicial" />).</>,
+            <>Los pagos de pacientes, cuotas de convenio y liquidaciones en efectivo <strong>entran solos</strong> como movimientos.</>,
+            <>Gastos menores o retiros se registran en <strong>Registrar movimiento manual</strong>.</>,
+            <>Al terminar, cuenta el efectivo (<Termino t="arqueo" />), escribe el monto y <strong>cierra la caja</strong>.</>,
+          ]}
+          reglas={[
+            <>Solo puede haber <strong>una caja abierta</strong> a la vez.</>,
+            <>Sin caja abierta no se reciben pagos de métodos que <Termino t="entra_caja">entran a caja</Termino>.</>,
+            <>Si el contado no calza con el <Termino t="esperado">esperado</Termino>, la diferencia se justifica.</>,
+            <>Una caja cerrada <strong>no se modifica</strong>: los errores se corrigen con un <Termino t="ajuste" /> en la caja abierta.</>,
+          ]}
+        />
+        {puede(usuario.rol, "administracion.gestionar") && (
+          <SeConfigura items={[{ que: "Métodos de pago y si entran a caja", etiqueta: "Administración › Métodos de pago", href: "/administracion#metodos-pago" }]} />
+        )}
       </div>
 
       <GestionCaja
@@ -42,10 +63,12 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
         usuario={usuario.nombre_completo}
       />
 
-      {/* RESUMEN POR PERÍODO */}
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
         <form className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-lg font-extrabold text-gray-900">Resumen por período</h2>
+          <div>
+            <h2 className="text-lg font-extrabold text-gray-900">Resumen por período</h2>
+            <p className="text-xs font-semibold text-gray-500">Cuánto entró y salió por cada método de pago entre dos fechas (todas las cajas).</p>
+          </div>
           <div className="flex items-end gap-2">
             <label className="text-xs font-bold text-gray-500">
               Desde
@@ -95,9 +118,11 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
         )}
       </section>
 
-      {/* HISTORIAL DE CAJAS */}
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
-        <h2 className="text-lg font-extrabold text-gray-900">Cajas cerradas</h2>
+        <div>
+          <h2 className="text-lg font-extrabold text-gray-900">Cajas cerradas</h2>
+          <p className="text-xs font-semibold text-gray-500">Historial de turnos. Haz clic en el N° para ver e imprimir el detalle de una caja.</p>
+        </div>
         {cerradas.length === 0 ? (
           <p className="text-sm font-semibold text-gray-400">Aún no hay cajas cerradas.</p>
         ) : (

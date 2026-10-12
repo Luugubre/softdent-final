@@ -29,9 +29,6 @@ function useAccion() {
   return { ejecutar, pendiente, Aviso }
 }
 
-// =====================================================================
-// CONVENIOS Y BENEFICIARIOS
-// =====================================================================
 export function GestionConvenios({ convenios, hoy, puedeConfigurar }: { convenios: Convenio[]; hoy: string; puedeConfigurar: boolean }) {
   const vacio = { nombre: "", institucion: "", tipo: "EMPRESA", descuento: "10", inicio: hoy, fin: "", rut: "", contacto: "", condiciones: "" }
   const [nuevo, setNuevo] = useState(vacio)
@@ -152,7 +149,6 @@ function TarjetaConvenio({
 
       {abierto && (
         <div className="border-t border-gray-100 p-5 grid gap-5 lg:grid-cols-2">
-          {/* Beneficiarios */}
           <div className="space-y-3">
             <h3 className="font-extrabold text-gray-900">Beneficiarios</h3>
             {vigente ? (
@@ -191,7 +187,6 @@ function TarjetaConvenio({
             </ul>
           </div>
 
-          {/* Datos */}
           <div className="space-y-3">
             <h3 className="font-extrabold text-gray-900">Condiciones</h3>
             {c.contacto && <p className="text-sm text-gray-600">Contacto: {c.contacto}</p>}
@@ -233,9 +228,6 @@ function TarjetaConvenio({
   )
 }
 
-// =====================================================================
-// CONTRATOS EN CUOTAS
-// =====================================================================
 export function GestionCuotas({
   contratos,
   convenios,

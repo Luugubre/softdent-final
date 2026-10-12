@@ -1,5 +1,3 @@
-// Los métodos de pago vienen del catálogo de Administración (tabla metodos_pago).
-// Este mapa solo da íconos y nombres de respaldo para mostrarlos.
 export type MetodoPago = string
 
 const ICONOS: Record<string, string> = { EFECTIVO: "💵", DEBITO: "💳", CREDITO: "💳", TRANSFERENCIA: "🏦", BONO_FONASA: "🏥", CHEQUE: "🧾" }

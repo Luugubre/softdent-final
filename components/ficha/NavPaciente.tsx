@@ -3,19 +3,17 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-type Item = { ruta: string; etiqueta: string; disponible: boolean; clinico?: boolean }
+type Item = { ruta: string; etiqueta: string; disponible: boolean; clinico?: boolean; ayuda?: string }
 
-// Pestañas principales
 const SECCIONES: Item[] = [
-  { ruta: "", etiqueta: "Ficha", disponible: true },
-  { ruta: "/datos", etiqueta: "Perfil", disponible: true },
-  { ruta: "/tratamientos", etiqueta: "Tratamientos", disponible: true },
-  { ruta: "/pagos", etiqueta: "Pagos", disponible: true },
-  { ruta: "/odontograma", etiqueta: "Odontograma", disponible: true, clinico: true },
+  { ruta: "", etiqueta: "Ficha", disponible: true, ayuda: "Resumen del paciente, evoluciones, antecedentes médicos y RX." },
+  { ruta: "/datos", etiqueta: "Perfil", disponible: true, ayuda: "Datos personales, contacto, previsión y grupo familiar. Aquí se editan." },
+  { ruta: "/tratamientos", etiqueta: "Tratamientos", disponible: true, ayuda: "Planes de tratamiento con su arancel, prestaciones, avance y saldo." },
+  { ruta: "/pagos", etiqueta: "Pagos", disponible: true, ayuda: "Registrar pagos, ver la deuda y el historial de comprobantes." },
+  { ruta: "/odontograma", etiqueta: "Odontograma", disponible: true, clinico: true, ayuda: "Hallazgos por pieza y cara dental; desde aquí se planifican prestaciones." },
   { ruta: "/periodontograma", etiqueta: "Periodontograma", disponible: false, clinico: true },
 ]
 
-// Sub-pestañas dentro de "Ficha"
 const FICHA: Item[] = [
   { ruta: "", etiqueta: "Resumen", disponible: true },
   { ruta: "/evoluciones", etiqueta: "Evoluciones", disponible: true, clinico: true },
@@ -28,17 +26,15 @@ const FICHA: Item[] = [
 
 export function NavPaciente({ pacienteId, verClinico }: { pacienteId: string; verClinico: boolean }) {
   const pathname = usePathname()
-  // Los roles sin acceso clínico no ven esas pestañas
   const secciones = SECCIONES.filter((s) => verClinico || !s.clinico)
   const ficha = FICHA.filter((f) => verClinico || !f.clinico)
   const base = `/pacientes/${pacienteId}`
-  const subruta = pathname.slice(base.length) // "", "/evoluciones", "/datos"...
+  const subruta = pathname.slice(base.length)
 
   const enFicha = FICHA.some((f) => f.ruta === subruta)
 
   return (
     <div className="space-y-3">
-      {/* Pestañas principales */}
       <nav className="flex gap-1 overflow-x-auto bg-white border border-gray-200 rounded-2xl p-1 shadow-sm">
         {secciones.map((s) => {
           const activa = s.ruta === "" ? enFicha : subruta === s.ruta || subruta.startsWith(s.ruta + "/")
@@ -57,6 +53,7 @@ export function NavPaciente({ pacienteId, verClinico }: { pacienteId: string; ve
             <Link
               key={s.ruta}
               href={`${base}${s.ruta}`}
+              title={s.ayuda}
               className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${
                 activa ? "bg-blue-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100"
               }`}
@@ -66,8 +63,11 @@ export function NavPaciente({ pacienteId, verClinico }: { pacienteId: string; ve
           )
         })}
       </nav>
+      {(() => {
+        const actual = secciones.find((s) => (s.ruta === "" ? enFicha : subruta === s.ruta || subruta.startsWith(s.ruta + "/")))
+        return actual?.ayuda ? <p className="px-1 text-xs font-semibold text-gray-500">ℹ️ {actual.ayuda}</p> : null
+      })()}
 
-      {/* Sub-pestañas de la ficha */}
       {enFicha && (
         <nav className="flex gap-1 overflow-x-auto border-b border-gray-200">
           {ficha.map((f) =>

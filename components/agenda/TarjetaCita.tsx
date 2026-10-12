@@ -36,7 +36,6 @@ function colorAvatar(nombre: string) {
 }
 const iniciales = (c: CitaAgenda) => `${c.paciente_nombres.charAt(0)}${c.paciente_apellidos.charAt(0)}`.toUpperCase()
 
-/** Minutos que lleva esperando (solo EN_ESPERA) y nivel del semáforo */
 function semaforo(c: CitaAgenda, ahoraMs: number) {
   if (c.estado !== "EN_ESPERA" || !c.hora_llegada) return null
   const min = Math.max(0, Math.floor((ahoraMs - new Date(c.hora_llegada).getTime()) / 60000))
@@ -56,9 +55,6 @@ const estiloFaltas = (n: number) =>
 
 const badge = "text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider inline-flex items-center gap-1"
 
-// =====================================================================
-// SELECTOR DE ESTADO (solo muestra los cambios permitidos)
-// =====================================================================
 function SelectorEstado({ cita, habilitado, onCambiar, compacto }: { cita: CitaAgenda; habilitado: boolean; onCambiar: (e: EstadoCita) => void; compacto?: boolean }) {
   const estilo = ESTADO_CITA[cita.estado]
   const opciones = habilitado ? siguientesEstados(cita.estado) : []
@@ -95,9 +91,6 @@ function SelectorEstado({ cita, habilitado, onCambiar, compacto }: { cita: CitaA
   )
 }
 
-// =====================================================================
-// FINANZAS DEL PACIENTE
-// =====================================================================
 function ChipFinanzas({ cita, info }: { cita: CitaAgenda; info?: InfoPaciente }) {
   if (!info || info.totalTratamientos === 0) {
     return <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider">Sin saldo</span>
@@ -123,9 +116,6 @@ function ChipFinanzas({ cita, info }: { cita: CitaAgenda; info?: InfoPaciente })
   return <span className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider">Saldado</span>
 }
 
-// =====================================================================
-// TARJETA GRANDE (vista día)
-// =====================================================================
 export function TarjetaCitaDia({ cita: c, info, ahoraMs, puedeGestionar, verFinanzas, acciones }: Comunes) {
   const sem = semaforo(c, ahoraMs)
   const estilo = ESTADO_CITA[c.estado]
@@ -135,7 +125,6 @@ export function TarjetaCitaDia({ cita: c, info, ahoraMs, puedeGestionar, verFina
 
   return (
     <div className="relative mb-5 group">
-      {/* Hora (a la izquierda de la línea de tiempo) */}
       <div className="md:absolute md:-left-[140px] md:top-4 md:w-[80px] md:text-right flex md:block items-baseline gap-2 mb-1 md:mb-0 px-1 md:px-0">
         <p className="text-xl font-black text-gray-900 leading-none tracking-tight">{c.hora_inicio}</p>
         <p className="text-xs font-semibold text-gray-400 md:mt-1">{c.hora_fin}</p>
@@ -274,9 +263,6 @@ export function TarjetaCitaDia({ cita: c, info, ahoraMs, puedeGestionar, verFina
   )
 }
 
-// =====================================================================
-// TARJETA COMPACTA (vista semana)
-// =====================================================================
 export function TarjetaCitaSemana({ cita: c, info, ahoraMs, puedeGestionar, acciones }: Comunes) {
   const sem = semaforo(c, ahoraMs)
   const color = colorAvatar(c.paciente_nombre)

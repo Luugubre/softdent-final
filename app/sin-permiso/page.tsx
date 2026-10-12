@@ -9,8 +9,8 @@ export default function SinPermiso() {
         <p className="text-sm font-medium text-gray-600">
           Tu rol no tiene acceso a esta sección. Si crees que es un error, contacta al administrador.
         </p>
-        <Link href="/pacientes" className="inline-block text-sm font-bold text-blue-600 hover:underline">
-          ← Volver a pacientes
+        <Link href="/" className="inline-block text-sm font-bold text-blue-600 hover:underline">
+          ← Volver al inicio
         </Link>
       </div>
     </div>

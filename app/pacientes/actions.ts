@@ -13,7 +13,6 @@ export type EstadoFormulario = {
   pacienteId?: string
 }
 
-/** FormData → objeto, descartando campos vacíos */
 function leerFormulario(formData: FormData) {
   const datos: Record<string, unknown> = {}
   for (const [clave, valor] of formData.entries()) {
@@ -24,10 +23,6 @@ function leerFormulario(formData: FormData) {
   return datos
 }
 
-/**
- * Arma la fila a guardar. Los campos vacíos van como null para que,
- * al editar, borrar un dato realmente lo borre de la BD.
- */
 function prepararFila(d: PacienteFormData) {
   const esMenor = (calcularEdad(d.fecha_nacimiento) ?? 99) < 18
   return {
@@ -50,14 +45,12 @@ function prepararFila(d: PacienteFormData) {
     empleador: d.empleador ?? null,
     referencia: d.referencia ?? null,
     observaciones: d.observaciones ?? null,
-    // El apoderado solo se guarda si es menor de edad
     apoderado_nombre: esMenor ? d.apoderado_nombre ?? null : null,
     apoderado_rut: esMenor && d.apoderado_rut ? normalizarRut(d.apoderado_rut) : null,
     apoderado_telefono: esMenor ? d.apoderado_telefono ?? null : null,
   }
 }
 
-/** Busca si el RUT ya pertenece a otro paciente */
 async function rutDuplicado(rut: string, excluirId?: string) {
   let consulta = getSupabase().from("pacientes").select("nombres, apellidos").eq("rut", rut)
   if (excluirId) consulta = consulta.neq("id", excluirId)
@@ -65,9 +58,6 @@ async function rutDuplicado(rut: string, excluirId?: string) {
   return data
 }
 
-// ---------------------------------------------------------------------
-// Crear paciente
-// ---------------------------------------------------------------------
 export async function crearPaciente(formData: FormData): Promise<EstadoFormulario> {
   const usuario = await autorizar("pacientes.editar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -106,9 +96,6 @@ export async function crearPaciente(formData: FormData): Promise<EstadoFormulari
   return { ok: true, mensaje: "Paciente registrado correctamente.", pacienteId: data.id }
 }
 
-// ---------------------------------------------------------------------
-// Editar paciente
-// ---------------------------------------------------------------------
 export async function actualizarPaciente(pacienteId: string, formData: FormData): Promise<EstadoFormulario> {
   const usuario = await autorizar("pacientes.editar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -147,9 +134,6 @@ export async function actualizarPaciente(pacienteId: string, formData: FormData)
   return { ok: true, mensaje: "Datos actualizados correctamente.", pacienteId }
 }
 
-// ---------------------------------------------------------------------
-// Activar / desactivar paciente
-// ---------------------------------------------------------------------
 export async function cambiarEstadoPaciente(pacienteId: string, motivo?: string) {
   const usuario = await autorizar("pacientes.deshabilitar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }

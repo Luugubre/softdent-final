@@ -1,10 +1,3 @@
-// =====================================================================
-// Roles y permisos del sistema.
-// Este archivo NO toca la base de datos, así que se puede usar tanto en
-// el servidor como en componentes "use client" (para ocultar botones).
-// La validación real siempre se hace de nuevo en el servidor.
-// =====================================================================
-
 export const ROLES = ["ADMINISTRADOR", "DENTISTA", "ASISTENTE", "RECEPCIONISTA"] as const
 export type Rol = (typeof ROLES)[number]
 
@@ -31,46 +24,39 @@ export const ROL_COLOR: Record<Rol, string> = {
 
 const TODOS: readonly Rol[] = ROLES
 
-/** Matriz de permisos: qué roles pueden hacer cada acción */
 const PERMISOS = {
-  // Pacientes
   "pacientes.ver": TODOS,
   "pacientes.editar": ["ADMINISTRADOR", "DENTISTA", "RECEPCIONISTA"],
   "pacientes.deshabilitar": ["ADMINISTRADOR", "RECEPCIONISTA"],
 
-  // Información clínica (antecedentes, evoluciones, RX, historial clínico)
   "clinico.ver": ["ADMINISTRADOR", "DENTISTA", "ASISTENTE"],
   "antecedentes.registrar": ["ADMINISTRADOR", "DENTISTA", "ASISTENTE"],
   "evoluciones.crear": ["ADMINISTRADOR", "DENTISTA"],
   "archivos.subir": ["ADMINISTRADOR", "DENTISTA", "ASISTENTE"],
 
-  // Odontograma y plan de tratamiento
   "odontograma.editar": ["ADMINISTRADOR", "DENTISTA"],
   "tratamientos.evolucionar": ["ADMINISTRADOR", "DENTISTA"],
 
-  // Prestaciones y aranceles
   "prestaciones.ver": TODOS,
   "prestaciones.gestionar": ["ADMINISTRADOR"],
 
-  // Próximos módulos (ya definidos para usarlos cuando se construyan)
   "agenda.ver": TODOS,
   "agenda.gestionar": ["ADMINISTRADOR", "RECEPCIONISTA", "DENTISTA"],
   "agenda.sobrecupo": ["ADMINISTRADOR", "DENTISTA"],
-  "agenda.ver_todas": ["ADMINISTRADOR", "RECEPCIONISTA", "ASISTENTE"], // el dentista ve solo su agenda
+  "agenda.ver_todas": ["ADMINISTRADOR", "RECEPCIONISTA", "ASISTENTE"],
   "agenda.configurar": ["ADMINISTRADOR"],
   "presupuestos.gestionar": ["ADMINISTRADOR", "DENTISTA"],
   "pagos.ver": TODOS,
   "pagos.registrar": ["ADMINISTRADOR", "RECEPCIONISTA"],
   "pagos.anular": ["ADMINISTRADOR"],
   "caja.gestionar": ["ADMINISTRADOR", "RECEPCIONISTA"],
-  "fonasa.gestionar": ["ADMINISTRADOR", "RECEPCIONISTA"], // bonos, beneficiarios y cuotas
-  "convenios.configurar": ["ADMINISTRADOR"], // crear y editar convenios
-  "administracion.gestionar": ["ADMINISTRADOR"], // catálogos y parámetros
-  "liquidaciones.ver": ["ADMINISTRADOR", "DENTISTA"], // el dentista solo ve las suyas
+  "fonasa.gestionar": ["ADMINISTRADOR", "RECEPCIONISTA"],
+  "convenios.configurar": ["ADMINISTRADOR"],
+  "administracion.gestionar": ["ADMINISTRADOR"],
+  "liquidaciones.ver": ["ADMINISTRADOR", "DENTISTA"],
   "liquidaciones.gestionar": ["ADMINISTRADOR"],
   "reportes.ver": ["ADMINISTRADOR"],
 
-  // Administración
   "usuarios.gestionar": ["ADMINISTRADOR"],
 } satisfies Record<string, readonly Rol[]>
 
@@ -109,7 +95,6 @@ export const PERMISO_ETIQUETAS: Record<Permiso, string> = {
 
 export const LISTA_PERMISOS = Object.keys(PERMISOS) as Permiso[]
 
-/** ¿El rol tiene este permiso? */
 export function puede(rol: Rol | null | undefined, permiso: Permiso): boolean {
   if (!rol) return false
   return (PERMISOS[permiso] as readonly Rol[]).includes(rol)

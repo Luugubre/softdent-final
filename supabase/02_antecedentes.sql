@@ -1,15 +1,10 @@
--- =====================================================================
--- Antecedentes médicos del paciente · Supabase
--- Pegar en Supabase → SQL Editor → Run (después de 01_pacientes.sql)
--- =====================================================================
-
 CREATE TABLE IF NOT EXISTS public.antecedentes (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   paciente_id    uuid NOT NULL REFERENCES public.pacientes(id) ON DELETE RESTRICT,
   categoria      text NOT NULL,
   contenido      text NOT NULL,
   vigente        boolean NOT NULL DEFAULT true,
-  profesional_id uuid,          -- se conectará a profesionales cuando exista el login
+  profesional_id uuid,
   fecha_registro timestamptz NOT NULL DEFAULT now(),
   fecha_baja     timestamptz,
   motivo_baja    text,
@@ -24,10 +19,6 @@ CREATE TABLE IF NOT EXISTS public.antecedentes (
 
 CREATE INDEX IF NOT EXISTS antecedentes_paciente_idx ON public.antecedentes (paciente_id, fecha_registro DESC);
 
--- ---------------------------------------------------------------------
--- Trazabilidad: un antecedente NO se borra ni se reescribe.
--- Solo se puede "dar de baja" (vigente = false) indicando fecha y motivo.
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.antecedentes_proteger()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -57,10 +48,6 @@ CREATE TRIGGER antecedentes_proteger_trg
 
 ALTER TABLE public.antecedentes ENABLE ROW LEVEL SECURITY;
 
--- ---------------------------------------------------------------------
--- Grupo familiar: un paciente que es carga no puede tener cargas propias
--- (evita cadenas titular → carga → carga).
--- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.pacientes_validar_titular()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
