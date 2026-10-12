@@ -63,6 +63,9 @@ const PERMISOS = {
   "pagos.registrar": ["ADMINISTRADOR", "RECEPCIONISTA"],
   "pagos.anular": ["ADMINISTRADOR"],
   "caja.gestionar": ["ADMINISTRADOR", "RECEPCIONISTA"],
+  "fonasa.gestionar": ["ADMINISTRADOR", "RECEPCIONISTA"], // bonos, beneficiarios y cuotas
+  "convenios.configurar": ["ADMINISTRADOR"], // crear y editar convenios
+  "administracion.gestionar": ["ADMINISTRADOR"], // catálogos y parámetros
   "liquidaciones.ver": ["ADMINISTRADOR", "DENTISTA"], // el dentista solo ve las suyas
   "liquidaciones.gestionar": ["ADMINISTRADOR"],
   "reportes.ver": ["ADMINISTRADOR"],
@@ -94,7 +97,10 @@ export const PERMISO_ETIQUETAS: Record<Permiso, string> = {
   "pagos.ver": "Ver pagos y deuda del paciente",
   "pagos.registrar": "Registrar pagos",
   "pagos.anular": "Anular pagos",
-  "caja.gestionar": "Abrir / cerrar caja",
+  "caja.gestionar": "Caja: abrir, movimientos, arqueo y cierre",
+  "fonasa.gestionar": "Bonos FONASA, beneficiarios y cuotas de convenios",
+  "convenios.configurar": "Crear y editar convenios",
+  "administracion.gestionar": "Catálogos, métodos de pago y parámetros del sistema",
   "liquidaciones.ver": "Ver liquidaciones (dentista: solo las suyas)",
   "liquidaciones.gestionar": "Generar / pagar liquidaciones y definir %",
   "reportes.ver": "Reportes",

@@ -5,6 +5,8 @@ import { obtenerItems, obtenerTratamientos } from "@/lib/tratamientos"
 import { cuentaCorriente, obtenerPagos, resumenDeuda } from "@/lib/pagos"
 import { formatearFechaHora, formatearPesos } from "@/lib/formato"
 import { RegistrarPago, type ItemCobrable } from "@/components/pagos/RegistrarPago"
+import { obtenerMetodosPago } from "@/lib/catalogos"
+import { obtenerCajaAbierta } from "@/lib/caja"
 import { HistorialPagos } from "@/components/pagos/HistorialPagos"
 import type { ResumenTratamiento } from "@/types/tratamiento"
 
@@ -31,10 +33,12 @@ export default async function PagosPage({ params }: { params: Promise<{ id: stri
   const usuario = await requerirPermiso("pagos.ver")
   const { id } = await params
 
-  const [{ items, avances }, tratamientos, pagos] = await Promise.all([
+  const [{ items, avances }, tratamientos, pagos, metodos, caja] = await Promise.all([
     obtenerItems(id),
     obtenerTratamientos(id),
     obtenerPagos(id),
+    obtenerMetodosPago(true),
+    obtenerCajaAbierta(),
   ])
 
   const resumen = resumenDeuda(items)
@@ -69,7 +73,15 @@ export default async function PagosPage({ params }: { params: Promise<{ id: stri
         <Tarjeta titulo="Abono anticipado" valor={resumen.anticipos} nota="Pagado antes de realizarse" estilo="bg-white border-gray-200 text-gray-900" />
       </div>
 
-      {puede(usuario.rol, "pagos.registrar") && <RegistrarPago pacienteId={id} items={cobrables} />}
+      {puede(usuario.rol, "pagos.registrar") && (
+        <RegistrarPago
+          pacienteId={id}
+          items={cobrables}
+          // Los bonos FONASA se registran desde el módulo FONASA
+          metodos={metodos.filter((m) => m.codigo !== "BONO_FONASA").map((m) => ({ codigo: m.codigo, nombre: m.nombre, es_efectivo: m.es_efectivo, pide_referencia: m.pide_referencia, registra_en_caja: m.registra_en_caja }))}
+          cajaAbierta={!!caja}
+        />
+      )}
 
       {/* DEUDA POR TRATAMIENTO */}
       <section className="space-y-3">

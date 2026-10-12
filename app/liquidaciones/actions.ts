@@ -36,22 +36,40 @@ export async function actualizarPorcentaje(profesionalId: string, porcentaje: st
   return { ok: true, mensaje: valor === null ? "Porcentaje eliminado." : `Porcentaje guardado: ${valor}%.` }
 }
 
-export async function generarLiquidacion(profesionalId: string, fechaCorte: string, nota: string): Promise<Resultado> {
+export async function generarLiquidacion(
+  profesionalId: string,
+  periodo: string,
+  extras: { bonificacion: string; ajuste: string; descuento: string },
+  nota: string
+): Promise<Resultado> {
   const usuario = await autorizar("liquidaciones.gestionar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaCorte)) return { ok: false, mensaje: "Fecha de corte no válida." }
-  if (fechaCorte > hoyChile()) return { ok: false, mensaje: "La fecha de corte no puede ser futura." }
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(periodo)) return { ok: false, mensaje: "Período no válido." }
+  if (`${periodo}-01` > hoyChile()) return { ok: false, mensaje: "No se puede liquidar un mes futuro." }
+  const n = (v: string) => Math.round(Number(String(v).replace(/[^\d-]/g, "")) || 0)
 
   const { data, error } = await getSupabase().rpc("generar_liquidacion", {
     p_profesional: profesionalId,
-    p_fecha_corte: fechaCorte,
+    p_periodo: periodo,
     p_usuario: usuario.id,
+    p_bonificacion: n(extras.bonificacion),
+    p_ajuste: n(extras.ajuste),
+    p_descuento: n(extras.descuento),
     p_nota: nota || null,
   })
   if (error) return { ok: false, mensaje: mensajeBD(error, "No se pudo generar la liquidación.") }
 
   refrescar()
-  return { ok: true, mensaje: "Liquidación generada.", id: data as string }
+  return { ok: true, mensaje: "Liquidación calculada.", id: data as string }
+}
+
+export async function aprobarLiquidacion(liquidacionId: string): Promise<Resultado> {
+  const usuario = await autorizar("liquidaciones.gestionar")
+  if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
+  const { error } = await getSupabase().rpc("aprobar_liquidacion", { p_liquidacion: liquidacionId, p_usuario: usuario.id })
+  if (error) return { ok: false, mensaje: mensajeBD(error, "No se pudo aprobar la liquidación.") }
+  refrescar()
+  return { ok: true, mensaje: "Liquidación aprobada." }
 }
 
 export async function pagarLiquidacion(liquidacionId: string, metodo: string, referencia: string): Promise<Resultado> {
@@ -69,7 +87,8 @@ export async function pagarLiquidacion(liquidacionId: string, metodo: string, re
   if (error) return { ok: false, mensaje: mensajeBD(error, "No se pudo registrar el pago de la liquidación.") }
 
   refrescar()
-  return { ok: true, mensaje: "Liquidación marcada como pagada." }
+  revalidatePath("/caja")
+  return { ok: true, mensaje: metodo === "EFECTIVO" ? "Liquidación pagada (egreso registrado en la caja)." : "Liquidación marcada como pagada." }
 }
 
 export async function anularLiquidacion(liquidacionId: string, motivo: string): Promise<Resultado> {

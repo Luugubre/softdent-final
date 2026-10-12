@@ -22,7 +22,8 @@ const SELECT_LIQUIDACION = `*,
   profesional:perfiles!liquidaciones_profesional_id_fkey(nombre_completo, rut, registro_profesional),
   creador:perfiles!liquidaciones_creado_por_fkey(nombre_completo),
   pagador:perfiles!liquidaciones_pagado_por_fkey(nombre_completo),
-  anulador:perfiles!liquidaciones_anulado_por_fkey(nombre_completo)`
+  anulador:perfiles!liquidaciones_anulado_por_fkey(nombre_completo),
+  aprobador:perfiles!liquidaciones_aprobado_por_fkey(nombre_completo)`
 
 /** Dentistas (y cualquiera que tenga % configurado) */
 export const obtenerProfesionales = cache(async (): Promise<ProfesionalLiquidacion[]> => {

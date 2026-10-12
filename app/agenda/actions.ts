@@ -55,6 +55,7 @@ export async function agendarCitas(datos: {
   prestacionId?: string | null
   boxId?: string | null
   motivoSobrecupo?: string
+  tipoAtencionId?: string | null
 }): Promise<Resultado & { ids?: string[] }> {
   const usuario = await autorizar("agenda.gestionar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -79,8 +80,11 @@ export async function agendarCitas(datos: {
   })
   if (error) return { ok: false, mensaje: mensajeBD(error, "No se pudo agendar.") }
 
-  refrescar(datos.pacienteId)
   const ids = (data ?? []) as string[]
+  if (ids.length && uuidONull(datos.tipoAtencionId)) {
+    await getSupabase().from("citas").update({ tipo_atencion_id: datos.tipoAtencionId }).in("id", ids)
+  }
+  refrescar(datos.pacienteId)
   return { ok: true, mensaje: ids.length > 1 ? `${ids.length} citas agendadas.` : "Cita agendada.", ids }
 }
 

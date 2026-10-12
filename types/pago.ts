@@ -1,12 +1,21 @@
-export const METODOS_PAGO = ["EFECTIVO", "DEBITO", "CREDITO", "TRANSFERENCIA"] as const
-export type MetodoPago = (typeof METODOS_PAGO)[number]
+// Los métodos de pago vienen del catálogo de Administración (tabla metodos_pago).
+// Este mapa solo da íconos y nombres de respaldo para mostrarlos.
+export type MetodoPago = string
 
-export const METODO_PAGO: Record<MetodoPago, { etiqueta: string; icono: string; pideReferencia: boolean }> = {
-  EFECTIVO: { etiqueta: "Efectivo", icono: "💵", pideReferencia: false },
-  DEBITO: { etiqueta: "Débito", icono: "💳", pideReferencia: true },
-  CREDITO: { etiqueta: "Crédito", icono: "💳", pideReferencia: true },
-  TRANSFERENCIA: { etiqueta: "Transferencia", icono: "🏦", pideReferencia: true },
+const ICONOS: Record<string, string> = { EFECTIVO: "💵", DEBITO: "💳", CREDITO: "💳", TRANSFERENCIA: "🏦", BONO_FONASA: "🏥", CHEQUE: "🧾" }
+const NOMBRES: Record<string, string> = {
+  EFECTIVO: "Efectivo",
+  DEBITO: "Débito",
+  CREDITO: "Crédito",
+  TRANSFERENCIA: "Transferencia",
+  BONO_FONASA: "Bono FONASA",
 }
+
+export function infoMetodo(codigo: string, nombre?: string) {
+  return { icono: ICONOS[codigo] ?? "💰", etiqueta: nombre ?? NOMBRES[codigo] ?? codigo.charAt(0) + codigo.slice(1).toLowerCase().replace(/_/g, " ") }
+}
+
+export type MetodoPagoOpcion = { codigo: string; nombre: string; es_efectivo: boolean; pide_referencia: boolean; registra_en_caja: boolean }
 
 export type DetallePago = {
   id: string

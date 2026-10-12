@@ -2,7 +2,7 @@ import Link from "next/link"
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
 import { obtenerCitas, obtenerInfoPacientes } from "@/lib/agenda"
-import { NOMBRE_CLINICA } from "@/lib/clinica"
+import { obtenerParametro } from "@/lib/catalogos"
 import { fechaTitulo, fechaValida, hoyEnChile } from "@/lib/fechas-agenda"
 import { formatearPesos } from "@/lib/formato"
 import { BotonImprimir } from "@/components/pagos/BotonImprimir"
@@ -23,6 +23,7 @@ export default async function HojaRutaPage({ searchParams }: { searchParams: Pro
     finanzas
   )
 
+  const nombreClinica = await obtenerParametro("clinica.nombre", "Clínica dental")
   const porProfesional = new Map<string, CitaAgenda[]>()
   for (const c of citas) porProfesional.set(c.profesional_nombre, [...(porProfesional.get(c.profesional_nombre) ?? []), c])
 
@@ -45,7 +46,7 @@ export default async function HojaRutaPage({ searchParams }: { searchParams: Pro
       <article id="hoja" className="max-w-5xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm p-8 space-y-6">
         <header className="flex items-end justify-between border-b border-gray-200 pb-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{NOMBRE_CLINICA}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400">{nombreClinica}</p>
             <h1 className="text-2xl font-black text-gray-900">Hoja de ruta</h1>
           </div>
           <p className="text-lg font-bold text-gray-700 capitalize">{fechaTitulo(fecha)}</p>

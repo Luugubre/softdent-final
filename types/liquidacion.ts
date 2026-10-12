@@ -1,7 +1,8 @@
-export type EstadoLiquidacion = "EMITIDA" | "PAGADA" | "ANULADA"
+export type EstadoLiquidacion = "CALCULADA" | "APROBADA" | "PAGADA" | "ANULADA"
 
 export const ESTADO_LIQUIDACION: Record<EstadoLiquidacion, { etiqueta: string; estilo: string }> = {
-  EMITIDA: { etiqueta: "Emitida · por pagar", estilo: "bg-amber-100 text-amber-800" },
+  CALCULADA: { etiqueta: "Calculada · por aprobar", estilo: "bg-amber-100 text-amber-800" },
+  APROBADA: { etiqueta: "Aprobada · por pagar", estilo: "bg-blue-100 text-blue-800" },
   PAGADA: { etiqueta: "Pagada", estilo: "bg-emerald-100 text-emerald-800" },
   ANULADA: { etiqueta: "Anulada", estilo: "bg-gray-200 text-gray-500" },
 }
@@ -61,11 +62,19 @@ export type Liquidacion = {
   id: string
   numero: number
   profesional_id: string
+  periodo: string | null // "2026-10"
   fecha_corte: string
   porcentaje: number
+  porcentaje_clinica: number | null
   cantidad: number
   total_base: number
+  base_profesional: number | null
+  bonificacion: number
+  ajuste: number
+  descuento: number
   total: number
+  total_clinica: number | null
+  fecha_aprobacion: string | null
   nota: string | null
   estado: EstadoLiquidacion
   created_at: string
@@ -77,6 +86,7 @@ export type Liquidacion = {
   profesional: { nombre_completo: string; rut: string | null; registro_profesional: string | null } | null
   creador: { nombre_completo: string } | null
   pagador: { nombre_completo: string } | null
+  aprobador: { nombre_completo: string } | null
   anulador: { nombre_completo: string } | null
 }
 
@@ -86,4 +96,11 @@ export type ProfesionalLiquidacion = {
   rol: string
   activo: boolean
   porcentaje_liquidacion: number | null
+}
+
+/** "2026-10" → "octubre 2026" */
+export function nombrePeriodo(periodo: string | null | undefined) {
+  if (!periodo) return "—"
+  const [a, m] = periodo.split("-").map(Number)
+  return new Date(Date.UTC(a, m - 1, 15)).toLocaleDateString("es-CL", { month: "long", year: "numeric", timeZone: "UTC" })
 }

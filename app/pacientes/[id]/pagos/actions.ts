@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache"
 import { getSupabase } from "@/lib/supabase"
 import { autorizar } from "@/lib/auth"
 import { MENSAJE_SIN_PERMISO } from "@/lib/permisos"
-import { METODOS_PAGO, METODO_PAGO, type MetodoPago } from "@/types/pago"
 
 type Resultado = { ok: boolean; mensaje: string; pagoId?: string }
 
@@ -28,10 +27,8 @@ export async function registrarPago(
 
   const monto = Math.round(Number(datos.monto))
   if (!Number.isFinite(monto) || monto <= 0) return { ok: false, mensaje: "Ingresa un monto mayor a cero." }
-  if (!(METODOS_PAGO as readonly string[]).includes(datos.metodo)) return { ok: false, mensaje: "Selecciona el método de pago." }
-  if (METODO_PAGO[datos.metodo as MetodoPago].pideReferencia && !datos.referencia?.trim()) {
-    return { ok: false, mensaje: "Ingresa el N° de operación o voucher." }
-  }
+  // El método, si pide N° de operación y si exige caja abierta lo valida la BD
+  if (!/^[A-Z_]{3,30}$/.test(datos.metodo)) return { ok: false, mensaje: "Selecciona el método de pago." }
 
   const detalle = datos.detalle
     .map((d) => ({ item_id: d.item_id, monto: Math.round(Number(d.monto)) }))
@@ -54,6 +51,7 @@ export async function registrarPago(
   if (error) return { ok: false, mensaje: mensajeBD(error, "No se pudo registrar el pago.") }
 
   revalidatePath(`/pacientes/${pacienteId}`, "layout")
+  revalidatePath("/caja")
   return { ok: true, mensaje: "Pago registrado.", pagoId: data as string }
 }
 
@@ -69,5 +67,6 @@ export async function anularPago(pacienteId: string, pagoId: string, motivo: str
   if (error) return { ok: false, mensaje: mensajeBD(error, "No se pudo anular el pago.") }
 
   revalidatePath(`/pacientes/${pacienteId}`, "layout")
-  return { ok: true, mensaje: "Pago anulado. Los abonos se revirtieron." }
+  revalidatePath("/caja")
+  return { ok: true, mensaje: "Pago anulado. Los abonos y la caja se revirtieron." }
 }

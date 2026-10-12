@@ -36,9 +36,11 @@ type Props = {
   paciente?: Paciente
   /** Solo en modo edición: se llama al cancelar o al guardar (con el mensaje de éxito) */
   onCerrar?: (mensaje?: string) => void
+  /** Previsiones activas del catálogo de Administración (si no viene, se usa la lista fija) */
+  previsiones?: readonly string[]
 }
 
-export function PacienteForm({ paciente: p, onCerrar }: Props) {
+export function PacienteForm({ paciente: p, onCerrar, previsiones = PREVISIONES }: Props) {
   const editando = !!p
   const [abierto, setAbierto] = useState(editando)
   const [estado, setEstado] = useState<EstadoFormulario | null>(null)
@@ -230,10 +232,10 @@ export function PacienteForm({ paciente: p, onCerrar }: Props) {
           <Campo nombre="prevision" etiqueta="Previsión" obligatorio errores={e}>
             <select id="prevision" name="prevision" defaultValue={p?.prevision ?? "Particular"} className={inputClass}>
               {/* Si el valor guardado no está en la lista, igual se muestra */}
-              {p?.prevision && !(PREVISIONES as readonly string[]).includes(p.prevision) && (
+              {p?.prevision && !previsiones.includes(p.prevision) && (
                 <option value={p.prevision}>{p.prevision}</option>
               )}
-              {PREVISIONES.map((x) => (
+              {previsiones.map((x) => (
                 <option key={x} value={x}>{x}</option>
               ))}
             </select>

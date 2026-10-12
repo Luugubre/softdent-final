@@ -11,12 +11,15 @@ export async function BarraSuperior() {
     { href: "/pacientes", etiqueta: "Pacientes", visible: puede(usuario.rol, "pacientes.ver") },
     { href: "/agenda", etiqueta: "Agenda", visible: puede(usuario.rol, "agenda.ver") },
     { href: "/prestaciones", etiqueta: "Prestaciones", visible: puede(usuario.rol, "prestaciones.ver") },
+    { href: "/caja", etiqueta: "Caja", visible: puede(usuario.rol, "caja.gestionar") },
+    { href: "/fonasa-convenios", etiqueta: "FONASA / Convenios", visible: puede(usuario.rol, "fonasa.gestionar") },
     {
       href: "/liquidaciones",
       etiqueta: puede(usuario.rol, "liquidaciones.gestionar") ? "Liquidaciones" : "Mis liquidaciones",
       visible: puede(usuario.rol, "liquidaciones.ver"),
     },
     { href: "/usuarios", etiqueta: "Usuarios", visible: puede(usuario.rol, "usuarios.gestionar") },
+    { href: "/administracion", etiqueta: "Administración", visible: puede(usuario.rol, "administracion.gestionar") },
   ].filter((e) => e.visible)
 
   return (
@@ -26,12 +29,12 @@ export async function BarraSuperior() {
           <Link href="/pacientes" className="text-lg font-black text-gray-900">
             🦷 SoftDent
           </Link>
-          <nav className="hidden sm:flex items-center gap-1">
+          <nav className="hidden sm:flex items-center gap-1 overflow-x-auto max-w-[70vw]">
             {enlaces.map((e) => (
               <Link
                 key={e.href}
                 href={e.href}
-                className="px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                className="px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900 whitespace-nowrap"
               >
                 {e.etiqueta}
               </Link>

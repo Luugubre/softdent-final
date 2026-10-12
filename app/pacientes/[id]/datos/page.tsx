@@ -1,3 +1,4 @@
+import { obtenerPrevisiones } from "@/lib/catalogos"
 import { notFound } from "next/navigation"
 import { getSupabase } from "@/lib/supabase"
 import { obtenerPaciente, obtenerResumenPaciente, type PacienteResumen } from "@/lib/paciente"
@@ -24,7 +25,7 @@ export default async function PerfilPaciente({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-5">
-      <DatosPaciente paciente={paciente} puedeEditar={puedeEditar} />
+      <DatosPaciente paciente={paciente} puedeEditar={puedeEditar} previsiones={await obtenerPrevisiones()} />
       <GrupoFamiliar
         pacienteId={id}
         titular={titular}

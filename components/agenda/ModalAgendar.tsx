@@ -15,7 +15,7 @@ import { enlaceWhatsapp } from "@/lib/clinica"
 import { fechaTitulo, hoyEnChile, lunesDeLaSemana, minutosAHora, partesChile, sumarDias } from "@/lib/fechas-agenda"
 import { mensajeCambioHora, mensajeCitaAgendada } from "@/lib/mensajes-agenda"
 import { PREVISIONES } from "@/lib/validaciones"
-import type { BloqueElegido, Box, CitaAgenda, DisponibilidadSemana, PacienteBusqueda, PrestacionAgenda, ProfesionalAgenda } from "@/types/cita"
+import type { BloqueElegido, Box, CitaAgenda, DisponibilidadSemana, PacienteBusqueda, PrestacionAgenda, ProfesionalAgenda, TipoAtencion } from "@/types/cita"
 
 const DURACIONES = [15, 30, 45, 60, 90, 120, 150, 180, 210, 240]
 const PASO = 15
@@ -50,10 +50,12 @@ export function ModalAgendar({
   puedeSobrecupo,
   puedeVerTodos,
   usuarioId,
+  tiposAtencion = [],
   onClose,
   onGuardado,
 }: {
   config: ConfigAgendar
+  tiposAtencion?: TipoAtencion[]
   profesionales: ProfesionalAgenda[]
   boxes: Box[]
   puedeSobrecupo: boolean
@@ -77,6 +79,7 @@ export function ModalAgendar({
       puedeSobrecupo={puedeSobrecupo}
       puedeVerTodos={puedeVerTodos}
       usuarioId={usuarioId}
+      tiposAtencion={tiposAtencion}
       onClose={onClose}
       onListo={(t, mensaje) => {
         setTicket(t)
@@ -97,10 +100,12 @@ function Formulario({
   puedeSobrecupo,
   puedeVerTodos,
   usuarioId,
+  tiposAtencion,
   onClose,
   onListo,
 }: {
   config: ConfigAgendar
+  tiposAtencion: TipoAtencion[]
   reprogramando: CitaAgenda | null
   profesionales: ProfesionalAgenda[]
   boxes: Box[]
@@ -136,6 +141,7 @@ function Formulario({
   const [filtroPrestacion, setFiltroPrestacion] = useState("")
   const [sugeridas, setSugeridas] = useState<PrestacionAgenda[]>([])
   const [boxId, setBoxId] = useState(reprogramando?.box_id ?? "")
+  const [tipoId, setTipoId] = useState("")
 
   // ---------- Fecha y hora ----------
   const [profesionalId, setProfesionalId] = useState(
@@ -310,6 +316,7 @@ function Formulario({
             presupuestoId: presupuestoId || null,
             prestacionId: prestacion?.id ?? null,
             boxId: boxId || null,
+            tipoAtencionId: tipoId || null,
           })
       if (!res.ok) return setAviso({ ok: false, texto: res.mensaje })
       onListo(
@@ -580,6 +587,28 @@ function Formulario({
                   </ul>
                 )}
               </div>
+            )}
+            {!reprogramando && tiposAtencion.length > 0 && (
+              <select
+                value={tipoId}
+                onChange={(e) => {
+                  setTipoId(e.target.value)
+                  const t = tiposAtencion.find((x) => x.id === e.target.value)
+                  if (t) {
+                    if (!motivo.trim()) setMotivo(t.nombre)
+                    const d = Math.max(15, Math.round(t.duracion_min / 15) * 15)
+                    if (d !== duracion) cambiarDuracion(d)
+                  }
+                }}
+                className={campo}
+              >
+                <option value="">Tipo de atención (opcional)</option>
+                {tiposAtencion.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre} · {t.duracion_min} min
+                  </option>
+                ))}
+              </select>
             )}
             <select value={boxId} onChange={(e) => setBoxId(e.target.value)} className={campo}>
               <option value="">Sin box asignado</option>

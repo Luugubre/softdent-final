@@ -35,7 +35,7 @@ export default async function LiquidacionesPage() {
     })
     .sort((a, b) => b.aPagar - a.aPagar || a.nombre.localeCompare(b.nombre))
 
-  const porPagar = liquidaciones.filter((l) => l.estado === "EMITIDA").reduce((s, l) => s + l.total, 0)
+  const porPagar = liquidaciones.filter((l) => l.estado === "CALCULADA" || l.estado === "APROBADA").reduce((s, l) => s + l.total, 0)
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
@@ -48,7 +48,7 @@ export default async function LiquidacionesPage() {
         </div>
         {porPagar > 0 && (
           <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-2 text-amber-800">
-            <p className="text-[11px] font-black uppercase tracking-wider">Liquidaciones emitidas por pagar</p>
+            <p className="text-[11px] font-black uppercase tracking-wider">Liquidaciones por pagar</p>
             <p className="text-xl font-black">{formatearPesos(porPagar)}</p>
           </div>
         )}

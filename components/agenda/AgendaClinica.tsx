@@ -12,7 +12,7 @@ import { TarjetaCitaDia, TarjetaCitaSemana, type AccionesCita } from "@/componen
 import { enlaceWhatsapp } from "@/lib/clinica"
 import { fechaTitulo, sumarDias } from "@/lib/fechas-agenda"
 import { mensajeInasistencia, mensajeRecordatorio } from "@/lib/mensajes-agenda"
-import { ESTADO_CITA, type Box, type CitaAgenda, type EstadoCita, type InfoPaciente, type PacienteBusqueda, type ProfesionalAgenda } from "@/types/cita"
+import { ESTADO_CITA, type Box, type CitaAgenda, type EstadoCita, type InfoPaciente, type PacienteBusqueda, type ProfesionalAgenda, type TipoAtencion } from "@/types/cita"
 
 type Props = {
   vista: "dia" | "semana"
@@ -23,6 +23,7 @@ type Props = {
   info: Record<string, InfoPaciente>
   profesionales: ProfesionalAgenda[]
   boxes: Box[]
+  tiposAtencion: TipoAtencion[]
   profesional?: string
   usuarioId: string
   permisos: { gestionar: boolean; sobrecupo: boolean; configurar: boolean; clinico: boolean; finanzas: boolean; verTodos: boolean }
@@ -370,6 +371,7 @@ export function AgendaClinica(p: Props) {
       {agendar && (
         <ModalAgendar
           config={agendar}
+          tiposAtencion={p.tiposAtencion}
           profesionales={profesionales}
           boxes={boxes}
           puedeSobrecupo={permisos.sobrecupo}

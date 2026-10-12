@@ -196,6 +196,11 @@ export function TarjetaCitaDia({ cita: c, info, ahoraMs, puedeGestionar, verFina
                 AGENDÓ: {(c.creado_por_nombre ?? "—").split(" ")[0].toUpperCase()} · {c.duracion_min} MIN
               </p>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {c.tipo_atencion_nombre && (
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md bg-violet-50 text-violet-700 border border-violet-100">
+                    🏷 {c.tipo_atencion_nombre}
+                  </span>
+                )}
                 {c.motivo && (
                   <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-200">
                     📝 {c.motivo}

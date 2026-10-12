@@ -5,8 +5,9 @@ import { obtenerPago } from "@/lib/pagos"
 import { obtenerPaciente } from "@/lib/paciente"
 import { formatearRut } from "@/lib/validaciones"
 import { formatearFechaHora, formatearPesos } from "@/lib/formato"
-import { METODO_PAGO } from "@/types/pago"
+import { infoMetodo } from "@/types/pago"
 import { BotonImprimir } from "@/components/pagos/BotonImprimir"
+import { obtenerParametro } from "@/lib/catalogos"
 
 export default async function ComprobantePage({ params }: { params: Promise<{ id: string; pagoId: string }> }) {
   await requerirPermiso("pagos.ver")
@@ -16,6 +17,7 @@ export default async function ComprobantePage({ params }: { params: Promise<{ id
   if (!pago || !paciente || pago.paciente_id !== id) notFound()
 
   const anulado = pago.estado === "ANULADO"
+  const clinica = await obtenerParametro("clinica.nombre", "SoftDent")
 
   return (
     <div className="space-y-4">
@@ -42,7 +44,7 @@ export default async function ComprobantePage({ params }: { params: Promise<{ id
 
         <header className="flex items-start justify-between gap-4 border-b border-gray-200 pb-4">
           <div>
-            <p className="text-2xl font-black text-blue-700">SoftDent</p>
+            <p className="text-2xl font-black text-blue-700">{clinica}</p>
             <p className="text-xs font-semibold text-gray-500">Comprobante de pago</p>
           </div>
           <div className="text-right">
@@ -64,7 +66,7 @@ export default async function ComprobantePage({ params }: { params: Promise<{ id
           </div>
           <div className="text-right">
             <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Método</p>
-            <p className="font-bold text-gray-900">{METODO_PAGO[pago.metodo].etiqueta}</p>
+            <p className="font-bold text-gray-900">{infoMetodo(pago.metodo).etiqueta}</p>
             {pago.referencia && <p className="text-gray-600">Ref. {pago.referencia}</p>}
             {pago.numero_boleta && <p className="text-gray-600">Boleta {pago.numero_boleta}</p>}
           </div>

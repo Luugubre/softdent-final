@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { formatearFecha, formatearFechaHora, formatearPesos } from "@/lib/formato"
-import { ESTADO_LIQUIDACION, type Liquidacion } from "@/types/liquidacion"
+import { ESTADO_LIQUIDACION, nombrePeriodo, type Liquidacion } from "@/types/liquidacion"
 
 export function TablaLiquidaciones({ liquidaciones, mostrarProfesional = true }: { liquidaciones: Liquidacion[]; mostrarProfesional?: boolean }) {
   if (liquidaciones.length === 0) {
@@ -19,7 +19,7 @@ export function TablaLiquidaciones({ liquidaciones, mostrarProfesional = true }:
             <th className="text-left px-4 py-2">N°</th>
             {mostrarProfesional && <th className="text-left px-4 py-2">Profesional</th>}
             <th className="text-left px-4 py-2">Emitida</th>
-            <th className="text-left px-4 py-2">Hasta</th>
+            <th className="text-left px-4 py-2">Período</th>
             <th className="text-right px-4 py-2">Prestaciones</th>
             <th className="text-right px-4 py-2">Producción</th>
             <th className="text-right px-4 py-2">%</th>
@@ -37,7 +37,7 @@ export function TablaLiquidaciones({ liquidaciones, mostrarProfesional = true }:
               </td>
               {mostrarProfesional && <td className="px-4 py-2.5 font-semibold">{l.profesional?.nombre_completo}</td>}
               <td className="px-4 py-2.5 whitespace-nowrap">{formatearFechaHora(l.created_at)}</td>
-              <td className="px-4 py-2.5 whitespace-nowrap">{formatearFecha(l.fecha_corte)}</td>
+              <td className="px-4 py-2.5 whitespace-nowrap capitalize" title={`Hasta ${formatearFecha(l.fecha_corte)}`}>{nombrePeriodo(l.periodo)}</td>
               <td className="px-4 py-2.5 text-right">{l.cantidad}</td>
               <td className="px-4 py-2.5 text-right">{formatearPesos(l.total_base)}</td>
               <td className="px-4 py-2.5 text-right">{l.porcentaje}%</td>

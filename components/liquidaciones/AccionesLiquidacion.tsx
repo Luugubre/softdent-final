@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { anularLiquidacion, pagarLiquidacion } from "@/app/liquidaciones/actions"
-import { METODOS_PAGO_LIQUIDACION, METODO_LIQUIDACION, type MetodoPagoLiquidacion } from "@/types/liquidacion"
+import { anularLiquidacion, aprobarLiquidacion, pagarLiquidacion } from "@/app/liquidaciones/actions"
+import { METODOS_PAGO_LIQUIDACION, METODO_LIQUIDACION, type EstadoLiquidacion, type MetodoPagoLiquidacion } from "@/types/liquidacion"
 
-export function AccionesLiquidacion({ liquidacionId }: { liquidacionId: string }) {
+export function AccionesLiquidacion({ liquidacionId, estado }: { liquidacionId: string; estado: EstadoLiquidacion }) {
   const [abierto, setAbierto] = useState(false)
   const [metodo, setMetodo] = useState<MetodoPagoLiquidacion>("TRANSFERENCIA")
   const [referencia, setReferencia] = useState("")
@@ -22,13 +22,24 @@ export function AccionesLiquidacion({ liquidacionId }: { liquidacionId: string }
   return (
     <div className="space-y-2 print:hidden">
       <div className="flex gap-2 justify-end flex-wrap">
-        <button
-          disabled={pendiente}
-          onClick={() => setAbierto(!abierto)}
-          className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
-        >
-          💸 Registrar pago al profesional
-        </button>
+        {estado === "CALCULADA" && (
+          <button
+            disabled={pendiente}
+            onClick={() => window.confirm("¿Aprobar la liquidación? Después solo se podrá pagar o anular.") && ejecutar(() => aprobarLiquidacion(liquidacionId))}
+            className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          >
+            ✔ Aprobar
+          </button>
+        )}
+        {estado === "APROBADA" && (
+          <button
+            disabled={pendiente}
+            onClick={() => setAbierto(!abierto)}
+            className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+          >
+            💸 Registrar pago al profesional
+          </button>
+        )}
         <button
           disabled={pendiente}
           onClick={() => {
@@ -41,7 +52,7 @@ export function AccionesLiquidacion({ liquidacionId }: { liquidacionId: string }
         </button>
       </div>
 
-      {abierto && (
+      {abierto && estado === "APROBADA" && (
         <div className="bg-white border border-gray-200 rounded-2xl p-4 flex items-end gap-3 flex-wrap">
           <div className="space-y-1">
             <span className="block text-xs font-black uppercase tracking-wider text-gray-500">Método</span>

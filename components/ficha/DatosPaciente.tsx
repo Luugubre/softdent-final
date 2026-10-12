@@ -24,7 +24,15 @@ function Seccion({ titulo, children }: { titulo: string; children: React.ReactNo
   )
 }
 
-export function DatosPaciente({ paciente: p, puedeEditar = true }: { paciente: Paciente; puedeEditar?: boolean }) {
+export function DatosPaciente({
+  paciente: p,
+  puedeEditar = true,
+  previsiones,
+}: {
+  paciente: Paciente
+  puedeEditar?: boolean
+  previsiones?: string[]
+}) {
   const [editando, setEditando] = useState(false)
   const [mensaje, setMensaje] = useState<string | null>(null)
 
@@ -32,6 +40,7 @@ export function DatosPaciente({ paciente: p, puedeEditar = true }: { paciente: P
     return (
       <PacienteForm
         paciente={p}
+        previsiones={previsiones}
         onCerrar={(msg) => {
           setEditando(false)
           setMensaje(msg ?? null)

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState, useTransition } from "react"
 import { anularPago } from "@/app/pacientes/[id]/pagos/actions"
 import { formatearFechaHora, formatearPesos } from "@/lib/formato"
-import { METODO_PAGO, type Pago } from "@/types/pago"
+import { infoMetodo, type Pago } from "@/types/pago"
 
 export function HistorialPagos({
   pacienteId,
@@ -60,7 +60,7 @@ export function HistorialPagos({
                       Pago N° {p.numero} · {formatearPesos(p.monto)}
                     </p>
                     <p className="text-xs font-semibold text-gray-500">
-                      {formatearFechaHora(p.fecha)} · {METODO_PAGO[p.metodo].icono} {METODO_PAGO[p.metodo].etiqueta}
+                      {formatearFechaHora(p.fecha)} · {infoMetodo(p.metodo).icono} {infoMetodo(p.metodo).etiqueta}
                       {p.referencia && ` · Ref. ${p.referencia}`}
                       {p.numero_boleta && ` · Boleta ${p.numero_boleta}`}
                       {p.registrador && ` · ${p.registrador.nombre_completo}`}

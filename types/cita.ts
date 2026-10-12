@@ -159,7 +159,11 @@ export type CitaAgenda = {
   tratamiento_numero: number | null
   tratamiento_nombre: string | null
   creado_por_nombre: string | null
+  tipo_atencion_id: string | null
+  tipo_atencion_nombre: string | null
 }
+
+export type TipoAtencion = { id: string; nombre: string; duracion_min: number }
 
 /** Datos extra por paciente que muestra la tarjeta */
 export type InfoPaciente = {

@@ -35,7 +35,7 @@ export default async function ProfesionalLiquidacionPage({
   searchParams,
 }: {
   params: Promise<{ profesionalId: string }>
-  searchParams: Promise<{ hasta?: string }>
+  searchParams: Promise<{ periodo?: string }>
 }) {
   const usuario = await requerirPermiso("liquidaciones.ver")
   const gestionar = puede(usuario.rol, "liquidaciones.gestionar")
@@ -43,8 +43,13 @@ export default async function ProfesionalLiquidacionPage({
   if (!gestionar && profesionalId !== usuario.id) redirect("/sin-permiso")
 
   const hoy = hoyChile()
-  const { hasta: hastaParam } = await searchParams
-  const hasta = hastaParam && /^\d{4}-\d{2}-\d{2}$/.test(hastaParam) && hastaParam <= hoy ? hastaParam : hoy
+  const mesActual = hoy.slice(0, 7)
+  const { periodo: p } = await searchParams
+  const periodo = p && /^\d{4}-(0[1-9]|1[0-2])$/.test(p) && p <= mesActual ? p : mesActual
+  // Fin del mes elegido (o hoy, si es el mes en curso)
+  const [anio, mes] = periodo.split("-").map(Number)
+  const finMes = new Date(Date.UTC(anio, mes, 0)).toISOString().slice(0, 10)
+  const hasta = finMes < hoy ? finMes : hoy
 
   const [profesional, produccion, liquidaciones] = await Promise.all([
     obtenerProfesional(profesionalId),
@@ -84,9 +89,11 @@ export default async function ProfesionalLiquidacionPage({
       {gestionar && (
         <GenerarLiquidacion
           profesionalId={profesionalId}
-          fechaCorte={hasta}
-          hoy={hoy}
-          total={r.aPagar}
+          periodo={periodo}
+          mesActual={mesActual}
+          base={r.baseLiquidable}
+          aPagar={r.aPagar}
+          porcentaje={pct}
           cantidad={r.liquidables.length}
           sinPorcentaje={pct === null}
         />

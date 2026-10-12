@@ -4,6 +4,7 @@ import { getSupabase } from "@/lib/supabase"
 import { obtenerBoxes, obtenerCitas, obtenerInfoPacientes, obtenerProfesionalesAgenda } from "@/lib/agenda"
 import { fechaValida, hoyEnChile, lunesDeLaSemana, sumarDias } from "@/lib/fechas-agenda"
 import { AgendaClinica } from "@/components/agenda/AgendaClinica"
+import { obtenerTiposAtencion } from "@/lib/catalogos"
 import type { PacienteBusqueda } from "@/types/cita"
 
 const UUID = /^[0-9a-f-]{36}$/i
@@ -30,7 +31,7 @@ export default async function AgendaPage({
   const desde = vista === "dia" ? fecha : lunes
   const hasta = vista === "dia" ? fecha : sumarDias(lunes, 6)
 
-  const [citas, profesionales, boxes, pacienteInicial] = await Promise.all([
+  const [citas, profesionales, boxes, pacienteInicial, tiposAtencion] = await Promise.all([
     obtenerCitas(desde, hasta, { profesional }),
     obtenerProfesionalesAgenda(),
     obtenerBoxes(),
@@ -43,6 +44,7 @@ export default async function AgendaPage({
           .maybeSingle()
           .then((r) => (r.data as PacienteBusqueda | null) ?? null)
       : Promise.resolve(null),
+    obtenerTiposAtencion(),
   ])
 
   const vigentes = citas.filter((c) => c.estado !== "CANCELADA" && c.estado !== "REAGENDADA")
@@ -66,6 +68,7 @@ export default async function AgendaPage({
       info={info}
       profesionales={profesionales}
       boxes={boxes}
+      tiposAtencion={tiposAtencion}
       profesional={profesional}
       usuarioId={usuario.id}
       permisos={{

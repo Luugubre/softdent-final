@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useMemo, useState, useTransition } from "react"
 import { registrarPago } from "@/app/pacientes/[id]/pagos/actions"
 import { formatearPesos } from "@/lib/formato"
-import { METODOS_PAGO, METODO_PAGO, type MetodoPago } from "@/types/pago"
+import { infoMetodo, type MetodoPagoOpcion } from "@/types/pago"
 
 export type ItemCobrable = {
   id: string
@@ -47,10 +47,22 @@ function distribuir(monto: number, items: ItemCobrable[]): Record<string, number
 
 const soloNumero = (v: string) => Number(v.replace(/\D/g, "")) || 0
 
-export function RegistrarPago({ pacienteId, items }: { pacienteId: string; items: ItemCobrable[] }) {
+export function RegistrarPago({
+  pacienteId,
+  items,
+  metodos,
+  cajaAbierta,
+}: {
+  pacienteId: string
+  items: ItemCobrable[]
+  metodos: MetodoPagoOpcion[]
+  cajaAbierta: boolean
+}) {
   const [monto, setMonto] = useState(0)
   const [asignado, setAsignado] = useState<Record<string, number>>({})
-  const [metodo, setMetodo] = useState<MetodoPago>("EFECTIVO")
+  const [metodo, setMetodo] = useState<string>(
+    (cajaAbierta ? metodos.find((m) => m.es_efectivo) : metodos.find((m) => !m.registra_en_caja))?.codigo ?? metodos[0]?.codigo ?? ""
+  )
   const [referencia, setReferencia] = useState("")
   const [boleta, setBoleta] = useState("")
   const [nota, setNota] = useState("")
@@ -102,8 +114,10 @@ export function RegistrarPago({ pacienteId, items }: { pacienteId: string; items
     })
   }
 
-  const pideReferencia = METODO_PAGO[metodo].pideReferencia
-  const valido = monto > 0 && (!pideReferencia || referencia.trim().length > 0)
+  const elegido = metodos.find((m) => m.codigo === metodo)
+  const pideReferencia = !!elegido?.pide_referencia
+  const faltaCaja = !!elegido?.registra_en_caja && !cajaAbierta
+  const valido = monto > 0 && !!elegido && !faltaCaja && (!pideReferencia || referencia.trim().length > 0)
 
   return (
     <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
@@ -184,7 +198,7 @@ export function RegistrarPago({ pacienteId, items }: { pacienteId: string; items
             <div className="space-y-1">
               <span className="block text-xs font-black uppercase tracking-wider text-gray-500">Método de pago</span>
               <div className="grid grid-cols-2 gap-2">
-                {METODOS_PAGO.map((m) => (
+                {metodos.map(({ codigo: m, nombre }) => (
                   <button
                     key={m}
                     type="button"
@@ -195,12 +209,17 @@ export function RegistrarPago({ pacienteId, items }: { pacienteId: string; items
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    {METODO_PAGO[m].icono} {METODO_PAGO[m].etiqueta}
+                    {infoMetodo(m).icono} {nombre}
                   </button>
                 ))}
               </div>
             </div>
 
+            {faltaCaja && (
+              <p className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-bold text-amber-800">
+                🔒 No hay caja abierta: para recibir un pago con {elegido?.nombre ?? "este método"} hay que abrirla en el módulo Caja.
+              </p>
+            )}
             {pideReferencia && (
               <Campo etiqueta="N° de operación / voucher *" valor={referencia} onCambiar={setReferencia} />
             )}

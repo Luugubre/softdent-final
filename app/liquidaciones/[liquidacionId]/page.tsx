@@ -5,7 +5,8 @@ import { puede } from "@/lib/permisos"
 import { formatearRut } from "@/lib/validaciones"
 import { formatearFecha, formatearFechaHora, formatearPesos } from "@/lib/formato"
 import { fechaChile, obtenerLiquidacion } from "@/lib/liquidaciones"
-import { ESTADO_LIQUIDACION, METODO_LIQUIDACION } from "@/types/liquidacion"
+import { ESTADO_LIQUIDACION, METODO_LIQUIDACION, nombrePeriodo } from "@/types/liquidacion"
+import { obtenerParametro } from "@/lib/catalogos"
 import { AccionesLiquidacion } from "@/components/liquidaciones/AccionesLiquidacion"
 import { BotonImprimir } from "@/components/pagos/BotonImprimir"
 
@@ -20,6 +21,9 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
   if (!gestionar && l.profesional_id !== usuario.id) redirect("/sin-permiso")
 
   const estado = ESTADO_LIQUIDACION[l.estado]
+  const clinica = await obtenerParametro("clinica.nombre", "SoftDent")
+  const baseProfesional = l.base_profesional ?? l.total
+  const porcentajeClinica = l.porcentaje_clinica ?? 100 - l.porcentaje
 
   return (
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-4">
@@ -36,7 +40,7 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
         <BotonImprimir />
       </div>
 
-      {gestionar && l.estado === "EMITIDA" && <AccionesLiquidacion liquidacionId={l.id} />}
+      {gestionar && (l.estado === "CALCULADA" || l.estado === "APROBADA") && <AccionesLiquidacion liquidacionId={l.id} estado={l.estado} />}
 
       <article id="liquidacion" className="relative max-w-4xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm p-8 space-y-6">
         {l.estado === "ANULADA" && (
@@ -47,7 +51,7 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
 
         <header className="flex items-start justify-between gap-4 border-b border-gray-200 pb-4">
           <div>
-            <p className="text-2xl font-black text-blue-700">SoftDent</p>
+            <p className="text-2xl font-black text-blue-700">{clinica}</p>
             <p className="text-xs font-semibold text-gray-500">Liquidación de honorarios profesionales</p>
           </div>
           <div className="text-right space-y-1">
@@ -67,12 +71,14 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
             </p>
           </div>
           <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Liquidado hasta</p>
-            <p className="font-bold text-gray-900">{formatearFecha(l.fecha_corte)}</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Período</p>
+            <p className="font-bold text-gray-900 capitalize">{nombrePeriodo(l.periodo)}</p>
+            <p className="text-xs text-gray-500">hasta {formatearFecha(l.fecha_corte)}</p>
           </div>
           <div>
-            <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Porcentaje</p>
-            <p className="font-bold text-gray-900">{l.porcentaje}%</p>
+            <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Porcentajes</p>
+            <p className="font-bold text-gray-900">Profesional {l.porcentaje}%</p>
+            <p className="text-xs text-gray-500">Clínica {porcentajeClinica}%</p>
           </div>
         </section>
 
@@ -103,19 +109,41 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
               </tr>
             ))}
           </tbody>
-          <tfoot>
+          <tfoot className="text-sm">
             <tr>
               <td colSpan={4} className="pt-3 text-right font-bold text-gray-600">
                 Producción ({l.cantidad} prestaciones)
               </td>
               <td className="pt-3 text-right font-bold">{formatearPesos(l.total_base)}</td>
-              <td></td>
+              <td className="pt-3 text-right font-bold">{formatearPesos(baseProfesional)}</td>
             </tr>
             <tr>
-              <td colSpan={5} className="pt-1 text-right font-black text-gray-900">
+              <td colSpan={5} className="text-right text-gray-500">Para la clínica ({porcentajeClinica}%)</td>
+              <td className="text-right text-gray-500">{formatearPesos(l.total_clinica ?? l.total_base - baseProfesional)}</td>
+            </tr>
+            {l.bonificacion !== 0 && (
+              <tr>
+                <td colSpan={5} className="text-right text-emerald-700 font-semibold">+ Bonificación</td>
+                <td className="text-right text-emerald-700 font-semibold">{formatearPesos(l.bonificacion)}</td>
+              </tr>
+            )}
+            {l.ajuste !== 0 && (
+              <tr>
+                <td colSpan={5} className="text-right text-blue-700 font-semibold">{l.ajuste > 0 ? "+" : "−"} Ajuste</td>
+                <td className="text-right text-blue-700 font-semibold">{formatearPesos(l.ajuste)}</td>
+              </tr>
+            )}
+            {l.descuento !== 0 && (
+              <tr>
+                <td colSpan={5} className="text-right text-rose-700 font-semibold">− Descuento</td>
+                <td className="text-right text-rose-700 font-semibold">{formatearPesos(-l.descuento)}</td>
+              </tr>
+            )}
+            <tr>
+              <td colSpan={5} className="pt-2 text-right font-black text-gray-900 border-t border-gray-200">
                 TOTAL A PAGAR AL PROFESIONAL
               </td>
-              <td className="pt-1 text-right text-xl font-black text-gray-900">{formatearPesos(l.total)}</td>
+              <td className="pt-2 text-right text-xl font-black text-gray-900 border-t border-gray-200">{formatearPesos(l.total)}</td>
             </tr>
           </tfoot>
         </table>
@@ -123,7 +151,12 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
         {l.nota && <p className="text-sm text-gray-600">Nota: {l.nota}</p>}
 
         <footer className="text-xs text-gray-500 border-t border-gray-200 pt-3 space-y-1">
-          <p>Generada por: {l.creador?.nombre_completo ?? "—"}</p>
+          <p>Calculada por: {l.creador?.nombre_completo ?? "—"}</p>
+          {l.fecha_aprobacion && (
+            <p>
+              Aprobada el {formatearFechaHora(l.fecha_aprobacion)} por {l.aprobador?.nombre_completo ?? "—"}
+            </p>
+          )}
           {l.estado === "PAGADA" && (
             <p className="font-bold text-emerald-700">
               Pagada el {formatearFechaHora(l.fecha_pago)} por {l.pagador?.nombre_completo ?? "—"} ·{" "}

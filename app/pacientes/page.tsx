@@ -1,3 +1,4 @@
+import { obtenerPrevisiones } from "@/lib/catalogos"
 import Link from "next/link"
 import { getSupabase } from "@/lib/supabase"
 import { PacienteForm } from "@/components/PacienteForm"
@@ -43,7 +44,7 @@ export default async function PacientesPage({
     <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
       <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Directorio de Pacientes</h1>
 
-      {puedeEditar && <PacienteForm />}
+      {puedeEditar && <PacienteForm previsiones={await obtenerPrevisiones()} />}
 
       {/* Buscador */}
       <form method="GET" className="flex gap-2 max-w-lg">
