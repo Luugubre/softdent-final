@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 import { crearClienteAuth } from "@/lib/supabase-auth"
 import { getSupabase } from "@/lib/supabase"
+import { rutaSegura } from "@/lib/rutas"
 
 export async function iniciarSesion(formData: FormData): Promise<{ error: string }> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase()
@@ -29,7 +30,7 @@ export async function iniciarSesion(formData: FormData): Promise<{ error: string
     return { error: "Tu usuario no está habilitado en el sistema. Contacta al administrador." }
   }
 
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/")
+  redirect(rutaSegura(next))
 }
 
 export async function cerrarSesion() {
