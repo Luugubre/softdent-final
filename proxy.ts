@@ -1,6 +1,10 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { rutaSegura } from "@/lib/rutas"
 
+// Chequeo "optimista": solo decide si hay sesión para redirigir a /login.
+// La validación real (perfil activo + permisos) se hace en cada página y server action
+// con requerirPermiso() / autorizar() de lib/auth.ts.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
@@ -21,30 +25,50 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() valida la firma del token con las llaves públicas del proyecto (ES256)
+  // sin llamar al servidor de Auth en cada request, y renueva la sesión si venció.
+  // getUser() hacía una llamada de red a Supabase en CADA navegación.
+  const { data } = await supabase.auth.getClaims()
+  const haySesion = Boolean(data?.claims?.sub)
 
   const { pathname, search } = request.nextUrl
-  const esLogin = pathname.startsWith("/login")
+  const esLogin = pathname === "/login" || pathname.startsWith("/login/")
 
-  if (!user && !esLogin) {
+  if (!haySesion && !esLogin) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
-    url.search = pathname === "/" ? "" : `?next=${encodeURIComponent(pathname + search)}`
-    return NextResponse.redirect(url)
+    const destino = rutaSegura(pathname + search)
+    url.search = destino === "/" ? "" : `?next=${encodeURIComponent(destino)}`
+    return redirigir(url, response)
   }
 
-  if (user && esLogin) {
+  if (haySesion && esLogin) {
     const url = request.nextUrl.clone()
     url.pathname = "/"
     url.search = ""
-    return NextResponse.redirect(url)
+    return redirigir(url, response)
   }
 
   return response
 }
 
+// Al redirigir se conservan las cookies que Supabase haya renovado/borrado en este request.
+function redirigir(url: URL, response: NextResponse) {
+  const redireccion = NextResponse.redirect(url)
+  response.cookies.getAll().forEach((cookie) => redireccion.cookies.set(cookie))
+  return redireccion
+}
+
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: [
+    {
+      source: "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+      // Las precargas (prefetch) de los <Link> no pasan por el proxy: la página igual valida
+      // la sesión al renderizarse, y así no se revisa la sesión por cada enlace visible.
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+  ],
 }
