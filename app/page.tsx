@@ -21,6 +21,20 @@ type Modulo = {
 
 const MODULOS: Modulo[] = [
   {
+    href: "/perfil",
+    icono: "👤",
+    titulo: "Mi Perfil",
+    descripcion: "Tus datos personales, firma digital y preferencias.",
+    puedes: [
+      "Actualizar tu teléfono y datos",
+      "Cambiar tu contraseña de acceso",
+      "Dibujar y actualizar tu firma digital SVG",
+      "Configurar preferencias de interfaz",
+    ],
+    permiso: "agenda.ver",
+    color: "from-indigo-500 to-blue-600",
+  },
+  {
     href: "/agenda",
     icono: "📅",
     titulo: "Agenda",
@@ -37,6 +51,20 @@ const MODULOS: Modulo[] = [
     puedes: ["Registrar pacientes nuevos", "Odontograma y tratamientos", "Evoluciones, antecedentes y RX", "Registrar pagos y ver su deuda"],
     permiso: "pacientes.ver",
     color: "from-teal-500 to-emerald-600",
+  },
+  {
+    href: "/recetas",
+    icono: "📄",
+    titulo: "Recetario Médico",
+    descripcion: "Prescripciones electrónicas e historial imprimible.",
+    puedes: [
+      "Emitir recetas con folio correlativo",
+      "Validación automática de alergias del paciente",
+      "Autocompletado de posología y catálogo de fármacos",
+      "Generación e impresión de PDF con firma digital",
+    ],
+    permiso: "pacientes.ver",
+    color: "from-emerald-500 to-teal-600",
   },
   {
     href: "/caja",

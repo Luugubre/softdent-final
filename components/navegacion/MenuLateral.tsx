@@ -19,6 +19,7 @@ export async function MenuLateral() {
       enlaces: [
         { href: "/agenda", icono: "📅", etiqueta: "Agenda", ayuda: "Citas, llegadas y recordatorios", visible: p("agenda.ver") },
         { href: "/pacientes", icono: "🧑‍⚕️", etiqueta: "Pacientes", ayuda: "Fichas, tratamientos y pagos", visible: p("pacientes.ver") },
+        { href: "/recetas", icono: "📄", etiqueta: "Recetario", ayuda: "Emitir prescripciones e historial PDF", visible: p("pacientes.ver") },
       ],
     },
     {
@@ -38,10 +39,12 @@ export async function MenuLateral() {
     {
       titulo: "Configuración",
       enlaces: [
+        { href: "/perfil", icono: "👤", etiqueta: "Mi Perfil", ayuda: "Datos personales, firma y contraseña", visible: true },
         { href: "/prestaciones", icono: "🦷", etiqueta: "Prestaciones y precios", ayuda: "Catálogo, aranceles y códigos", visible: p("prestaciones.ver") },
         { href: "/agenda/configuracion", icono: "🕘", etiqueta: "Horarios y boxes", ayuda: "Cuándo atiende cada dentista", visible: p("agenda.configurar") },
         { href: "/usuarios", icono: "🔐", etiqueta: "Usuarios y roles", ayuda: "Cuentas y permisos", visible: p("usuarios.gestionar") },
         { href: "/administracion", icono: "⚙️", etiqueta: "Administración", ayuda: "Catálogos, métodos de pago y parámetros", visible: p("administracion.gestionar") },
+        {href: "/administracion/plantillas", icono: "📋", etiqueta: "Plantillas y Consentimientos", ayuda: "Consentimientos informados y plantillas con variables", visible: p("administracion.gestionar")},
       ],
     },
     {

@@ -86,6 +86,76 @@ export const REFERENCIAS = [
   "Otro",
 ] as const
 
+// ==========================================
+// ESQUEMAS ZOD REUTILIZABLES (COMPARTIDOS)
+// ==========================================
+
+export const rutSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresa el RUT")
+  .refine((r) => validarRut(r), "RUT inválido. Revisa el dígito verificador.")
+
+export const telefonoSchema = z
+  .string()
+  .trim()
+  .refine((v) => telefonoValido(v), "Teléfono inválido (ej: +56 9 1234 5678)")
+
+export const correoSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Correo electrónico inválido")
+
+export const montoSchema = z
+  .number({ message: "El monto debe ser un número válido" })
+  .min(0, "El monto no puede ser negativo")
+
+export const fechaSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)")
+
+export const fechaNacimientoSchema = fechaSchema.refine((fecha) => {
+  const edad = calcularEdad(fecha)
+  if (edad === null) return false
+  return edad >= 0 && edad <= 120
+}, "Fecha de nacimiento inválida o fuera de rango")
+
+// ==========================================
+// ESQUEMAS PARA PERFIL DE USUARIO
+// ==========================================
+
+export const perfilUsuarioSchema = z.object({
+  nombres: z.string().trim().min(2, "Ingresa los nombres").max(80),
+  apellidos: z.string().trim().min(2, "Ingresa los apellidos").max(80),
+  telefono: telefonoSchema.optional().or(z.literal("")),
+  firma_svg: z.string().optional().nullable(),
+  preferencias: z
+    .object({
+      notificaciones_email: z.boolean().default(true),
+      tema: z.enum(["light", "dark", "system"]).default("light"),
+    })
+    .optional(),
+})
+
+export const cambioPasswordSchema = z
+  .object({
+    password_actual: z.string().min(1, "Ingresa tu contraseña actual"),
+    nueva_password: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
+    confirmar_password: z.string().min(1, "Confirma la nueva contraseña"),
+  })
+  .refine((data) => data.nueva_password === data.confirmar_password, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmar_password"],
+  })
+
+export type PerfilUsuarioFormData = z.infer<typeof perfilUsuarioSchema>
+export type CambioPasswordFormData = z.infer<typeof cambioPasswordSchema>
+
+// ==========================================
+// PACIENTE SCHEMA
+// ==========================================
+
 const textoOpcional = (max: number) =>
   z.string().trim().max(max, `Máximo ${max} caracteres`).optional()
 
