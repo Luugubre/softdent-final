@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { anularReceta } from "@/app/recetas/actions"
 
-export function BotonAnularReceta({ recetaId, folio, pacienteId }: { recetaId: string; folio: number; pacienteId?: string }) {
+export function BotonAnularReceta({ recetaId, folio }: { recetaId: string; folio: number }) {
   const [abierto, setAbierto] = useState(false)
   const [motivo, setMotivo] = useState("")
   const [cargando, setCargando] = useState(false)
@@ -18,12 +18,8 @@ export function BotonAnularReceta({ recetaId, folio, pacienteId }: { recetaId: s
     setCargando(true)
     setError(null)
 
-    const formData = new FormData()
-    formData.append("receta_id", recetaId)
-    formData.append("motivo", motivo)
-    if (pacienteId) formData.append("paciente_id", pacienteId)
-
-    const res = await anularReceta(formData)
+    // anularReceta recibe solo el id de la receta (ver app/recetas/actions.ts)
+    const res = await anularReceta(recetaId)
 
     setCargando(false)
     if (res.error) {
