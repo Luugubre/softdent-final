@@ -151,3 +151,47 @@ export async function obtenerHistorialCita(citaId: string) {
     usuario: { nombre_completo: string } | null
   }[]
 }
+
+export type CitaHuerfana = CitaAgenda & { motivo_huerfana: string }
+
+export async function obtenerCitasHuerfanas(
+  desde: string,
+  hasta: string,
+  profesionalId?: string
+): Promise<CitaHuerfana[]> {
+  const supabase = getSupabase()
+  const { data: huerfanas, error } = await supabase.rpc("citas_huerfanas", {
+    p_desde: desde,
+    p_hasta: hasta,
+  })
+
+  if (error) {
+    console.error("Error RPC citas_huerfanas:", error.message)
+    return []
+  }
+  if (!huerfanas || huerfanas.length === 0) return []
+
+  const mapaMotivos = new Map<string, string>()
+  for (const h of huerfanas as { cita_id: string; motivo: string }[]) {
+    mapaMotivos.set(h.cita_id, h.motivo)
+  }
+
+  let q = supabase
+    .from("v_agenda")
+    .select("*")
+    .in("id", [...mapaMotivos.keys()])
+    .order("inicio")
+
+  if (profesionalId) q = q.eq("profesional_id", profesionalId)
+
+  const { data: citas, error: errVista } = await q
+  if (errVista) {
+    console.error("Error consultando v_agenda para huérfanas:", errVista.message)
+    return []
+  }
+
+  return ((citas ?? []) as CitaAgenda[]).map((c) => ({
+    ...c,
+    motivo_huerfana: mapaMotivos.get(c.id) ?? "Situación inválida",
+  }))
+}

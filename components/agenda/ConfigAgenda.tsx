@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { agregarHorario, cambiarEstadoBox, crearBox, eliminarBloqueo, eliminarHorario } from "@/app/agenda/actions"
+import { agregarHorario, cambiarEstadoBox, crearBox, eliminarBloqueo, eliminarHorario, contarCitasAfectadasHorario   } from "@/app/agenda/actions"
 import { formatearFechaHora } from "@/lib/formato"
 import { DIAS_SEMANA, TIPO_BLOQUEO, type BloqueoAgenda, type Box, type HorarioAtencion, type ProfesionalAgenda } from "@/types/cita"
 
@@ -28,6 +28,36 @@ export function ConfigHorarios({ profesionales, horarios }: { profesionales: Pro
   const [inicio, setInicio] = useState("09:00")
   const [fin, setFin] = useState("13:00")
   const { ejecutar, pendiente, Aviso } = useAccion()
+
+  async function manejarAgregar() {
+    const afectadas = await contarCitasAfectadasHorario(profesionalId, {
+      tipo: "agregar",
+      dias,
+      horaInicio: inicio,
+      horaFin: fin,
+    })
+    if (
+      afectadas > 0 &&
+      !window.confirm(`Esto deja ${afectadas} cita${afectadas === 1 ? "" : "s"} fuera de horario.\n¿Guardar de todas formas?`)
+    ) {
+      return
+    }
+    ejecutar(() => agregarHorario(profesionalId, dias, inicio, fin))
+  }
+
+  async function manejarEliminar(profId: string, horarioId: string) {
+    const afectadas = await contarCitasAfectadasHorario(profId, {
+      tipo: "eliminar",
+      horarioId,
+    })
+    if (
+      afectadas > 0 &&
+      !window.confirm(`Esto deja ${afectadas} cita${afectadas === 1 ? "" : "s"} fuera de horario.\n¿Quitar este horario de todas formas?`)
+    ) {
+      return
+    }
+    ejecutar(() => eliminarHorario(horarioId))
+  }
 
   return (
     <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
@@ -67,7 +97,7 @@ export function ConfigHorarios({ profesionales, horarios }: { profesionales: Pro
         <input type="time" step={900} value={fin} onChange={(e) => setFin(e.target.value)} className="rounded-lg border border-gray-300 px-2 py-1 text-sm font-bold" />
         <button
           disabled={pendiente || !profesionalId}
-          onClick={() => ejecutar(() => agregarHorario(profesionalId, dias, inicio, fin))}
+          onClick={manejarAgregar}
           className="px-4 py-1.5 rounded-lg text-sm font-black text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >
           Agregar
@@ -97,7 +127,7 @@ export function ConfigHorarios({ profesionales, horarios }: { profesionales: Pro
                               {corta(h.hora_inicio)}–{corta(h.hora_fin)}
                               <button
                                 disabled={pendiente}
-                                onClick={() => ejecutar(() => eliminarHorario(h.id))}
+                                onClick={() => manejarEliminar(p.id, h.id)}
                                 className="text-blue-400 hover:text-rose-600"
                                 title="Quitar"
                               >
@@ -200,3 +230,4 @@ export function ListaBloqueos({ bloqueos, puedeEliminar }: { bloqueos: BloqueoAg
     </section>
   )
 }
+

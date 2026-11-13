@@ -14,6 +14,7 @@ import { ComoFunciona, Termino } from "@/components/ui/Ayuda"
 import { fechaTitulo, sumarDias } from "@/lib/fechas-agenda"
 import { mensajeInasistencia, mensajeRecordatorio } from "@/lib/mensajes-agenda"
 import { ESTADO_CITA, type Box, type CitaAgenda, type EstadoCita, type InfoPaciente, type PacienteBusqueda, type ProfesionalAgenda, type TipoAtencion } from "@/types/cita"
+import type { CitaHuerfana } from "@/lib/agenda"
 
 type Props = {
   vista: "dia" | "semana"
@@ -21,6 +22,7 @@ type Props = {
   hoy: string
   dias: string[]
   citas: CitaAgenda[]
+  huerfanas: CitaHuerfana[] 
   info: Record<string, InfoPaciente>
   profesionales: ProfesionalAgenda[]
   boxes: Box[]
@@ -34,7 +36,7 @@ type Props = {
 type Modal = null | "bloqueo" | "buscar" | "recordatorios" | "anuladas"
 
 export function AgendaClinica(p: Props) {
-  const { vista, fecha, hoy, dias, citas, info, profesionales, boxes, profesional, usuarioId, permisos } = p
+  const { vista, fecha, hoy, dias, citas, huerfanas, info, profesionales, boxes, profesional, usuarioId, permisos } = p
   const router = useRouter()
   const fechaRef = useRef<HTMLInputElement>(null)
 
@@ -43,6 +45,7 @@ export function AgendaClinica(p: Props) {
     p.pacienteInicial && permisos.gestionar ? { clave: Date.now(), paciente: p.pacienteInicial, profesionalId: profesional, semana: fecha } : null
   )
   const [modal, setModal] = useState<Modal>(null)
+  const [modalHuerfanas, setModalHuerfanas] = useState(false)
   const [detalle, setDetalle] = useState<CitaAgenda | null>(null)
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string; whatsapp?: string } | null>(null)
   const [, startTransition] = useTransition()
@@ -157,6 +160,12 @@ export function AgendaClinica(p: Props) {
               🔒 Bloquear
             </button>
           )}
+          <Link
+            href={`/agenda/dia?fecha=${fecha}${profesional ? `&profesional=${profesional}` : ""}`}
+            className={`${boton} border-gray-200 text-gray-600 hover:bg-gray-50`}
+          >
+            🕒 Vista día
+          </Link>
           <Link href={`/agenda/grilla?fecha=${fecha}${profesional ? `&profesional=${profesional}` : ""}`} className={`${boton} border-gray-200 text-gray-600 hover:bg-gray-50`}>
             ▦ Vista grilla
           </Link>
@@ -292,10 +301,22 @@ export function AgendaClinica(p: Props) {
             🗓 {filtradas.length} {vista === "dia" ? (esHoy ? "citas hoy" : "citas del día") : "citas en la semana"}
           </span>
           {anuladas.length > 0 && (
+            
             <>
               <span className="w-1 h-1 rounded-full bg-gray-300" />
               <button onClick={() => setModal("anuladas")} className="font-bold text-xs uppercase tracking-widest text-red-500 hover:text-red-700">
                 {anuladas.length} anulada{anuladas.length === 1 ? "" : "s"}
+              </button>
+            </>
+          )}
+          {huerfanas.length > 0 && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-gray-300" />
+              <button
+                onClick={() => setModalHuerfanas(true)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-red-700 animate-pulse"
+              >
+                ⚠ {huerfanas.length} huérfana{huerfanas.length === 1 ? "" : "s"}
               </button>
             </>
           )}

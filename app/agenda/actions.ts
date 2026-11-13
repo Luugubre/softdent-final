@@ -411,3 +411,94 @@ export async function eliminarHorario(horarioId: string): Promise<Resultado> {
   refrescar()
   return { ok: true, mensaje: "Horario eliminado." }
 }
+
+export async function contarCitasAfectadasBloqueo(datos: {
+  fechaInicio: string
+  horaInicio: string
+  fechaFin: string
+  horaFin: string
+  profesionalId?: string | null
+  boxId?: string | null
+}): Promise<number> {
+  if (!(await autorizar("agenda.gestionar"))) return 0
+  if (![datos.fechaInicio, datos.fechaFin].every((f) => FECHA.test(f))) return 0
+
+  const supabase = getSupabase()
+  const [{ data: inicio }, { data: fin }] = await Promise.all([
+    supabase.rpc("hora_chile", { p_fecha: datos.fechaInicio, p_hora: datos.horaInicio }),
+    supabase.rpc("hora_chile", { p_fecha: datos.fechaFin, p_hora: datos.horaFin }),
+  ])
+  if (!inicio || !fin || new Date(String(fin)) <= new Date(String(inicio))) return 0
+
+  // Consultamos las citas vigentes en el rango de fechas
+  let q = supabase
+    .from("v_agenda")
+    .select("id, inicio, duracion_min, profesional_id, box_id")
+    .in("estado", ESTADOS_VIGENTES)
+    .gte("fecha", datos.fechaInicio)
+    .lte("fecha", datos.fechaFin)
+
+  if (uuidONull(datos.profesionalId)) q = q.eq("profesional_id", datos.profesionalId as string)
+  if (uuidONull(datos.boxId)) q = q.eq("box_id", datos.boxId as string)
+
+  const { data } = await q
+  const iniMs = new Date(String(inicio)).getTime()
+  const finMs = new Date(String(fin)).getTime()
+
+  return (data ?? []).filter((c) => {
+    const cIni = new Date(c.inicio).getTime()
+    const cFin = cIni + c.duracion_min * 60_000
+    return cIni < finMs && cFin > iniMs
+  }).length
+}
+
+export async function contarCitasAfectadasHorario(
+  profesionalId: string,
+  accion:
+    | { tipo: "agregar"; dias: number[]; horaInicio: string; horaFin: string }
+    | { tipo: "eliminar"; horarioId: string }
+): Promise<number> {
+  if (!(await autorizar("agenda.configurar")) || !UUID.test(profesionalId)) return 0
+  const supabase = getSupabase()
+  const hoy = new Date().toISOString().slice(0, 10)
+  const en90Dias = sumarDias(hoy, 90)
+
+  const [{ data: actuales }, { data: citas }] = await Promise.all([
+    supabase.from("horarios_atencion").select("id, dia_semana, hora_inicio, hora_fin").eq("profesional_id", profesionalId),
+    supabase
+      .from("v_agenda")
+      .select("id, fecha, minuto_inicio, duracion_min, sobrecupo")
+      .eq("profesional_id", profesionalId)
+      .in("estado", ESTADOS_VIGENTES)
+      .eq("sobrecupo", false)
+      .gte("fecha", hoy)
+      .lte("fecha", en90Dias),
+  ])
+
+  const listaActual = actuales ?? []
+  let listaNueva = [...listaActual]
+
+  if (accion.tipo === "agregar") {
+    for (const d of accion.dias) {
+      listaNueva.push({ id: "temp", dia_semana: d, hora_inicio: accion.horaInicio, hora_fin: accion.horaFin })
+    }
+  } else {
+    listaNueva = listaActual.filter((h) => h.id !== accion.horarioId)
+  }
+
+  const esValidaEn = (tramos: typeof listaActual, fecha: string, minIni: number, minFin: number) => {
+    const dow = diaSemana(fecha)
+    if (tramos.length === 0) return dow < 7 && minIni >= 540 && minFin <= 1140
+    return tramos
+      .filter((t) => t.dia_semana === dow)
+      .some((t) => minIni >= horaAMinutos(t.hora_inicio) && minFin <= horaAMinutos(t.hora_fin))
+  }
+
+  // Contamos citas que ANTES estaban válidas y con el cambio quedarían fuera de horario
+  return (citas ?? []).filter((c) => {
+    const fin = c.minuto_inicio + c.duracion_min
+    const antesOk = esValidaEn(listaActual, c.fecha, c.minuto_inicio, fin)
+    const despuesOk = esValidaEn(listaNueva, c.fecha, c.minuto_inicio, fin)
+    return antesOk && !despuesOk
+  }).length
+}
