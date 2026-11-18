@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { SelectorMedicamentos, type MedicamentoCatalogo } from "@/components/recetas/SelectorMedicamentos"
 import { AlertaAlergiaModal } from "@/components/recetas/AlertaAlergiaModal"
@@ -35,16 +36,27 @@ type Props = {
   pacientes: PacienteOpt[]
   dentistas: DentistaOpt[]
   rolUsuario: string
+  pacienteFijoId?: string
 }
 
-export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsuario }: Props) {
-  const [pacienteId, setPacienteId] = useState("")
+export default function FormNuevaReceta({
+  catalogo,
+  pacientes,
+  dentistas,
+  rolUsuario,
+  pacienteFijoId,
+}: Props) {
+  const [pacienteId, setPacienteId] = useState(pacienteFijoId ?? "")
   const [profesionalId, setProfesionalId] = useState("")
   const [diagnostico, setDiagnostico] = useState("")
   const [indicaciones, setIndicaciones] = useState("")
   const [items, setItems] = useState<MedicamentoItem[]>([])
 
-  const esRecepcionista = rolUsuario === "RECEPCIONISTA" || rolUsuario === "RECEPCION" || rolUsuario === "ADMIN"
+  const esRecepcionista =
+    rolUsuario === "RECEPCIONISTA" ||
+    rolUsuario === "RECEPCION" ||
+    rolUsuario === "ADMIN" ||
+    rolUsuario === "ADMINISTRADOR"
 
   const [medActual, setMedActual] = useState<MedicamentoItem>({
     medicamento: "",
@@ -61,7 +73,6 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
   const [error, setError] = useState<string | null>(null)
   const [recetaEmitidaId, setRecetaEmitidaId] = useState<string | null>(null)
 
-  // Mapeo adaptado al tipo MedicamentoCatalogo del selector
   const catalogoTyped: MedicamentoCatalogo[] = catalogo.map((m) => ({
     id: m.id || m.medicamento,
     nombre: m.medicamento,
@@ -78,9 +89,10 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
     const pacienteSeleccionado = pacientes.find((p) => p.id === pacienteId)
     const alergiasPaciente = pacienteSeleccionado?.antecedentes?.filter((a) => a.categoria === "ALERGIA") ?? []
 
-    const conflicto = alergiasPaciente.find((a) =>
-      item.medicamento.toLowerCase().includes(a.detalle.toLowerCase()) ||
-      a.detalle.toLowerCase().includes(item.medicamento.toLowerCase())
+    const conflicto = alergiasPaciente.find(
+      (a) =>
+        item.medicamento.toLowerCase().includes(a.detalle.toLowerCase()) ||
+        a.detalle.toLowerCase().includes(item.medicamento.toLowerCase())
     )
 
     if (conflicto) {
@@ -133,9 +145,17 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-gray-900">📄 Emitir Nueva Receta Médica</h1>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-extrabold text-gray-900">📄 Emitir Nueva Receta Médica</h2>
+        {pacienteFijoId && (
+          <Link
+            href={`/pacientes/${pacienteFijoId}/recetas`}
+            className="rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50"
+          >
+            ← Volver al recetario
+          </Link>
+        )}
       </div>
 
       {/* Banner de Advertencia Legal */}
@@ -158,7 +178,7 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
               required
               value={pacienteId}
               onChange={(e) => setPacienteId(e.target.value)}
-              disabled={!!recetaEmitidaId}
+              disabled={!!recetaEmitidaId || !!pacienteFijoId}
               className="w-full rounded-xl border border-gray-300 p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 bg-white disabled:bg-gray-100"
             >
               <option value="">-- Seleccionar Paciente --</option>
@@ -330,7 +350,9 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
               <div key={idx} className="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-xs">
                 <div>
                   <strong className="text-gray-900">{it.medicamento}</strong> ({it.presentacion})
-                  <p className="text-gray-500">{it.dosis} · {it.frecuencia} · {it.duracion} · Vía: {it.via} ({it.cantidad})</p>
+                  <p className="text-gray-500">
+                    {it.dosis} · {it.frecuencia} · {it.duracion} · Vía: {it.via} ({it.cantidad})
+                  </p>
                 </div>
                 {!recetaEmitidaId && (
                   <button
@@ -357,7 +379,7 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
               La receta inmutable se ha registrado correctamente en el sistema.
             </p>
 
-            <div className="flex justify-center gap-3 pt-2">
+            <div className="flex flex-wrap justify-center gap-3 pt-2">
               <a
                 href={`/recetas/${recetaEmitidaId}/pdf`}
                 target="_blank"
@@ -373,13 +395,21 @@ export default function FormNuevaReceta({ catalogo, pacientes, dentistas, rolUsu
                   setItems([])
                   setDiagnostico("")
                   setIndicaciones("")
-                  setPacienteId("")
+                  if (!pacienteFijoId) setPacienteId("")
                   setProfesionalId("")
                 }}
                 className="rounded-xl bg-white border border-gray-300 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 + Emitir Otra Receta
               </button>
+              {pacienteFijoId && (
+                <Link
+                  href={`/pacientes/${pacienteFijoId}/recetas`}
+                  className="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 transition-colors"
+                >
+                  Ver Historial del Paciente
+                </Link>
+              )}
             </div>
           </div>
         ) : (

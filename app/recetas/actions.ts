@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { crearClienteAuth } from "@/lib/supabase-auth"
 import { requerirUsuario } from "@/lib/auth"
 
@@ -80,6 +81,9 @@ export async function emitirReceta(payload: EmitirRecetaPayload) {
       return { error: "Receta creada pero ocurrió un error al asociar los medicamentos." }
     }
 
+    revalidatePath(`/pacientes/${payload.paciente_id}/recetas`)
+    revalidatePath(`/pacientes/${payload.paciente_id}`)
+
     return { recetaId: receta.id, folio: nuevoFolio }
   } catch (e: unknown) {
     console.error("Error en emitirReceta:", e)
@@ -94,14 +98,21 @@ export async function anularReceta(recetaId: string) {
     await requerirUsuario()
     const supabase = await crearClienteAuth()
 
-    const { error } = await supabase
+    const { data: receta, error } = await supabase
       .from("recetas")
       .update({ estado: "ANULADA" })
       .eq("id", recetaId)
+      .select("paciente_id")
+      .single()
 
     if (error) {
       console.error("Error al anular receta:", error)
       return { error: "No se pudo anular la receta." }
+    }
+
+    if (receta?.paciente_id) {
+      revalidatePath(`/pacientes/${receta.paciente_id}/recetas`)
+      revalidatePath(`/pacientes/${receta.paciente_id}`)
     }
 
     return { success: true }

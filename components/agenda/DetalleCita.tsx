@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useState, useTransition } from "react"
 import { cambiarEstadoCita, historialCita } from "@/app/agenda/actions"
 import { Modal } from "@/components/odontograma/Modales"
+import { ModalEnviarPresupuestoWA } from "@/components/presupuestos/ModalEnviarPresupuestoWA"
 import { enlaceWhatsapp } from "@/lib/clinica"
 import { fechaTitulo } from "@/lib/fechas-agenda"
 import { formatearFechaHora } from "@/lib/formato"
@@ -37,6 +38,7 @@ export function DetalleCita({
 }) {
   const [historial, setHistorial] = useState<Historial | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [modalPresupuesto, setModalPresupuesto] = useState(false)
   const [pendiente, startTransition] = useTransition()
   const estilo = ESTADO_CITA[cita.estado]
   const whatsapp = enlaceWhatsapp(cita.paciente_telefono, mensajeRecordatorio([cita]))
@@ -61,141 +63,159 @@ export function DetalleCita({
   }
 
   return (
-    <Modal titulo={`Cita N° ${cita.numero}`} onClose={onClose}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <Link href={`/pacientes/${cita.paciente_id}`} className="text-xl font-black text-gray-900 hover:text-blue-700 hover:underline">
-            {cita.paciente_nombre}
+    <>
+      <Modal titulo={`Cita N° ${cita.numero}`} onClose={onClose}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Link href={`/pacientes/${cita.paciente_id}`} className="text-xl font-black text-gray-900 hover:text-blue-700 hover:underline">
+              {cita.paciente_nombre}
+            </Link>
+            <p className="text-sm font-semibold text-gray-500">
+              {cita.paciente_rut}
+              {cita.paciente_telefono ? ` · ${cita.paciente_telefono}` : ""}
+            </p>
+          </div>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-black whitespace-nowrap ${estilo.chip}`}>{estilo.etiqueta}</span>
+        </div>
+
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm rounded-xl bg-gray-50 border border-gray-200 p-3">
+          <div className="col-span-2">
+            <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Cuándo</dt>
+            <dd className="font-bold text-gray-900 capitalize">
+              {fechaTitulo(cita.fecha)} · {cita.hora_inicio} a {cita.hora_fin} ({cita.duracion_min} min)
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Profesional</dt>
+            <dd className="font-semibold text-gray-900">{cita.profesional_nombre}</dd>
+          </div>
+          <div>
+            <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Box</dt>
+            <dd className="font-semibold text-gray-900">{cita.box_nombre ?? "—"}</dd>
+          </div>
+          {cita.prestacion_nombre && (
+            <div className="col-span-2">
+              <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Prestación</dt>
+              <dd className="font-semibold text-gray-900">{cita.prestacion_nombre}</dd>
+            </div>
+          )}
+          {cita.motivo && (
+            <div className="col-span-2">
+              <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Motivo / notas</dt>
+              <dd className="font-medium text-gray-800">{cita.motivo}</dd>
+            </div>
+          )}
+          {cita.sobrecupo && (
+            <div className="col-span-2 text-xs font-bold text-orange-700">⚠ Sobrecupo: {cita.motivo_sobrecupo}</div>
+          )}
+          {cita.motivo_cancelacion && (
+            <div className="col-span-2 text-xs font-bold text-rose-700">Anulada: {cita.motivo_cancelacion}</div>
+          )}
+        </dl>
+
+        {puedeGestionar && (
+          <div className="flex flex-wrap gap-2">
+            {ACCIONES.filter((a) => puedePasarA(cita.estado, a.estado)).map((a) => (
+              <button
+                key={a.estado}
+                disabled={pendiente}
+                onClick={() => cambiar(a.estado)}
+                className={`px-3 py-2 rounded-xl text-sm font-bold disabled:opacity-50 ${a.estilo}`}
+              >
+                {a.texto}
+              </button>
+            ))}
+            {puedePasarA(cita.estado, "REAGENDADA") && (
+              <button
+                disabled={pendiente}
+                onClick={onReagendar}
+                className="px-3 py-2 rounded-xl text-sm font-bold bg-purple-100 text-purple-800 hover:bg-purple-200 disabled:opacity-50"
+              >
+                📅 Reprogramar
+              </button>
+            )}
+            {puedePasarA(cita.estado, "CANCELADA") && (
+              <button
+                disabled={pendiente}
+                onClick={() => cambiar("CANCELADA")}
+                className="px-3 py-2 rounded-xl text-sm font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+              >
+                Anular cita
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 text-sm">
+          <Link href={`/pacientes/${cita.paciente_id}`} className="px-3 py-1.5 rounded-lg font-bold text-blue-700 bg-blue-50 hover:bg-blue-100">
+            Ver ficha
           </Link>
-          <p className="text-sm font-semibold text-gray-500">
-            {cita.paciente_rut}
-            {cita.paciente_telefono ? ` · ${cita.paciente_telefono}` : ""}
-          </p>
-        </div>
-        <span className={`px-2.5 py-1 rounded-full text-xs font-black whitespace-nowrap ${estilo.chip}`}>{estilo.etiqueta}</span>
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm rounded-xl bg-gray-50 border border-gray-200 p-3">
-        <div className="col-span-2">
-          <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Cuándo</dt>
-          <dd className="font-bold text-gray-900 capitalize">
-            {fechaTitulo(cita.fecha)} · {cita.hora_inicio} a {cita.hora_fin} ({cita.duracion_min} min)
-          </dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Profesional</dt>
-          <dd className="font-semibold text-gray-900">{cita.profesional_nombre}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Box</dt>
-          <dd className="font-semibold text-gray-900">{cita.box_nombre ?? "—"}</dd>
-        </div>
-        {cita.prestacion_nombre && (
-          <div className="col-span-2">
-            <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Prestación</dt>
-            <dd className="font-semibold text-gray-900">{cita.prestacion_nombre}</dd>
-          </div>
-        )}
-        {cita.motivo && (
-          <div className="col-span-2">
-            <dt className="text-[11px] font-black uppercase tracking-wider text-gray-500">Motivo / notas</dt>
-            <dd className="font-medium text-gray-800">{cita.motivo}</dd>
-          </div>
-        )}
-        {cita.sobrecupo && (
-          <div className="col-span-2 text-xs font-bold text-orange-700">⚠ Sobrecupo: {cita.motivo_sobrecupo}</div>
-        )}
-        {cita.motivo_cancelacion && (
-          <div className="col-span-2 text-xs font-bold text-rose-700">Anulada: {cita.motivo_cancelacion}</div>
-        )}
-      </dl>
-
-      {puedeGestionar && (
-        <div className="flex flex-wrap gap-2">
-          {ACCIONES.filter((a) => puedePasarA(cita.estado, a.estado)).map((a) => (
-            <button
-              key={a.estado}
-              disabled={pendiente}
-              onClick={() => cambiar(a.estado)}
-              className={`px-3 py-2 rounded-xl text-sm font-bold disabled:opacity-50 ${a.estilo}`}
+          {verClinico && (
+            <Link
+              href={`/pacientes/${cita.paciente_id}/odontograma`}
+              className="px-3 py-1.5 rounded-lg font-bold text-blue-700 bg-blue-50 hover:bg-blue-100"
             >
-              {a.texto}
-            </button>
-          ))}
-          {puedePasarA(cita.estado, "REAGENDADA") && (
-            <button
-              disabled={pendiente}
-              onClick={onReagendar}
-              className="px-3 py-2 rounded-xl text-sm font-bold bg-purple-100 text-purple-800 hover:bg-purple-200 disabled:opacity-50"
-            >
-              📅 Reprogramar
-            </button>
+              🦷 Odontograma
+            </Link>
           )}
-          {puedePasarA(cita.estado, "CANCELADA") && (
-            <button
-              disabled={pendiente}
-              onClick={() => cambiar("CANCELADA")}
-              className="px-3 py-2 rounded-xl text-sm font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:opacity-50"
-            >
-              Anular cita
-            </button>
-          )}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-2 text-sm">
-        <Link href={`/pacientes/${cita.paciente_id}`} className="px-3 py-1.5 rounded-lg font-bold text-blue-700 bg-blue-50 hover:bg-blue-100">
-          Ver ficha
-        </Link>
-        {verClinico && (
           <Link
-            href={`/pacientes/${cita.paciente_id}/odontograma`}
+            href={`/pacientes/${cita.paciente_id}/pagos`}
             className="px-3 py-1.5 rounded-lg font-bold text-blue-700 bg-blue-50 hover:bg-blue-100"
           >
-            🦷 Odontograma
+            💳 Pagos
           </Link>
-        )}
-        <Link
-          href={`/pacientes/${cita.paciente_id}/pagos`}
-          className="px-3 py-1.5 rounded-lg font-bold text-blue-700 bg-blue-50 hover:bg-blue-100"
-        >
-          💳 Pagos
-        </Link>
-        {whatsapp && ["AGENDADA", "CONFIRMADA"].includes(cita.estado) && (
-          <a
-            href={whatsapp}
-            target="_blank"
-            rel="noreferrer"
-            className="px-3 py-1.5 rounded-lg font-bold text-green-800 bg-green-50 hover:bg-green-100"
+          <button
+            type="button"
+            onClick={() => setModalPresupuesto(true)}
+            className="px-3 py-1.5 rounded-lg font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
           >
-            💬 Recordar por WhatsApp
-          </a>
-        )}
-      </div>
+            💬 Enviar presupuesto
+          </button>
+          {whatsapp && ["AGENDADA", "CONFIRMADA"].includes(cita.estado) && (
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 rounded-lg font-bold text-green-800 bg-green-50 hover:bg-green-100"
+            >
+              💬 Recordar por WhatsApp
+            </a>
+          )}
+        </div>
 
-      {error && <p className="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-800">{error}</p>}
+        {error && <p className="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-800">{error}</p>}
 
-      <div>
-        <p className="text-[11px] font-black uppercase tracking-wider text-gray-500 mb-1">Historial de la cita</p>
-        {historial === null ? (
-          <p className="text-xs text-gray-400">Cargando…</p>
-        ) : (
-          <ol className="space-y-1 text-xs">
-            {historial.map((h) => (
-              <li key={h.id} className="flex gap-2">
-                <span className="text-gray-400 whitespace-nowrap">{formatearFechaHora(h.fecha)}</span>
-                <span className="font-semibold text-gray-700">
-                  {h.estado_anterior ? `${ESTADO_CITA[h.estado_anterior].etiqueta} → ` : ""}
-                  {ESTADO_CITA[h.estado_nuevo].etiqueta}
-                  {h.usuario ? ` · ${h.usuario.nombre_completo}` : ""}
-                  {h.motivo ? ` · ${h.motivo}` : ""}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-        {cita.cita_original_id && <p className="mt-1 text-xs font-semibold text-purple-700">Esta cita viene de una reprogramación.</p>}
-      </div>
-    </Modal>
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-wider text-gray-500 mb-1">Historial de la cita</p>
+          {historial === null ? (
+            <p className="text-xs text-gray-400">Cargando…</p>
+          ) : (
+            <ol className="space-y-1 text-xs">
+              {historial.map((h) => (
+                <li key={h.id} className="flex gap-2">
+                  <span className="text-gray-400 whitespace-nowrap">{formatearFechaHora(h.fecha)}</span>
+                  <span className="font-semibold text-gray-700">
+                    {h.estado_anterior ? `${ESTADO_CITA[h.estado_anterior].etiqueta} → ` : ""}
+                    {ESTADO_CITA[h.estado_nuevo].etiqueta}
+                    {h.usuario ? ` · ${h.usuario.nombre_completo}` : ""}
+                    {h.motivo ? ` · ${h.motivo}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {cita.cita_original_id && <p className="mt-1 text-xs font-semibold text-purple-700">Esta cita viene de una reprogramación.</p>}
+        </div>
+      </Modal>
+
+      {modalPresupuesto && (
+        <ModalEnviarPresupuestoWA
+          pacienteId={cita.paciente_id}
+          pacienteNombre={cita.paciente_nombre}
+          pacienteTelefono={cita.paciente_telefono}
+          onClose={() => setModalPresupuesto(false)}
+        />
+      )}
+    </>
   )
 }
