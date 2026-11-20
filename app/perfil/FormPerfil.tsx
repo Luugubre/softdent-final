@@ -10,6 +10,7 @@ interface PerfilProps {
     apellidos: string
     email: string
     telefono?: string
+    rol?: string
     firma_svg?: string
     preferencias?: {
       notificaciones_email?: boolean
@@ -27,13 +28,14 @@ export function FormPerfil({ perfil }: PerfilProps) {
   const [firmaSvg, setFirmaSvg] = useState<string>(perfil.firma_svg || "")
   const [cargando, startTransition] = useTransition()
 
-  // Envío del perfil y preferencias
+  const esDentista = (perfil.rol ?? "").toUpperCase() === "DENTISTA"
+
   function onSubmitPerfil(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     setError(null)
     setExito(null)
     const formData = new FormData(ev.currentTarget)
-    formData.set("firma_svg", firmaSvg)
+    formData.set("firma_svg", esDentista ? firmaSvg : "")
 
     startTransition(async () => {
       const res = await actualizarPerfil(formData)
@@ -42,7 +44,6 @@ export function FormPerfil({ perfil }: PerfilProps) {
     })
   }
 
-  // Envío de actualización de contraseña
   function onSubmitPassword(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     setError(null)
@@ -62,7 +63,14 @@ export function FormPerfil({ perfil }: PerfilProps) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 p-6">
-      <h1 className="text-2xl font-bold text-gray-900">Perfil de Usuario</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">Perfil de Usuario</h1>
+        {perfil.rol && (
+          <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-blue-100 text-blue-800 border border-blue-200">
+            Rol: {perfil.rol}
+          </span>
+        )}
+      </div>
 
       {error && (
         <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm font-semibold">
@@ -76,7 +84,7 @@ export function FormPerfil({ perfil }: PerfilProps) {
         </div>
       )}
 
-      {/* SECCIÓN 1: DATOS PERSONALES, FIRMA SVG Y PREFERENCIAS */}
+      {/* SECCIÓN 1: DATOS PERSONALES, FIRMA SVG (SOLO DENTISTA) Y PREFERENCIAS */}
       <form onSubmit={onSubmitPerfil} className="bg-white p-6 rounded-2xl border border-gray-200 space-y-6 shadow-sm">
         <h2 className="text-lg font-bold text-gray-800 border-b pb-2">Información Personal</h2>
 
@@ -99,9 +107,13 @@ export function FormPerfil({ perfil }: PerfilProps) {
           </div>
         </div>
 
-        {/* FIRMA DIGITAL SVG */}
-        <h2 className="text-lg font-bold text-gray-800 border-b pb-2 pt-4">Firma Digital (SVG)</h2>
-        <FirmaCanvas valorInicial={perfil.firma_svg} onChange={(svg: string) => setFirmaSvg(svg)} />
+        {/* FIRMA DIGITAL SVG: Exclusiva para rol DENTISTA */}
+        {esDentista && (
+          <>
+            <h2 className="text-lg font-bold text-gray-800 border-b pb-2 pt-4">Firma Digital (SVG)</h2>
+            <FirmaCanvas valorInicial={perfil.firma_svg} onChange={(svg: string) => setFirmaSvg(svg)} />
+          </>
+        )}
 
         {/* PREFERENCIAS */}
         <h2 className="text-lg font-bold text-gray-800 border-b pb-2 pt-4">Preferencias</h2>

@@ -12,15 +12,19 @@ export default async function NuevaRecetaPacientePage({
   const { id } = await params
   const supabase = await crearClienteAuth()
 
-  const [paciente, antecedentes, { data: dentistasRaw }] = await Promise.all([
+  const [paciente, antecedentes, { data: perfilesRaw }] = await Promise.all([
     obtenerPaciente(id),
     obtenerAntecedentes(id),
     supabase.from("perfiles").select("id, nombre_completo, rut, especialidad, rol"),
   ])
 
-  const dentistasFiltrados = (dentistasRaw ?? []).filter(
-    (d) => d.rol && String(d.rol).toUpperCase().includes("DENTISTA")
-  )
+  const emisoresFiltrados = (perfilesRaw ?? []).filter((d) => {
+    const rol = String(d.rol ?? "").toUpperCase()
+    return rol.includes("DENTISTA") || (rol === "ADMINISTRADOR" && d.id === usuario.id)
+  })
+
+  // Si el usuario logueado es Administrador, lo ponemos primero como emisor por defecto
+  emisoresFiltrados.sort((a, b) => (a.id === usuario.id ? -1 : b.id === usuario.id ? 1 : 0))
 
   const pacienteFormateado = paciente
     ? [
@@ -35,11 +39,14 @@ export default async function NuevaRecetaPacientePage({
       ]
     : []
 
-  const dentistasFormateados = dentistasFiltrados.map((d) => ({
+  const dentistasFormateados = emisoresFiltrados.map((d) => ({
     id: String(d.id),
-    nombre_completo: d.nombre_completo || "Dr(a). Sin Nombre",
+    nombre_completo: d.nombre_completo || "Profesional Sin Nombre",
     rut: d.rut || "",
-    especialidad: d.especialidad || "Odontología General",
+    especialidad:
+      String(d.rol ?? "").toUpperCase() === "ADMINISTRADOR"
+        ? "Administración / Dirección Clínica"
+        : d.especialidad || "Odontología General",
   }))
 
   const catalogoMedicamentos = [

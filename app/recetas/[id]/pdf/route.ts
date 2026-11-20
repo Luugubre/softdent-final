@@ -26,29 +26,34 @@ export async function GET(
     .eq("id", receta.paciente_id)
     .maybeSingle()
 
-  // 3. Obtener el perfil DEL DENTISTA ASIGNADO A LA RECETA (receta.profesional_id)
+  // 3. Obtener el perfil del emisor asignado a la receta (receta.profesional_id)
   const { data: { user } } = await supabase.auth.getUser()
-  const idDentistaReceta = receta.profesional_id || user?.id
+  const idEmisorReceta = receta.profesional_id || user?.id
 
   const { data: perfil } = await supabase
     .from("perfiles")
     .select("*")
-    .eq("id", idDentistaReceta)
+    .eq("id", idEmisorReceta)
     .maybeSingle()
 
-  // Extraer firma SVG del dentista asignado
-  const firmaSvg = perfil?.firma_svg || perfil?.firma || null
+  const rolEmisor = String(perfil?.rol ?? "").toUpperCase()
+  const esDentista = rolEmisor === "DENTISTA"
 
-  // Nombre y registro profesional del dentista asignado
-  const profesionalNombre = 
+  // La firma digital SVG aplica EXCLUSIVAMENTE cuando el emisor tiene rol DENTISTA
+  const firmaSvg = esDentista ? (perfil?.firma_svg || perfil?.firma || null) : null
+
+  const nombreBase =
     perfil?.nombre_completo ||
     (perfil ? `${perfil.nombres ?? ""} ${perfil.apellidos ?? ""}`.trim() : null) ||
-    "Cirujano Dentista"
+    "Profesional"
 
-  const registroProf = 
-    perfil?.registro_profesional || 
-    perfil?.registro_superintendencia || 
-    "N/A"
+  const etiquetaEmisor = esDentista ? `Dr(a). ${nombreBase}` : nombreBase
+  const subtituloPie = esDentista ? "Firma y Timbre Profesional" : "Administración · Clínica Odontológica"
+
+  const registroProf =
+    perfil?.registro_profesional ||
+    perfil?.registro_superintendencia ||
+    (esDentista ? "N/A" : "Administración")
 
   // 4. Obtener items prescritos
   const { data: items } = await supabase
@@ -110,8 +115,8 @@ export async function GET(
           <strong>RUT:</strong> ${paciente?.rut || "N/A"}
         </div>
         <div>
-          <strong>PROFESIONAL:</strong> Dr(a). ${profesionalNombre}<br>
-          <strong>REG. PROFESIONAL:</strong> ${registroProf}
+          <strong>EMITIDO POR:</strong> ${etiquetaEmisor}<br>
+          <strong>REGISTRO / CARGO:</strong> ${registroProf}
         </div>
       </div>
 
@@ -146,11 +151,13 @@ export async function GET(
           Verificación de autenticidad ID: ${receta.id}
         </div>
         <div class="firma-box">
-          <div class="firma-container">
-            ${firmaSvg ? `<div class="firma-svg-wrapper">${firmaSvg}</div>` : `<span style="color: #cbd5e1; font-style: italic; font-size: 10px;">[Sin firma guardada]</span>`}
-          </div>
-          <strong>Dr(a). ${profesionalNombre}</strong><br>
-          Firma y Timbre Profesional
+          ${esDentista ? `
+            <div class="firma-container">
+              ${firmaSvg ? `<div class="firma-svg-wrapper">${firmaSvg}</div>` : `<span style="color: #cbd5e1; font-style: italic; font-size: 10px;">[Sin firma guardada]</span>`}
+            </div>
+          ` : `<div style="height: 36px;"></div>`}
+          <strong>${etiquetaEmisor}</strong><br>
+          ${subtituloPie}
         </div>
       </div>
     </body>

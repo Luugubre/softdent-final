@@ -13,11 +13,19 @@ export async function actualizarPerfil(formData: FormData): Promise<{ error?: st
 
   if (!user) return { error: "Sesión no válida" }
 
+  const { data: perfilActual } = await supabase
+    .from("perfiles")
+    .select("rol")
+    .eq("id", user.id)
+    .single()
+
+  const esDentista = (perfilActual?.rol ?? "").toUpperCase() === "DENTISTA"
+
   const rawData = {
     nombres: String(formData.get("nombres") ?? ""),
     apellidos: String(formData.get("apellidos") ?? ""),
     telefono: String(formData.get("telefono") ?? ""),
-    firma_svg: String(formData.get("firma_svg") ?? ""),
+    firma_svg: esDentista ? String(formData.get("firma_svg") ?? "") : "",
     preferencias: {
       notificaciones_email: formData.get("notificaciones_email") === "true",
       tema: String(formData.get("tema") ?? "light"),
@@ -36,7 +44,7 @@ export async function actualizarPerfil(formData: FormData): Promise<{ error?: st
     .update({
       nombre_completo: nombreCompleto,
       telefono: validacion.data.telefono,
-      firma_svg: validacion.data.firma_svg,
+      firma_svg: esDentista ? (validacion.data.firma_svg || null) : null,
       preferencias: validacion.data.preferencias,
       updated_at: new Date().toISOString(),
     })

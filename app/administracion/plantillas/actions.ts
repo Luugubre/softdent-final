@@ -10,7 +10,6 @@ type PlantillaPayload = {
   contenido: string
 }
 
-// Constante interna privada (no se exporta) para cumplir la regla de Server Actions
 const PLANTILLAS_BASE = [
   {
     tipo: "CONSENTIMIENTO_EXTRACCION",
@@ -130,6 +129,89 @@ RUT: {{paciente.rut}}`,
   },
 ]
 
+function normalizarCodigoTipo(categoria: string, nombre: string): string {
+  const base = nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40)
+
+  const prefijo = categoria.toUpperCase().replace(/[^A-Z0-9]+/g, "_")
+  return `${prefijo}_${base || Date.now()}`
+}
+
+/**
+ * Crea una nueva plantilla de documento (versión 1)
+ */
+export async function crearPlantilla(payload: {
+  categoria: string
+  nombre: string
+  contenido: string
+}) {
+  try {
+    const usuario = await requerirUsuario()
+    if (usuario.rol !== "ADMINISTRADOR") {
+      return { error: "Solo el ADMINISTRADOR puede crear nuevas plantillas." }
+    }
+
+    if (!payload.nombre.trim() || !payload.contenido.trim()) {
+      return { error: "El nombre y el contenido del documento son obligatorios." }
+    }
+
+    const supabase = await crearClienteAuth()
+    let tipoCodigo = normalizarCodigoTipo(payload.categoria || "DOCUMENTO", payload.nombre)
+
+    // Evitar colisión si existe una plantilla con el mismo código tipo
+    const { data: yaExiste } = await supabase
+      .from("plantillas_documento")
+      .select("id")
+      .eq("tipo", tipoCodigo)
+      .maybeSingle()
+
+    if (yaExiste) {
+      tipoCodigo = `${tipoCodigo}_${Date.now().toString().slice(-4)}`
+    }
+
+    const { data: creada, error } = await supabase
+      .from("plantillas_documento")
+      .insert({
+        tipo: tipoCodigo,
+        nombre: payload.nombre.trim(),
+        contenido: payload.contenido,
+        version: 1,
+        activa: true,
+        creado_por: usuario.id,
+      })
+      .select("*")
+      .single()
+
+    if (error || !creada) {
+      console.error("Error creando nueva plantilla:", error)
+      return { error: "No se pudo crear la plantilla en la base de datos." }
+    }
+
+    revalidatePath("/administracion/plantillas")
+    return {
+      success: true,
+      plantilla: {
+        id: String(creada.id),
+        tipo: creada.tipo,
+        nombre: creada.nombre,
+        contenido: creada.contenido,
+        version: creada.version,
+        activa: creada.activa,
+        updated_at: creada.updated_at,
+      },
+    }
+  } catch (e: unknown) {
+    console.error("Error en crearPlantilla:", e)
+    const msg = e instanceof Error ? e.message : "Error inesperado"
+    return { error: msg }
+  }
+}
+
 /**
  * Guarda o actualiza una plantilla. Si ya existe, desactiva la versión previa e inserta versión v + 1.
  */
@@ -142,7 +224,6 @@ export async function guardarPlantilla(payload: PlantillaPayload) {
 
     const supabase = await crearClienteAuth()
 
-    // 1. Verificar si existe una versión activa para este tipo
     const { data: existente } = await supabase
       .from("plantillas_documento")
       .select("id, version")
@@ -152,7 +233,6 @@ export async function guardarPlantilla(payload: PlantillaPayload) {
 
     const nuevaVersion = existente ? existente.version + 1 : 1
 
-    // 2. Desactivar la versión anterior si existía
     if (existente) {
       const { error: errDesactivar } = await supabase
         .from("plantillas_documento")
@@ -165,8 +245,7 @@ export async function guardarPlantilla(payload: PlantillaPayload) {
       }
     }
 
-    // 3. Insertar la nueva versión activa
-    const { error: errInsertar } = await supabase
+    const { data: nuevaFila, error: errInsertar } = await supabase
       .from("plantillas_documento")
       .insert({
         tipo: payload.tipo,
@@ -176,14 +255,28 @@ export async function guardarPlantilla(payload: PlantillaPayload) {
         activa: true,
         creado_por: usuario.id,
       })
+      .select("*")
+      .single()
 
-    if (errInsertar) {
+    if (errInsertar || !nuevaFila) {
       console.error("Error al guardar nueva plantilla:", errInsertar)
       return { error: "Error al guardar la plantilla en la base de datos." }
     }
 
     revalidatePath("/administracion/plantillas")
-    return { success: true, version: nuevaVersion }
+    return {
+      success: true,
+      version: nuevaVersion,
+      plantilla: {
+        id: String(nuevaFila.id),
+        tipo: nuevaFila.tipo,
+        nombre: nuevaFila.nombre,
+        contenido: nuevaFila.contenido,
+        version: nuevaFila.version,
+        activa: nuevaFila.activa,
+        updated_at: nuevaFila.updated_at,
+      },
+    }
   } catch (e: unknown) {
     console.error("Error en guardarPlantilla:", e)
     const msg = e instanceof Error ? e.message : "Error inesperado"

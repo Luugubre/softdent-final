@@ -12,7 +12,7 @@ export default async function PerfilPage() {
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("nombre_completo, email, telefono, firma_svg, preferencias")
+    .select("nombre_completo, email, telefono, rol, firma_svg, preferencias")
     .eq("id", user.id)
     .single()
 
@@ -27,7 +27,8 @@ export default async function PerfilPage() {
         apellidos,
         email: user.email ?? "",
         telefono: perfil?.telefono ?? "",
-        firma_svg: perfil?.firma_svg ?? "",
+        rol: perfil?.rol ?? "DENTISTA",
+        firma_svg: perfil?.rol === "DENTISTA" ? (perfil?.firma_svg ?? "") : "",
         preferencias: perfil?.preferencias ?? { notificaciones_email: true, tema: "light" },
       }}
     />

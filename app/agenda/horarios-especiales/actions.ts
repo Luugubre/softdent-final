@@ -21,9 +21,14 @@ export type EntradaDiaEspecial = {
   hora_fin?: string | null
 }
 
-export async function listarHorariosEspeciales(desde: string) {
+export async function listarHorariosEspeciales(desde?: string) {
   await requerirPermiso("agenda.configurar")
   const supabase = getSupabase()
+
+  // Por defecto trae desde el primer día del mes actual para alimentar el visor mensual
+  const inicioMes = new Date()
+  inicioMes.setDate(1)
+  const fechaBase = desde ?? inicioMes.toISOString().slice(0, 10)
 
   const { data, error } = await supabase
     .from("horarios_especiales")
@@ -36,7 +41,7 @@ export async function listarHorariosEspeciales(desde: string) {
       motivo,
       profesional:perfiles!horarios_especiales_profesional_id_fkey(nombre_completo)
     `)
-    .gte("fecha", desde)
+    .gte("fecha", fechaBase)
     .order("fecha", { ascending: true })
 
   if (error) {
@@ -80,7 +85,6 @@ export async function guardarHorariosEspecialesLote(payload: {
       updated_at: new Date().toISOString(),
     }))
 
-    // Usa la constraint uq_profesional_fecha para insertar o actualizar si ya existía
     const { error } = await supabase
       .from("horarios_especiales")
       .upsert(filas, { onConflict: "profesional_id,fecha" })
