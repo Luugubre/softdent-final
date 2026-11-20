@@ -14,11 +14,18 @@ export async function MenuLateral() {
       titulo: "",
       enlaces: [{ href: "/", icono: "🏠", etiqueta: "Inicio", ayuda: "Resumen del día y accesos rápidos", visible: true }],
     },
-    {
+ {
       titulo: "Atención",
       enlaces: [
         { href: "/agenda", icono: "📅", etiqueta: "Agenda", ayuda: "Citas, llegadas y recordatorios", visible: p("agenda.ver") },
         { href: "/pacientes", icono: "🧑‍⚕️", etiqueta: "Pacientes", ayuda: "Fichas, tratamientos y pagos", visible: p("pacientes.ver") },
+        {
+          href: "/presupuestos-pendientes",
+          icono: "📋",
+          etiqueta: "Presupuestos",
+          ayuda: "Planes activos sin aprobar y seguimiento",
+          visible: p("presupuestos.gestionar") || p("agenda.gestionar"),
+        },
       ],
     },
     {
