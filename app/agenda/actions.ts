@@ -502,3 +502,65 @@ export async function contarCitasAfectadasHorario(
     return antesOk && !despuesOk
   }).length
 }
+
+export type PacienteEnEspera = {
+  id: string
+  paciente_id: string
+  paciente_nombre: string
+  hora_cita: string
+  llegada_at: string | null
+  box_nombre: string | null
+  motivo: string | null
+}
+
+export async function obtenerPacientesEnEspera(): Promise<PacienteEnEspera[]> {
+  const usuario = await autorizar("agenda.ver")
+  if (!usuario) return []
+
+  const supabase = getSupabase()
+  // Rango amplio de hoy en Chile (cubre UTC-4 y UTC-3)
+  const ahoraChile = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" })
+  const desde = `${ahoraChile}T00:00:00-04:00`
+  const hasta = `${ahoraChile}T23:59:59-03:00`
+
+  const { data, error } = await supabase
+    .from("citas")
+    .select(`
+      id,
+      paciente_id,
+      inicio,
+      llegada_at,
+      hora_llegada,
+      motivo,
+      paciente:pacientes(nombres, apellidos),
+      box:boxes(nombre)
+    `)
+    .eq("profesional_id", usuario.id)
+    .eq("estado", "EN_ESPERA")
+    .gte("inicio", desde)
+    .lte("inicio", hasta)
+    .order("llegada_at", { ascending: true, nullsFirst: false })
+
+  if (error || !data) return []
+
+  return data.map((row) => {
+    const pac = Array.isArray(row.paciente) ? row.paciente[0] : row.paciente
+    const bx = Array.isArray(row.box) ? row.box[0] : row.box
+    const horaChile = new Date(row.inicio).toLocaleTimeString("es-CL", {
+      timeZone: "America/Santiago",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+
+    return {
+      id: row.id,
+      paciente_id: row.paciente_id,
+      paciente_nombre: pac ? `${pac.nombres} ${pac.apellidos}` : "Paciente",
+      hora_cita: horaChile,
+      llegada_at: row.llegada_at ?? row.hora_llegada ?? null,
+      box_nombre: bx?.nombre ?? null,
+      motivo: row.motivo ?? null,
+    }
+  })
+}

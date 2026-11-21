@@ -2,10 +2,11 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
 import { Resend } from 'resend';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { generarPdfConsentimientoBase64 } from '@/lib/pdf-consentimiento';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -47,17 +48,47 @@ function sha256(texto: string): string {
   return crypto.createHash('sha256').update(texto).digest('hex');
 }
 
-function limpiarHtml(html: string): string {
-  if (!html) return '';
-  return html
-    .replace(/<br\s*[\/]?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<\/h[1-6]>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+function calcularEdadTexto(fechaNacimiento?: string | null): string {
+  if (!fechaNacimiento) return 'No registrada';
+  const nac = new Date(fechaNacimiento);
+  if (Number.isNaN(nac.getTime())) return 'No registrada';
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const mes = hoy.getMonth() - nac.getMonth();
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nac.getDate())) {
+    edad--;
+  }
+  return edad >= 0 ? String(edad) : 'No registrada';
+}
+
+function interpolarPlantilla(
+  contenido: string,
+  datos: {
+    fecha: string;
+    pacienteNombre: string;
+    pacienteRut: string;
+    pacienteEdad: string;
+    clinicaNombre: string;
+    profesionalNombre: string;
+    profesionalRegistro: string;
+    prestaciones: string;
+  }
+): string {
+  return contenido
+    // Variables con punto (plantillas_documento)
+    .replace(/\{\{\s*fecha\s*\}\}/gi, datos.fecha)
+    .replace(/\{\{\s*paciente\.nombre\s*\}\}/gi, datos.pacienteNombre)
+    .replace(/\{\{\s*paciente\.rut\s*\}\}/gi, datos.pacienteRut)
+    .replace(/\{\{\s*paciente\.edad\s*\}\}/gi, datos.pacienteEdad)
+    .replace(/\{\{\s*clinica\.nombre\s*\}\}/gi, datos.clinicaNombre)
+    .replace(/\{\{\s*profesional\.nombre\s*\}\}/gi, datos.profesionalNombre)
+    .replace(/\{\{\s*profesional\.registro\s*\}\}/gi, datos.profesionalRegistro)
+    .replace(/\{\{\s*prestaciones\s*\}\}/gi, datos.prestaciones)
+    // Compatibilidad con variables antiguas con guion bajo
+    .replace(/\{\{\s*nombre_paciente\s*\}\}/gi, datos.pacienteNombre)
+    .replace(/\{\{\s*nombres_paciente\s*\}\}/gi, datos.pacienteNombre)
+    .replace(/\{\{\s*rut_paciente\s*\}\}/gi, datos.pacienteRut)
+    .replace(/\{\{\s*nombre_doctor\s*\}\}/gi, datos.profesionalNombre);
 }
 
 // 1. Obtener citas del doctor
@@ -75,14 +106,20 @@ export async function obtenerCitasDoctor(doctorId: string) {
         paciente:pacientes (
           id,
           nombres,
+          apellidos,
           rut,
+          fecha_nacimiento,
           email,
           telefono
         ),
         consentimientos:consentimientos_paciente (
           id,
+          folio,
+          titulo,
           estado,
+          contenido_snapshot,
           created_at,
+          firmado_at,
           pdf_base64
         )
       `)
@@ -101,69 +138,156 @@ export async function obtenerCitasDoctor(doctorId: string) {
   }
 }
 
-// 2. Obtener plantillas activas
+// 2. Obtener plantillas activas desde plantillas_documento
 export async function obtenerPlantillasActivas() {
   try {
     const { data: plantillas, error } = await supabaseAdmin
-      .from('plantillas_consentimiento')
-      .select('id, titulo, contenido_template')
-      .eq('activa', true);
+      .from('plantillas_documento')
+      .select('id, nombre, contenido')
+      .ilike('tipo', 'CONSENTIMIENTO%')
+      .eq('activa', true)
+      .order('nombre', { ascending: true });
 
     if (error) {
       console.error('Error al obtener plantillas:', JSON.stringify(error, null, 2));
       return [];
     }
 
-    return plantillas || [];
+    return (plantillas || []).map((p) => ({
+      id: p.id,
+      titulo: p.nombre,
+      contenido_template: p.contenido,
+    }));
   } catch (err) {
     console.error('Error inesperado en obtenerPlantillasActivas:', err);
     return [];
   }
 }
 
-// Lógica auxiliar para snapshot y tokens
+async function prepararDatosBase(payload: {
+  citaId?: string;
+  pacienteId: string;
+  doctorId: string;
+  plantillaId: string;
+}) {
+  const [{ data: paciente }, { data: doctor }, { data: docPlantilla }, { data: cita }] = await Promise.all([
+    supabaseAdmin.from('pacientes').select('*').eq('id', payload.pacienteId).single(),
+    supabaseAdmin
+      .from('perfiles')
+      .select('id, nombre_completo, especialidad, registro_profesional, firma_svg')
+      .eq('id', payload.doctorId)
+      .single(),
+    supabaseAdmin
+      .from('plantillas_documento')
+      .select('nombre, contenido')
+      .eq('id', payload.plantillaId)
+      .ilike('tipo', 'CONSENTIMIENTO%')
+      .single(),
+    payload.citaId
+      ? supabaseAdmin
+          .from('citas')
+          .select('inicio, motivo, prestacion:prestaciones(nombre)')
+          .eq('id', payload.citaId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  if (!paciente) return { error: 'No se encontró información del paciente.' };
+  if (!docPlantilla) return { error: 'No se encontró la plantilla seleccionada.' };
+
+  const pacienteNombre =
+    [paciente.nombres, paciente.apellidos].filter(Boolean).join(' ') || paciente.nombre || 'Paciente';
+  const doctorNombre = doctor?.nombre_completo || 'Profesional tratante';
+  const doctorRegistro = doctor?.registro_profesional || 'Sin registro';
+
+  const fechaTexto = new Date().toLocaleDateString('es-CL', {
+    timeZone: 'America/Santiago',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const prestacionObj = Array.isArray(cita?.prestacion) ? cita?.prestacion[0] : cita?.prestacion;
+  const prestacionesTexto =
+    prestacionObj?.nombre || cita?.motivo || docPlantilla.nombre || 'Atención odontológica';
+
+  const clinicaNombre = process.env.NEXT_PUBLIC_CLINICA_NOMBRE || 'SoftDent';
+
+  const contenidoCompletado = interpolarPlantilla(docPlantilla.contenido, {
+    fecha: fechaTexto,
+    pacienteNombre,
+    pacienteRut: paciente.rut || 'Sin RUT',
+    pacienteEdad: calcularEdadTexto(paciente.fecha_nacimiento),
+    clinicaNombre,
+    profesionalNombre: doctorNombre,
+    profesionalRegistro: doctorRegistro,
+    prestaciones: prestacionesTexto,
+  });
+
+  return {
+    paciente,
+    pacienteNombre,
+    doctor,
+    doctorNombre,
+    titulo: docPlantilla.nombre,
+    contenidoCompletado,
+  };
+}
+
+// Crear o actualizar en estado BORRADOR (antes de congelar para firma)
+export async function crearBorradorConsentimiento(payload: {
+  citaId: string;
+  pacienteId: string;
+  doctorId: string;
+  plantillaId: string;
+}) {
+  try {
+    const base = await prepararDatosBase(payload);
+    if ('error' in base) return { exito: false, mensaje: base.error ?? 'Error al preparar datos.' };
+
+    const { data, error } = await supabaseAdmin
+      .from('consentimientos_paciente')
+      .insert({
+        paciente_id: payload.pacienteId,
+        doctor_id: payload.doctorId,
+        cita_id: payload.citaId,
+        plantilla_id: payload.plantillaId,
+        titulo: base.titulo,
+        contenido_snapshot: base.contenidoCompletado,
+        estado: 'BORRADOR',
+      })
+      .select('id, titulo, contenido_snapshot')
+      .single();
+
+    if (error || !data) {
+      return { exito: false, mensaje: 'No se pudo crear el borrador.' };
+    }
+
+    revalidatePath('/citas-consentimiento');
+    return {
+      exito: true,
+      mensaje: 'Borrador creado.',
+      consentimientoId: data.id,
+      titulo: data.titulo,
+      contenido: data.contenido_snapshot,
+    };
+  } catch (err) {
+    console.error('Error en crearBorradorConsentimiento:', err);
+    return { exito: false, mensaje: 'Error inesperado al crear el borrador.' };
+  }
+}
+
+// Congela texto -> PENDIENTE_FIRMA y genera token de 32 bytes (guardando solo hash)
 async function crearConsentimientoYToken(payload: {
   citaId: string;
   pacienteId: string;
   doctorId: string;
   plantillaId: string;
 }) {
-  const { data: paciente, error: errPaciente } = await supabaseAdmin
-    .from('pacientes')
-    .select('*')
-    .eq('id', payload.pacienteId)
-    .single();
+  const base = await prepararDatosBase(payload);
+  if ('error' in base) return { exito: false, mensaje: base.error ?? 'Error al preparar datos.' };
 
-  if (errPaciente || !paciente) {
-    return { exito: false, mensaje: 'No se encontró información del paciente.' };
-  }
-
-  let nombreCompleto = '';
-  if (paciente.nombres) {
-    nombreCompleto = paciente.apellidos 
-      ? `${paciente.nombres} ${paciente.apellidos}` 
-      : paciente.nombres;
-  } else if (paciente.nombre) {
-    nombreCompleto = paciente.nombre;
-  } else {
-    nombreCompleto = 'Paciente';
-  }
-
-  const { data: plantilla, error: errPlantilla } = await supabaseAdmin
-    .from('plantillas_consentimiento')
-    .select('titulo, contenido_template')
-    .eq('id', payload.plantillaId)
-    .single();
-
-  if (errPlantilla || !plantilla) {
-    return { exito: false, mensaje: 'No se encontró la plantilla seleccionada.' };
-  }
-
-  const contenidoSnapshot = plantilla.contenido_template
-    .replace(/{{nombre_paciente}}/g, nombreCompleto)
-    .replace(/{{nombres_paciente}}/g, nombreCompleto)
-    .replace(/{{rut_paciente}}/g, paciente.rut || '');
-
+  const contenidoSnapshot = base.contenidoCompletado;
   const hashContenido = sha256(contenidoSnapshot);
 
   const { data: consentimiento, error: errConsentimiento } = await supabaseAdmin
@@ -173,7 +297,7 @@ async function crearConsentimientoYToken(payload: {
       doctor_id: payload.doctorId,
       cita_id: payload.citaId,
       plantilla_id: payload.plantillaId,
-      titulo: plantilla.titulo,
+      titulo: base.titulo,
       contenido_snapshot: contenidoSnapshot,
       hash_contenido_sha256: hashContenido,
       estado: 'PENDIENTE_FIRMA',
@@ -182,6 +306,7 @@ async function crearConsentimientoYToken(payload: {
     .single();
 
   if (errConsentimiento || !consentimiento) {
+    console.error('Error insert consentimientos_paciente:', errConsentimiento);
     return { exito: false, mensaje: 'Error al registrar el consentimiento.' };
   }
 
@@ -195,6 +320,8 @@ async function crearConsentimientoYToken(payload: {
       consentimiento_id: consentimiento.id,
       token_hash: tokenHash,
       expires_at: expiresAt,
+      intentos_fallidos: 0,
+      max_intentos: 5,
     });
 
   if (errToken) {
@@ -204,14 +331,12 @@ async function crearConsentimientoYToken(payload: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const linkFirma = `${appUrl}/firmar/${tokenRaw}`;
 
-  return { 
-    exito: true, 
-    paciente: { 
-      ...paciente, 
-      nombreCompleto 
-    }, 
-    plantilla, 
-    linkFirma 
+  revalidatePath('/citas-consentimiento');
+  return {
+    exito: true,
+    paciente: { ...base.paciente, nombreCompleto: base.pacienteNombre },
+    plantilla: { titulo: base.titulo },
+    linkFirma,
   };
 }
 
@@ -241,7 +366,7 @@ export async function enviarConsentimientoCita(payload: {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <h2 style="color: #1e40af;">Estimado(a) ${resBase.paciente.nombreCompleto},</h2>
-          <p>Para su próxima atención médica, solicitamos revisar y firmar el siguiente documento:</p>
+          <p>Para su próxima atención dental, solicitamos revisar y firmar el siguiente documento:</p>
           <p style="font-size: 16px; font-weight: bold; color: #1f2937;">${resBase.plantilla.titulo}</p>
           <div style="margin: 25px 0;">
             <a href="${resBase.linkFirma}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -273,19 +398,20 @@ export async function generarEnlaceWhatsAppConsentimiento(payload: {
       return { exito: false, mensaje: resBase.mensaje || 'Error al procesar el documento.' };
     }
 
-    let telefono = resBase.paciente.telefono ? String(resBase.paciente.telefono).replace(/\D/g, '') : '';
+    const digitos = resBase.paciente.telefono ? String(resBase.paciente.telefono).replace(/\D/g, '') : '';
+    const telefono = digitos.startsWith('56') ? digitos : digitos.length === 9 ? `56${digitos}` : digitos;
 
-    const mensaje = `Hola *${resBase.paciente.nombreCompleto}*,\n\nPara su próxima atención médica solicitamos revisar y firmar el documento:\n*${resBase.plantilla.titulo}*\n\nPuede completarlo en el siguiente enlace:\n${resBase.linkFirma}\n\n_(Enlace válido por 48 horas)_`;
+    const mensaje = `Hola *${resBase.paciente.nombreCompleto}*,\n\nPara su próxima atención dental solicitamos revisar y firmar el documento:\n*${resBase.plantilla.titulo}*\n\nPuede completarlo en el siguiente enlace:\n${resBase.linkFirma}\n\n_(Enlace válido por 48 horas)_`;
 
     const mensajeEncoded = encodeURIComponent(mensaje);
-    const linkWhatsApp = telefono 
+    const linkWhatsApp = telefono
       ? `https://wa.me/${telefono}?text=${mensajeEncoded}`
       : `https://wa.me/?text=${mensajeEncoded}`;
 
-    return { 
-      exito: true, 
-      linkWhatsApp, 
-      mensaje: 'Enlace de WhatsApp generado correctamente.' 
+    return {
+      exito: true,
+      linkWhatsApp,
+      mensaje: 'Enlace de WhatsApp generado correctamente.',
     };
   } catch (err) {
     console.error('Error en generarEnlaceWhatsAppConsentimiento:', err);
@@ -293,147 +419,137 @@ export async function generarEnlaceWhatsAppConsentimiento(payload: {
   }
 }
 
-// 5. Procesar Firma, Generar PDF Limpio y Guardar en BD
-export async function procesarFirmaPaciente(payload: {
-  tokenRaw: string;
-  firmaBase64Paciente: string;
+// 5. Firma Presencial en Consulta (tablet o PC)
+export async function firmarConsentimientoPresencial(payload: {
+  citaId: string;
+  pacienteId: string;
+  doctorId: string;
+  plantillaId: string;
+  firmanteNombre: string;
+  firmanteRut: string;
+  esApoderado: boolean;
+  firmaBase64: string;
 }) {
   try {
-    const tokenHash = sha256(payload.tokenRaw);
-
-    const { data: tokenData, error: errToken } = await supabaseAdmin
-      .from('tokens_firma_consentimiento')
-      .select('consentimiento_id, expires_at')
-      .eq('token_hash', tokenHash)
-      .maybeSingle();
-
-    if (errToken || !tokenData) {
-      return { exito: false, mensaje: 'Token inválido o expirado.' };
+    if (!payload.firmaBase64.startsWith('data:image/png;base64,')) {
+      return { exito: false, mensaje: 'La firma capturada no es válida.' };
     }
 
-    if (new Date(tokenData.expires_at) < new Date()) {
-      return { exito: false, mensaje: 'El token ha expirado.' };
-    }
+    const base = await prepararDatosBase(payload);
+    if ('error' in base) return { exito: false, mensaje: base.error ?? 'Error al preparar datos.' };
 
-    const { data: consentimiento, error: errConsentimiento } = await supabaseAdmin
+    const headersList = await headers();
+    const ip =
+      headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      headersList.get('x-real-ip') ||
+      'Consulta presencial';
+    const userAgent = headersList.get('user-agent') || 'Tablet/PC Consulta';
+    const ahora = new Date().toISOString();
+
+    const contenidoSnapshot = base.contenidoCompletado;
+    const hashContenido = sha256(contenidoSnapshot);
+
+    const { data: insertado, error: errInsert } = await supabaseAdmin
       .from('consentimientos_paciente')
-      .select('*')
-      .eq('id', tokenData.consentimiento_id)
+      .insert({
+        paciente_id: payload.pacienteId,
+        doctor_id: payload.doctorId,
+        cita_id: payload.citaId,
+        plantilla_id: payload.plantillaId,
+        titulo: base.titulo,
+        contenido_snapshot: contenidoSnapshot,
+        hash_contenido_sha256: hashContenido,
+        estado: 'FIRMADO',
+        firma_paciente_url: payload.firmaBase64,
+        firmado_at: ahora,
+        firmante_nombre: payload.firmanteNombre.trim(),
+        firmante_rut: payload.firmanteRut.trim(),
+        firmante_es_apoderado: payload.esApoderado,
+        firmante_ip: ip,
+        firmante_user_agent: userAgent,
+      })
+      .select('id, folio')
       .single();
 
-    if (errConsentimiento || !consentimiento) {
-      return { exito: false, mensaje: 'No se encontró el consentimiento.' };
+    if (errInsert || !insertado) {
+      console.error('Error guardando firma presencial:', errInsert);
+      return { exito: false, mensaje: 'No se pudo registrar la firma presencial.' };
     }
 
-    const { data: paciente } = await supabaseAdmin
-      .from('pacientes')
-      .select('nombres, rut, email')
-      .eq('id', consentimiento.paciente_id)
-      .single();
-
-    const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage([595.28, 841.89]);
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-    const { width, height } = page.getSize();
-    let y = height - 50;
-
-    page.drawText(`FOLIO: ${consentimiento.id}`, { x: 50, y, size: 9, font: fontBold, color: rgb(0.4, 0.4, 0.4) });
-    y -= 25;
-
-    page.drawText(consentimiento.titulo || 'Consentimiento Informado', { x: 50, y, size: 13, font: fontBold, color: rgb(0.1, 0.2, 0.6) });
-    y -= 30;
-
-    const textoLimpio = limpiarHtml(consentimiento.contenido_snapshot || '');
-    const lineas = textoLimpio.split('\n');
-
-    for (const linea of lineas) {
-      const lineaTrim = linea.trim();
-      if (!lineaTrim) continue;
-
-      if (y < 120) {
-        page = pdfDoc.addPage([595.28, 841.89]);
-        y = height - 50;
-      }
-
-      if (lineaTrim.length > 90) {
-        const partes = lineaTrim.match(/.{1,85}(\s|$)/g) || [lineaTrim];
-        for (const subLinea of partes) {
-          page.drawText(subLinea.trim(), { x: 50, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
-          y -= 14;
-        }
-      } else {
-        page.drawText(lineaTrim, { x: 50, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
-        y -= 14;
-      }
-    }
-
-    if (y < 100) {
-      page = pdfDoc.addPage([595.28, 841.89]);
-      y = height - 50;
-    }
-
-    y -= 20;
-    page.drawLine({ start: { x: 50, y }, end: { x: width - 50, y }, thickness: 0.5, color: rgb(0.85, 0.85, 0.85) });
-    y -= 40;
-
-    // Sello HASH SHA-256 de Inmutabilidad
-    page.drawRectangle({ x: 50, y: y - 10, width: width - 100, height: 35, color: rgb(0.96, 0.96, 0.96) });
-    page.drawText(`HASH SHA-256 (Inmutabilidad Legal):`, { x: 60, y: y + 10, size: 8, font: fontBold });
-    page.drawText(consentimiento.hash_contenido_sha256 || '', { x: 60, y: y, size: 7, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
-
-    const pdfBytes = await pdfDoc.save();
-    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+    const pdfBase64 = await generarPdfConsentimientoBase64({
+      id: insertado.id,
+      folio: insertado.folio,
+      titulo: base.titulo,
+      estado: 'FIRMADO',
+      contenido_snapshot: contenidoSnapshot,
+      hash_contenido_sha256: hashContenido,
+      firma_paciente_url: payload.firmaBase64,
+      firmado_at: ahora,
+      firmante_nombre: payload.firmanteNombre.trim(),
+      firmante_rut: payload.firmanteRut.trim(),
+      firmante_es_apoderado: payload.esApoderado,
+      firmante_ip: ip,
+      paciente_nombre: base.pacienteNombre,
+      paciente_rut: base.paciente.rut || '',
+      doctor_nombre: base.doctorNombre,
+      doctor_especialidad: base.doctor?.especialidad ?? null,
+      doctor_registro: base.doctor?.registro_profesional ?? null,
+      doctor_firma_svg: base.doctor?.firma_svg ?? null,
+    });
 
     await supabaseAdmin
       .from('consentimientos_paciente')
-      .update({
-        estado: 'FIRMADO',
-        firmado_at: new Date().toISOString(),
-        firma_paciente_base64: payload.firmaBase64Paciente,
-        pdf_base64: pdfBase64,
-      })
-      .eq('id', consentimiento.id);
+      .update({ pdf_base64: pdfBase64 })
+      .eq('id', insertado.id);
 
-    if (paciente?.email) {
-      try {
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
-          to: [paciente.email],
-          subject: `Copia Firmada: ${consentimiento.titulo}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #166534;">Documento Firmado Exitosamente</h2>
-              <p>Estimado(a) <strong>${paciente.nombres}</strong>,</p>
-              <p>Adjunto encontrará una copia oficial en PDF de su consentimiento informado.</p>
-            </div>
-          `,
-          attachments: [
-            {
-              filename: `${(consentimiento.titulo || 'Consentimiento').replace(/\s+/g, '_')}_Firmado.pdf`,
-              content: pdfBase64,
-            },
-          ],
-        });
-      } catch (e) {
-        console.error('Error enviando correo con PDF:', e);
-      }
-    }
-
-    return { 
-      exito: true, 
-      mensaje: 'Documento firmado y PDF generado correctamente.',
-      pdfBase64 
-    };
-
+    revalidatePath('/citas-consentimiento');
+    return { exito: true, mensaje: 'Consentimiento firmado presencialmente y PDF generado.' };
   } catch (err) {
-    console.error('Error en procesarFirmaPaciente:', err);
-    return { exito: false, mensaje: 'Error al procesar la firma.' };
+    console.error('Error en firmarConsentimientoPresencial:', err);
+    return { exito: false, mensaje: 'Error inesperado al registrar la firma presencial.' };
   }
 }
 
-// 6. Obtener o Auto-generar PDF para el Doctor
+// 6. Revocar un consentimiento (opcional)
+export async function revocarConsentimiento(consentimientoId: string, motivo: string) {
+  try {
+    if (!motivo.trim()) {
+      return { exito: false, mensaje: 'Indica el motivo de revocación.' };
+    }
+
+    const ahora = new Date().toISOString();
+    const { data: consentimiento, error } = await supabaseAdmin
+      .from('consentimientos_paciente')
+      .update({
+        estado: 'REVOCADO',
+        motivo_revocacion: motivo.trim(),
+        revocado_at: ahora,
+        pdf_base64: null,
+        updated_at: ahora,
+      })
+      .eq('id', consentimientoId)
+      .select('id')
+      .single();
+
+    if (error || !consentimiento) {
+      return { exito: false, mensaje: 'No se pudo revocar el consentimiento.' };
+    }
+
+    await supabaseAdmin
+      .from('tokens_firma_consentimiento')
+      .update({ usado_at: ahora })
+      .eq('consentimiento_id', consentimientoId)
+      .is('usado_at', null);
+
+    revalidatePath('/citas-consentimiento');
+    return { exito: true, mensaje: 'Consentimiento revocado.' };
+  } catch (err) {
+    console.error('Error en revocarConsentimiento:', err);
+    return { exito: false, mensaje: 'Error inesperado al revocar.' };
+  }
+}
+
+// 7. Obtener o Regenerar PDF con firmas incrustadas
 export async function obtenerPdfConsentimiento(consentimientoId: string) {
   try {
     if (!consentimientoId) {
@@ -442,7 +558,16 @@ export async function obtenerPdfConsentimiento(consentimientoId: string) {
 
     const { data: consentimiento, error } = await supabaseAdmin
       .from('consentimientos_paciente')
-      .select('*')
+      .select(`
+        *,
+        paciente:pacientes (nombres, apellidos, rut),
+        doctor:perfiles!consentimientos_paciente_doctor_id_fkey (
+          nombre_completo,
+          especialidad,
+          registro_profesional,
+          firma_svg
+        )
+      `)
       .eq('id', consentimientoId)
       .single();
 
@@ -450,69 +575,38 @@ export async function obtenerPdfConsentimiento(consentimientoId: string) {
       return { exito: false, mensaje: 'No se encontró el consentimiento en la base de datos.' };
     }
 
-    // 1. Si ya se guardó pdf_base64 previamente, lo entrega al instante
-    if (consentimiento.pdf_base64) {
-      return { 
-        exito: true, 
-        pdfBase64: consentimiento.pdf_base64, 
-        titulo: consentimiento.titulo 
-      };
-    }
+    const paciente = Array.isArray(consentimiento.paciente)
+      ? consentimiento.paciente[0]
+      : consentimiento.paciente;
+    const doctor = Array.isArray(consentimiento.doctor)
+      ? consentimiento.doctor[0]
+      : consentimiento.doctor;
 
-    // 2. Si no existía, compila la versión en PDF directa y limpia
-    const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage([595.28, 841.89]);
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const pacienteNombre =
+      [paciente?.nombres, paciente?.apellidos].filter(Boolean).join(' ') || 'Paciente';
 
-    const { width, height } = page.getSize();
-    let y = height - 50;
-
-    page.drawText(`FOLIO: ${consentimiento.id}`, { x: 50, y, size: 9, font: fontBold, color: rgb(0.4, 0.4, 0.4) });
-    y -= 25;
-
-    page.drawText(consentimiento.titulo || 'Consentimiento Informado', { x: 50, y, size: 13, font: fontBold, color: rgb(0.1, 0.2, 0.6) });
-    y -= 30;
-
-    const textoLimpio = limpiarHtml(consentimiento.contenido_snapshot || '');
-    const lineas = textoLimpio.split('\n');
-
-    for (const linea of lineas) {
-      const lineaTrim = linea.trim();
-      if (!lineaTrim) continue;
-
-      if (y < 120) {
-        page = pdfDoc.addPage([595.28, 841.89]);
-        y = height - 50;
-      }
-
-      if (lineaTrim.length > 90) {
-        const partes = lineaTrim.match(/.{1,85}(\s|$)/g) || [lineaTrim];
-        for (const subLinea of partes) {
-          page.drawText(subLinea.trim(), { x: 50, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
-          y -= 14;
-        }
-      } else {
-        page.drawText(lineaTrim, { x: 50, y, size: 9, font: fontRegular, color: rgb(0.1, 0.1, 0.1) });
-        y -= 14;
-      }
-    }
-
-    if (y < 100) {
-      page = pdfDoc.addPage([595.28, 841.89]);
-      y = height - 50;
-    }
-
-    y -= 20;
-    page.drawLine({ start: { x: 50, y }, end: { x: width - 50, y }, thickness: 0.5, color: rgb(0.85, 0.85, 0.85) });
-    y -= 40;
-
-    page.drawRectangle({ x: 50, y: y - 10, width: width - 100, height: 35, color: rgb(0.96, 0.96, 0.96) });
-    page.drawText(`HASH SHA-256 (Inmutabilidad Legal):`, { x: 60, y: y + 10, size: 8, font: fontBold });
-    page.drawText(consentimiento.hash_contenido_sha256 || '', { x: 60, y: y, size: 7, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
-
-    const pdfBytes = await pdfDoc.save();
-    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+    const pdfBase64 = await generarPdfConsentimientoBase64({
+      id: consentimiento.id,
+      folio: consentimiento.folio,
+      titulo: consentimiento.titulo,
+      estado: consentimiento.estado,
+      contenido_snapshot: consentimiento.contenido_snapshot,
+      hash_contenido_sha256: consentimiento.hash_contenido_sha256,
+      firma_paciente_url: consentimiento.firma_paciente_url,
+      firma_doctor_url: consentimiento.firma_doctor_url,
+      firmado_at: consentimiento.firmado_at,
+      firmante_nombre: consentimiento.firmante_nombre,
+      firmante_rut: consentimiento.firmante_rut,
+      firmante_es_apoderado: consentimiento.firmante_es_apoderado,
+      firmante_ip: consentimiento.firmante_ip,
+      paciente_nombre: pacienteNombre,
+      paciente_rut: paciente?.rut ?? null,
+      doctor_nombre: doctor?.nombre_completo ?? null,
+      doctor_especialidad: doctor?.especialidad ?? null,
+      doctor_registro: doctor?.registro_profesional ?? null,
+      doctor_firma_svg: doctor?.firma_svg ?? null,
+      motivo_revocacion: consentimiento.motivo_revocacion ?? null,
+    });
 
     await supabaseAdmin
       .from('consentimientos_paciente')

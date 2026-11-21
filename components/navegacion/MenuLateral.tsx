@@ -34,6 +34,13 @@ export async function MenuLateral() {
         { href: "/caja", icono: "💰", etiqueta: "Caja", ayuda: "Abrir, movimientos, arqueo y cierre", visible: p("caja.gestionar") },
         { href: "/fonasa-convenios", icono: "🏥", etiqueta: "FONASA y convenios", ayuda: "Bonos, convenios y cuotas", visible: p("fonasa.gestionar") },
         {
+          href: "/pagos-pendientes",
+          icono: "💳",
+          etiqueta: "Pagos pendientes",
+          ayuda: "Saldos por cobrar y recordatorios por WhatsApp",
+          visible: p("pagos.registrar") || p("caja.gestionar") || usuario.rol === "DENTISTA",
+        },
+        {
           href: "/liquidaciones",
           icono: "👩‍⚕️",
           etiqueta: p("liquidaciones.gestionar") ? "Liquidaciones" : "Mis liquidaciones",

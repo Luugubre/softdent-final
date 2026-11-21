@@ -2,12 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { obtenerPacientesEnEspera, type PacienteEnEspera } from "@/app/agenda/actions"
+import { useRouter } from "next/navigation"
+import {
+  cambiarEstadoCita,
+  obtenerPacientesEnEspera,
+  type PacienteEnEspera,
+} from "@/app/agenda/actions"
 
 /** Genera un timbre doble suave de clínica usando Web Audio API (sin archivos externos) */
 function reproducirTimbreSuave() {
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     if (!AudioCtx) return
     const ctx = new AudioCtx()
     const ahora = ctx.currentTime
@@ -44,12 +51,13 @@ function minutosEsperando(llegadaAt: string | null, ahoraMs: number): number {
 }
 
 export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
+  const router = useRouter()
   const [pacientes, setPacientes] = useState<PacienteEnEspera[]>([])
   const [ocultos, setOcultos] = useState<Set<string>>(new Set())
+  const [procesandoId, setProcesandoId] = useState<string | null>(null)
   const [ahoraMs, setAhoraMs] = useState(() => Date.now())
   const [permisoNotif, setPermisoNotif] = useState<NotificationPermission | "unsupported">("unsupported")
 
-  // Guarda los IDs de citas que ya notificamos para sonar solo cuando entra uno nuevo
   const notificadosRef = useRef<Set<string>>(new Set())
   const primeraCargaRef = useRef(true)
 
@@ -83,7 +91,6 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
     setPacientes(lista)
     setAhoraMs(Date.now())
 
-    // Limpiar de "ocultos" citas que ya salieron de EN_ESPERA
     const idsActuales = new Set(lista.map((x) => x.id))
     setOcultos((prev) => {
       const next = new Set<string>()
@@ -91,7 +98,6 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
       return next
     })
 
-    // Detectar llegadas nuevas
     const nuevos = lista.filter((p) => !notificadosRef.current.has(p.id))
     for (const p of lista) notificadosRef.current.add(p.id)
 
@@ -104,7 +110,6 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
     primeraCargaRef.current = false
   }, [esDentista, dispararNotificacionNavegador])
 
-  // Consulta inicial + cada 15 segundos
   useEffect(() => {
     if (!esDentista) return
     consultar()
@@ -112,7 +117,6 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
     return () => clearInterval(intervalo)
   }, [esDentista, consultar])
 
-  // Reloj interno cada 30s para actualizar "esperando hace X min"
   useEffect(() => {
     if (pacientes.length === 0) return
     const reloj = setInterval(() => setAhoraMs(Date.now()), 30_000)
@@ -125,6 +129,22 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
     setPermisoNotif(res)
   }
 
+  async function pasarABox(p: PacienteEnEspera, abrirFicha: boolean) {
+    setProcesandoId(p.id)
+    const res = await cambiarEstadoCita(p.id, "EN_ATENCION")
+    setProcesandoId(null)
+
+    if (res.ok) {
+      setPacientes((prev) => prev.filter((item) => item.id !== p.id))
+      router.refresh()
+      if (abrirFicha) {
+        router.push(`/pacientes/${p.paciente_id}`)
+      }
+    } else {
+      alert(res.mensaje)
+    }
+  }
+
   if (!esDentista) return null
 
   const visibles = pacientes.filter((p) => !ocultos.has(p.id))
@@ -134,6 +154,7 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2.5 max-w-sm w-full px-4 sm:px-0">
       {visibles.map((p) => {
         const mins = minutosEsperando(p.llegada_at, ahoraMs)
+        const cargando = procesandoId === p.id
         return (
           <div
             key={p.id}
@@ -149,7 +170,7 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
               <button
                 onClick={() => setOcultos((prev) => new Set(prev).add(p.id))}
                 className="text-gray-400 hover:text-gray-600 text-xs font-bold px-1"
-                title="Ocultar aviso"
+                title="Ocultar aviso temporalmente"
               >
                 ✕
               </button>
@@ -171,23 +192,34 @@ export function AvisoSalaEspera({ esDentista }: { esDentista: boolean }) {
               )}
             </div>
 
-            <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => pasarABox(p, true)}
+                disabled={cargando}
+                className="rounded-xl bg-fuchsia-600 px-3 py-1.5 text-xs font-black text-white hover:bg-fuchsia-700 disabled:opacity-50 transition"
+              >
+                {cargando ? "Pasando..." : "🦷 Pasar a box y ver ficha"}
+              </button>
+
               <Link
                 href={`/pacientes/${p.paciente_id}`}
-                className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-black text-white hover:bg-amber-600 transition"
+                className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-800 hover:bg-amber-100 transition"
               >
                 Ver ficha
               </Link>
+            </div>
 
-              {permisoNotif === "default" && (
+            {permisoNotif === "default" && (
+              <div className="mt-2 pt-2 border-t border-gray-100">
                 <button
                   onClick={pedirPermisoNotificaciones}
                   className="text-[11px] font-bold text-blue-600 hover:underline"
                 >
                   🔔 Activar alertas de escritorio
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )
       })}

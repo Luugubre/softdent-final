@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { headers } from 'next/headers';
+import { generarPdfConsentimientoBase64 } from '@/lib/pdf-consentimiento';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,6 +28,7 @@ export async function obtenerDocumentoPorToken(tokenRaw: string) {
       consentimiento:consentimientos_paciente (
         id,
         titulo,
+        estado,
         contenido_snapshot
       )
     `)
@@ -55,6 +57,10 @@ export async function obtenerDocumentoPorToken(tokenRaw: string) {
 
   if (!consentimientoData) {
     return { error: 'No se encontró el contenido del documento.' };
+  }
+
+  if (consentimientoData.estado !== 'PENDIENTE_FIRMA') {
+    return { error: `Este documento ya no está pendiente de firma (estado: ${consentimientoData.estado}).` };
   }
 
   return {
@@ -87,8 +93,23 @@ export async function procesarFirmaPaciente(
       usado_at,
       consentimiento_id,
       consentimiento:consentimientos_paciente (
+        id,
+        folio,
+        titulo,
+        estado,
+        contenido_snapshot,
+        hash_contenido_sha256,
+        firma_doctor_url,
         paciente:pacientes (
+          nombres,
+          apellidos,
           rut
+        ),
+        doctor:perfiles!consentimientos_paciente_doctor_id_fkey (
+          nombre_completo,
+          especialidad,
+          registro_profesional,
+          firma_svg
         )
       )
     `)
@@ -99,21 +120,31 @@ export async function procesarFirmaPaciente(
     return { exito: false, mensaje: 'Token inválido o expirado.' };
   }
 
-  if (tokenRecord.intentos_fallidos >= tokenRecord.max_intentos) {
-    return { exito: false, mensaje: 'Enlace bloqueado.' };
+  if (new Date(tokenRecord.expires_at) < new Date()) {
+    return { exito: false, mensaje: 'El enlace ha expirado (límite 48 horas).' };
   }
 
-  // Desestructuración segura contra arrays inferidos por Supabase
+  if (tokenRecord.intentos_fallidos >= tokenRecord.max_intentos) {
+    return { exito: false, mensaje: 'Enlace bloqueado por superar los intentos permitidos.' };
+  }
+
   const consentimiento = Array.isArray(tokenRecord.consentimiento)
     ? tokenRecord.consentimiento[0]
     : tokenRecord.consentimiento;
 
-  const paciente = Array.isArray(consentimiento?.paciente)
+  if (!consentimiento || consentimiento.estado !== 'PENDIENTE_FIRMA') {
+    return { exito: false, mensaje: 'Este documento ya fue firmado o revocado.' };
+  }
+
+  const paciente = Array.isArray(consentimiento.paciente)
     ? consentimiento.paciente[0]
-    : consentimiento?.paciente;
+    : consentimiento.paciente;
+
+  const doctor = Array.isArray(consentimiento.doctor)
+    ? consentimiento.doctor[0]
+    : consentimiento.doctor;
 
   const rutRaw = (paciente as { rut?: string } | undefined)?.rut || '';
-
   const rutPacienteBD = rutRaw.replace(/[^0-9kK]/g, '').toLowerCase();
   const rutIngresadoNorm = payload.rutIngresado.replace(/[^0-9kK]/g, '').toLowerCase();
 
@@ -127,16 +158,45 @@ export async function procesarFirmaPaciente(
     const rest = tokenRecord.max_intentos - nuevosIntentos;
     return {
       exito: false,
-      mensaje: rest > 0
-        ? `RUT no coincide. Te quedan ${rest} intento(s).`
-        : 'Límite alcanzado. Enlace bloqueado.',
+      mensaje:
+        rest > 0
+          ? `El RUT ingresado no coincide con el paciente. Te quedan ${rest} intento(s).`
+          : 'Límite de 5 intentos alcanzado. Enlace bloqueado.',
     };
   }
 
   const headersList = await headers();
-  const ip = headersList.get('x-forwarded-for') || 'IP no detectada';
+  const ip =
+    headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    headersList.get('x-real-ip') ||
+    'IP no detectada';
   const userAgent = headersList.get('user-agent') || 'Navegador no detectado';
   const ahora = new Date().toISOString();
+
+  const pacienteNombre = [paciente?.nombres, paciente?.apellidos].filter(Boolean).join(' ') || 'Paciente';
+
+  // Generar PDF final con firma del paciente, firma del doctor, fecha, folio y hash
+  const pdfBase64 = await generarPdfConsentimientoBase64({
+    id: consentimiento.id,
+    folio: consentimiento.folio,
+    titulo: consentimiento.titulo,
+    estado: 'FIRMADO',
+    contenido_snapshot: consentimiento.contenido_snapshot,
+    hash_contenido_sha256: consentimiento.hash_contenido_sha256,
+    firma_paciente_url: payload.firmaBase64,
+    firma_doctor_url: consentimiento.firma_doctor_url,
+    firmado_at: ahora,
+    firmante_nombre: payload.nombreFirmante.trim(),
+    firmante_rut: payload.rutIngresado.trim(),
+    firmante_es_apoderado: payload.esApoderado,
+    firmante_ip: ip,
+    paciente_nombre: pacienteNombre,
+    paciente_rut: rutRaw,
+    doctor_nombre: doctor?.nombre_completo ?? null,
+    doctor_especialidad: doctor?.especialidad ?? null,
+    doctor_registro: doctor?.registro_profesional ?? null,
+    doctor_firma_svg: doctor?.firma_svg ?? null,
+  });
 
   const { error: errUpdate } = await supabase
     .from('consentimientos_paciente')
@@ -144,19 +204,22 @@ export async function procesarFirmaPaciente(
       estado: 'FIRMADO',
       firma_paciente_url: payload.firmaBase64,
       firmado_at: ahora,
-      firmante_nombre: payload.nombreFirmante,
-      firmante_rut: payload.rutIngresado,
+      firmante_nombre: payload.nombreFirmante.trim(),
+      firmante_rut: payload.rutIngresado.trim(),
       firmante_es_apoderado: payload.esApoderado,
       firmante_ip: ip,
       firmante_user_agent: userAgent,
+      pdf_base64: pdfBase64,
       updated_at: ahora,
     })
     .eq('id', tokenRecord.consentimiento_id);
 
   if (errUpdate) {
+    console.error('Error al actualizar consentimiento firmado:', errUpdate);
     return { exito: false, mensaje: 'Error al registrar la firma.' };
   }
 
+  // Anular el token para que sea de un solo uso
   await supabase
     .from('tokens_firma_consentimiento')
     .update({ usado_at: ahora })
