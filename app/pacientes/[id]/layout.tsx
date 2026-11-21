@@ -4,6 +4,7 @@ import { obtenerAntecedentes, obtenerPaciente, obtenerResumenPaciente } from "@/
 import { calcularEdad, formatearRut } from "@/lib/validaciones"
 import { BotonEstadoPaciente } from "@/components/BotonEstadoPaciente"
 import { NavPaciente } from "@/components/ficha/NavPaciente"
+import { RegistroAcceso } from "@/components/ficha/RegistroAcceso"
 import type { Antecedente } from "@/types/antecedente"
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
@@ -175,6 +176,7 @@ export default async function LayoutPaciente({
 
         <main className="space-y-5 min-w-0">
           <NavPaciente pacienteId={id} verClinico={verClinico} />
+          <RegistroAcceso pacienteId={id} />
           {children}
         </main>
       </div>

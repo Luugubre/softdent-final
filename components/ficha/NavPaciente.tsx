@@ -19,8 +19,8 @@ const FICHA: Item[] = [
   { ruta: "/evoluciones", etiqueta: "Evoluciones", disponible: true, clinico: true },
   { ruta: "/antecedentes", etiqueta: "Ant. Médicos", disponible: true, clinico: true },
   { ruta: "/rx-documentos", etiqueta: "RX y Multimedia", disponible: true, clinico: true },
-  { ruta: "/recetas", etiqueta: "Recetario", disponible: false, clinico: true },
-  { ruta: "/documentos", etiqueta: "Documentos", disponible: false },
+  { ruta: "/recetas", etiqueta: "Recetario", disponible: true, clinico: true },
+  { ruta: "/documentos", etiqueta: "Documentos", disponible: true, clinico: true },
   { ruta: "/consentimientos", etiqueta: "Consentimientos", disponible: false, clinico: true },
 ]
 

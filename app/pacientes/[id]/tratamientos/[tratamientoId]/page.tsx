@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { getSupabase } from "@/lib/supabase"
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
 import { obtenerFases, obtenerHallazgos, obtenerItems, obtenerTratamiento } from "@/lib/tratamientos"
@@ -9,6 +10,7 @@ import { Odontograma } from "@/components/odontograma/Odontograma"
 import { PlanTratamiento } from "@/components/odontograma/PlanTratamiento"
 import { AccionesTratamiento } from "@/components/tratamientos/AccionesTratamiento"
 import { FasesTratamiento } from "@/components/tratamientos/FasesTratamiento"
+import { AplicarPackTratamiento, type PackDisponible } from "@/components/tratamientos/AplicarPackTratamiento"
 import { ESTADO_TRATAMIENTO } from "@/types/tratamiento"
 import { obtenerCatalogo } from "@/lib/catalogo"
 
@@ -38,6 +40,66 @@ export default async function TratamientoPage({
   const opcion = { id: tratamiento.id, numero: tratamiento.numero, nombre: tratamiento.nombre, arancel_id: tratamiento.arancel_id }
 
   const catalogo = verClinico && gestionar ? await obtenerCatalogo(tratamiento.arancel_id) : null
+
+  // Cargar packs activos para agregarlos rápido al tratamiento
+  let packsDisponibles: PackDisponible[] = []
+  if (gestionar) {
+    const supabase = getSupabase()
+    const [{ data: packsRaw }, { data: preciosArancel }] = await Promise.all([
+      supabase
+        .from("plantillas_prestaciones")
+        .select(`
+          id,
+          nombre,
+          descripcion,
+          items:plantilla_prestacion_items(
+            cantidad,
+            precio_pack,
+            prestacion_id,
+            prestacion:prestaciones(nombre, activo)
+          )
+        `)
+        .eq("activo", true)
+        .order("nombre"),
+      supabase
+        .from("v_precios_vigentes")
+        .select("prestacion_id, precio")
+        .eq("arancel_id", tratamiento.arancel_id),
+    ])
+
+    const mapaPrecios = new Map<string, number>()
+    for (const v of preciosArancel ?? []) {
+      if (v.precio) mapaPrecios.set(v.prestacion_id, v.precio)
+    }
+
+    packsDisponibles = (packsRaw ?? [])
+      .map((pk) => {
+        const itemsPack = ((pk.items ?? []) as unknown as {
+          cantidad: number
+          precio_pack: number | null
+          prestacion_id: string
+          prestacion: { nombre: string; activo: boolean } | null
+        }[]).filter((it) => it.prestacion?.activo)
+
+        const totalEstimado = itemsPack.reduce((s, it) => {
+          const unit = it.precio_pack ?? mapaPrecios.get(it.prestacion_id) ?? 0
+          return s + unit * it.cantidad
+        }, 0)
+
+        const cantidadTotal = itemsPack.reduce((s, it) => s + it.cantidad, 0)
+        const resumen = itemsPack.map((it) => `${it.cantidad}x ${it.prestacion?.nombre}`).join(", ")
+
+        return {
+          id: pk.id,
+          nombre: pk.nombre,
+          descripcion: pk.descripcion,
+          total_estimado: totalEstimado,
+          cantidad_items: cantidadTotal,
+          resumen,
+        }
+      })
+      .filter((pk) => pk.cantidad_items > 0)
+  }
 
   return (
     <div className="space-y-5">
@@ -74,6 +136,15 @@ export default async function TratamientoPage({
           {gestionar && <AccionesTratamiento pacienteId={id} tratamientoId={tratamiento.id} />}
         </div>
       </header>
+
+      {gestionar && packsDisponibles.length > 0 && (
+        <AplicarPackTratamiento
+          pacienteId={id}
+          tratamientoId={tratamiento.id}
+          packs={packsDisponibles}
+          fases={fases}
+        />
+      )}
 
       {verClinico && (
         <Odontograma

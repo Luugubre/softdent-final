@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
-import { buscarHorasLibres, citasParaRecordar, marcarRecordatorio } from "@/app/agenda/actions"
+import { buscarHorasLibres, buscarPrestaciones, citasParaRecordar, marcarRecordatorio } from "@/app/agenda/actions"
 import { Ventana } from "@/components/agenda/Ventana"
 import { enlaceWhatsapp } from "@/lib/clinica"
 import { diaSemana, fechaTitulo, hoyEnChile, sumarDias } from "@/lib/fechas-agenda"
 import { mensajeRecordatorio } from "@/lib/mensajes-agenda"
-import type { CitaAgenda, HoraLibre, ProfesionalAgenda } from "@/types/cita"
+import type { CitaAgenda, HoraLibre, PrestacionAgenda, ProfesionalAgenda } from "@/types/cita"
 
 export function ModalBuscarHora({
   profesionales,
@@ -18,7 +18,7 @@ export function ModalBuscarHora({
   profesionales: ProfesionalAgenda[]
   profesionalInicial?: string
   puedeVerTodos: boolean
-  onElegir: (h: HoraLibre, duracion: number) => void
+  onElegir: (h: HoraLibre, duracion: number, prestacion: PrestacionAgenda | null) => void
   onClose: () => void
 }) {
   const hoy = hoyEnChile()
@@ -31,6 +31,29 @@ export function ModalBuscarHora({
   })
   const [horas, setHoras] = useState<HoraLibre[] | null>(null)
   const [pendiente, startTransition] = useTransition()
+  const [prestacion, setPrestacion] = useState<PrestacionAgenda | null>(null)
+  const [textoPrestacion, setTextoPrestacion] = useState("")
+  const [sugeridas, setSugeridas] = useState<PrestacionAgenda[]>([])
+
+  useEffect(() => {
+    if (prestacion || textoPrestacion.trim().length < 2) return
+    let vigente = true
+    const t = setTimeout(() => {
+      buscarPrestaciones(textoPrestacion).then((r) => vigente && setSugeridas(r))
+    }, 250)
+    return () => {
+      vigente = false
+      clearTimeout(t)
+    }
+  }, [textoPrestacion, prestacion])
+
+  function elegirPrestacion(p: PrestacionAgenda | null) {
+    setPrestacion(p)
+    setSugeridas([])
+    setTextoPrestacion("")
+    setFiltro((f) => ({ ...f, duracion: p ? Math.max(15, Math.ceil(p.duracion_min / 15) * 15) : f.duracion, limite: 10 }))
+  }
+  const duraciones = [...new Set([15, 30, 45, 60, 90, 120, filtro.duracion])].sort((a, b) => a - b)
 
   useEffect(() => {
     startTransition(async () => {
@@ -41,10 +64,11 @@ export function ModalBuscarHora({
           profesionalId: filtro.profesional || null,
           turno: filtro.turno,
           limite: filtro.limite,
+          prestacionId: prestacion?.id ?? null,
         })
       )
     })
-  }, [filtro])
+  }, [filtro, prestacion])
 
   const porDia = new Map<string, HoraLibre[]>()
   for (const h of horas ?? []) porDia.set(h.fecha, [...(porDia.get(h.fecha) ?? []), h])
@@ -68,7 +92,7 @@ export function ModalBuscarHora({
             ))}
           </select>
           <select value={filtro.duracion} onChange={(e) => setFiltro({ ...filtro, duracion: Number(e.target.value), limite: 10 })} className={sel}>
-            {[15, 30, 45, 60, 90, 120].map((d) => (
+            {duraciones.map((d) => (
               <option key={d} value={d}>
                 {d} min
               </option>
@@ -80,6 +104,43 @@ export function ModalBuscarHora({
             <option value="tarde">Tarde (desde 13:00)</option>
           </select>
           <input type="date" min={hoy} value={filtro.desde} onChange={(e) => e.target.value && setFiltro({ ...filtro, desde: e.target.value, limite: 10 })} className={sel} />
+        </div>
+
+        <div className="relative">
+          {prestacion ? (
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2">
+              <span className="text-xs font-bold text-blue-900 truncate">
+                🦷 {prestacion.nombre} · {prestacion.duracion_min} min · solo dentistas que la realizan
+              </span>
+              <button onClick={() => elegirPrestacion(null)} className="text-xs font-black text-blue-700 hover:text-blue-900">
+                Quitar
+              </button>
+            </div>
+          ) : (
+            <input
+              value={textoPrestacion}
+              onChange={(e) => {
+                setTextoPrestacion(e.target.value)
+                if (e.target.value.trim().length < 2) setSugeridas([])
+              }}
+              placeholder="Filtrar por prestación (opcional): extracción, limpieza, implante…"
+              className={`${sel} w-full font-semibold`}
+            />
+          )}
+          {!prestacion && sugeridas.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+              {sugeridas.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => elegirPrestacion(p)}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold text-gray-700 hover:bg-blue-50"
+                >
+                  <span className="truncate">{p.nombre}</span>
+                  <span className="text-gray-400">{p.duracion_min} min</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {horas === null || (pendiente && horas.length === 0) ? (
@@ -100,7 +161,7 @@ export function ModalBuscarHora({
                       <span className="text-sm font-black text-gray-900">{h.hora}</span>
                       <span className="flex-1 text-sm font-semibold text-gray-600 truncate">{h.profesional_nombre}</span>
                       <button
-                        onClick={() => onElegir(h, filtro.duracion)}
+                        onClick={() => onElegir(h, filtro.duracion, prestacion)}
                         className="px-3 py-1.5 rounded-lg text-xs font-black uppercase text-white bg-blue-600 hover:bg-blue-700"
                       >
                         + Agendar

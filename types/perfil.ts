@@ -8,6 +8,7 @@ export type Perfil = {
   rol: Rol
   especialidad: string | null
   registro_profesional: string | null
+  firma_svg?: string | null
   porcentaje_liquidacion: number | null
   activo: boolean
   created_at: string

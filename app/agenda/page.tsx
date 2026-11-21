@@ -1,7 +1,13 @@
 import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
 import { getSupabase } from "@/lib/supabase"
-import { obtenerBoxes, obtenerCitas, obtenerInfoPacientes, obtenerProfesionalesAgenda } from "@/lib/agenda"
+import {
+  obtenerBoxes,
+  obtenerCitas,
+  obtenerCitasHuerfanas,
+  obtenerInfoPacientes,
+  obtenerProfesionalesAgenda,
+} from "@/lib/agenda"
 import { fechaValida, hoyEnChile, lunesDeLaSemana, sumarDias } from "@/lib/fechas-agenda"
 import { AgendaClinica } from "@/components/agenda/AgendaClinica"
 import { obtenerTiposAtencion } from "@/lib/catalogos"
@@ -30,8 +36,9 @@ export default async function AgendaPage({
   const desde = vista === "dia" ? fecha : lunes
   const hasta = vista === "dia" ? fecha : sumarDias(lunes, 6)
 
-  const [citas, profesionales, boxes, pacienteInicial, tiposAtencion] = await Promise.all([
+  const [citas, huerfanas, profesionales, boxes, pacienteInicial, tiposAtencion] = await Promise.all([
     obtenerCitas(desde, hasta, { profesional }),
+    obtenerCitasHuerfanas(hoy, sumarDias(hoy, 90), profesional),
     obtenerProfesionalesAgenda(),
     obtenerBoxes(),
     gestionar && sp.agendar && UUID.test(sp.agendar)
@@ -63,6 +70,7 @@ export default async function AgendaPage({
       hoy={hoy}
       dias={dias}
       citas={citas}
+      huerfanas={huerfanas}
       info={info}
       profesionales={profesionales}
       boxes={boxes}

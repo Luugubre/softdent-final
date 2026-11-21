@@ -2,9 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { rutaSegura } from "@/lib/rutas"
 
-// Chequeo "optimista": solo decide si hay sesión para redirigir a /login.
-// La validación real (perfil activo + permisos) se hace en cada página y server action
-// con requerirPermiso() / autorizar() de lib/auth.ts.
+// Verifica que exista sesión; los permisos se validan en cada página y acción (lib/auth.ts).
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
@@ -25,16 +23,16 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // getClaims() valida la firma del token con las llaves públicas del proyecto (ES256)
-  // sin llamar al servidor de Auth en cada request, y renueva la sesión si venció.
-  // getUser() hacía una llamada de red a Supabase en CADA navegación.
+  // Validación local del JWT (ES256)
   const { data } = await supabase.auth.getClaims()
   const haySesion = Boolean(data?.claims?.sub)
 
   const { pathname, search } = request.nextUrl
   const esLogin = pathname === "/login" || pathname.startsWith("/login/")
+  // Rutas públicas protegidas por token
+  const esPublica = pathname.startsWith("/firmar/")
 
-  if (!haySesion && !esLogin) {
+  if (!haySesion && !esLogin && !esPublica) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     const destino = rutaSegura(pathname + search)
@@ -52,7 +50,7 @@ export async function proxy(request: NextRequest) {
   return response
 }
 
-// Al redirigir se conservan las cookies que Supabase haya renovado/borrado en este request.
+// Conserva las cookies renovadas en la redirección
 function redirigir(url: URL, response: NextResponse) {
   const redireccion = NextResponse.redirect(url)
   response.cookies.getAll().forEach((cookie) => redireccion.cookies.set(cookie))
@@ -63,8 +61,7 @@ export const config = {
   matcher: [
     {
       source: "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-      // Las precargas (prefetch) de los <Link> no pasan por el proxy: la página igual valida
-      // la sesión al renderizarse, y así no se revisa la sesión por cada enlace visible.
+      // Se excluyen las precargas de enlaces
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

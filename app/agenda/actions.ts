@@ -184,6 +184,7 @@ export async function buscarHorasLibres(filtro: {
   profesionalId?: string | null
   turno: "cualquiera" | "manana" | "tarde"
   limite: number
+  prestacionId?: string | null
 }): Promise<HoraLibre[]> {
   if (!(await autorizar("agenda.ver"))) return []
   const { data, error } = await getSupabase().rpc("proximas_horas", {
@@ -192,6 +193,7 @@ export async function buscarHorasLibres(filtro: {
     p_profesional: uuidONull(filtro.profesionalId),
     p_turno: filtro.turno,
     p_limite: Math.min(Math.max(filtro.limite, 5), 60),
+    ...(uuidONull(filtro.prestacionId) ? { p_prestacion: uuidONull(filtro.prestacionId) } : {}),
   })
   if (error) return []
   return ((data ?? []) as HoraLibre[]).sort((a, b) => `${a.fecha}${a.hora}${a.profesional_nombre}`.localeCompare(`${b.fecha}${b.hora}${b.profesional_nombre}`))
@@ -410,4 +412,157 @@ export async function eliminarHorario(horarioId: string): Promise<Resultado> {
   if (error) return { ok: false, mensaje: "No se pudo eliminar el horario." }
   refrescar()
   return { ok: true, mensaje: "Horario eliminado." }
+}
+
+export async function contarCitasAfectadasBloqueo(datos: {
+  fechaInicio: string
+  horaInicio: string
+  fechaFin: string
+  horaFin: string
+  profesionalId?: string | null
+  boxId?: string | null
+}): Promise<number> {
+  if (!(await autorizar("agenda.gestionar"))) return 0
+  if (![datos.fechaInicio, datos.fechaFin].every((f) => FECHA.test(f))) return 0
+
+  const supabase = getSupabase()
+  const [{ data: inicio }, { data: fin }] = await Promise.all([
+    supabase.rpc("hora_chile", { p_fecha: datos.fechaInicio, p_hora: datos.horaInicio }),
+    supabase.rpc("hora_chile", { p_fecha: datos.fechaFin, p_hora: datos.horaFin }),
+  ])
+  if (!inicio || !fin || new Date(String(fin)) <= new Date(String(inicio))) return 0
+
+  // Citas vigentes en el rango
+  let q = supabase
+    .from("v_agenda")
+    .select("id, inicio, duracion_min, profesional_id, box_id")
+    .in("estado", ESTADOS_VIGENTES)
+    .gte("fecha", datos.fechaInicio)
+    .lte("fecha", datos.fechaFin)
+
+  if (uuidONull(datos.profesionalId)) q = q.eq("profesional_id", datos.profesionalId as string)
+  if (uuidONull(datos.boxId)) q = q.eq("box_id", datos.boxId as string)
+
+  const { data } = await q
+  const iniMs = new Date(String(inicio)).getTime()
+  const finMs = new Date(String(fin)).getTime()
+
+  return (data ?? []).filter((c) => {
+    const cIni = new Date(c.inicio).getTime()
+    const cFin = cIni + c.duracion_min * 60_000
+    return cIni < finMs && cFin > iniMs
+  }).length
+}
+
+export async function contarCitasAfectadasHorario(
+  profesionalId: string,
+  accion:
+    | { tipo: "agregar"; dias: number[]; horaInicio: string; horaFin: string }
+    | { tipo: "eliminar"; horarioId: string }
+): Promise<number> {
+  if (!(await autorizar("agenda.configurar")) || !UUID.test(profesionalId)) return 0
+  const supabase = getSupabase()
+  const hoy = new Date().toISOString().slice(0, 10)
+  const en90Dias = sumarDias(hoy, 90)
+
+  const [{ data: actuales }, { data: citas }] = await Promise.all([
+    supabase.from("horarios_atencion").select("id, dia_semana, hora_inicio, hora_fin").eq("profesional_id", profesionalId),
+    supabase
+      .from("v_agenda")
+      .select("id, fecha, minuto_inicio, duracion_min, sobrecupo")
+      .eq("profesional_id", profesionalId)
+      .in("estado", ESTADOS_VIGENTES)
+      .eq("sobrecupo", false)
+      .gte("fecha", hoy)
+      .lte("fecha", en90Dias),
+  ])
+
+  const listaActual = actuales ?? []
+  let listaNueva = [...listaActual]
+
+  if (accion.tipo === "agregar") {
+    for (const d of accion.dias) {
+      listaNueva.push({ id: "temp", dia_semana: d, hora_inicio: accion.horaInicio, hora_fin: accion.horaFin })
+    }
+  } else {
+    listaNueva = listaActual.filter((h) => h.id !== accion.horarioId)
+  }
+
+  const esValidaEn = (tramos: typeof listaActual, fecha: string, minIni: number, minFin: number) => {
+    const dow = diaSemana(fecha)
+    if (tramos.length === 0) return dow < 7 && minIni >= 540 && minFin <= 1140
+    return tramos
+      .filter((t) => t.dia_semana === dow)
+      .some((t) => minIni >= horaAMinutos(t.hora_inicio) && minFin <= horaAMinutos(t.hora_fin))
+  }
+
+  // Citas válidas hoy que quedarían fuera del nuevo horario
+  return (citas ?? []).filter((c) => {
+    const fin = c.minuto_inicio + c.duracion_min
+    const antesOk = esValidaEn(listaActual, c.fecha, c.minuto_inicio, fin)
+    const despuesOk = esValidaEn(listaNueva, c.fecha, c.minuto_inicio, fin)
+    return antesOk && !despuesOk
+  }).length
+}
+
+export type PacienteEnEspera = {
+  id: string
+  paciente_id: string
+  paciente_nombre: string
+  hora_cita: string
+  llegada_at: string | null
+  box_nombre: string | null
+  motivo: string | null
+}
+
+export async function obtenerPacientesEnEspera(): Promise<PacienteEnEspera[]> {
+  const usuario = await autorizar("agenda.ver")
+  if (!usuario) return []
+
+  const supabase = getSupabase()
+  // Rango amplio de hoy en Chile (cubre UTC-4 y UTC-3)
+  const ahoraChile = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" })
+  const desde = `${ahoraChile}T00:00:00-04:00`
+  const hasta = `${ahoraChile}T23:59:59-03:00`
+
+  const { data, error } = await supabase
+    .from("citas")
+    .select(`
+      id,
+      paciente_id,
+      inicio,
+      llegada_at,
+      hora_llegada,
+      motivo,
+      paciente:pacientes(nombres, apellidos),
+      box:boxes(nombre)
+    `)
+    .eq("profesional_id", usuario.id)
+    .eq("estado", "EN_ESPERA")
+    .gte("inicio", desde)
+    .lte("inicio", hasta)
+    .order("llegada_at", { ascending: true, nullsFirst: false })
+
+  if (error || !data) return []
+
+  return data.map((row) => {
+    const pac = Array.isArray(row.paciente) ? row.paciente[0] : row.paciente
+    const bx = Array.isArray(row.box) ? row.box[0] : row.box
+    const horaChile = new Date(row.inicio).toLocaleTimeString("es-CL", {
+      timeZone: "America/Santiago",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+
+    return {
+      id: row.id,
+      paciente_id: row.paciente_id,
+      paciente_nombre: pac ? `${pac.nombres} ${pac.apellidos}` : "Paciente",
+      hora_cita: horaChile,
+      llegada_at: row.llegada_at ?? row.hora_llegada ?? null,
+      box_nombre: bx?.nombre ?? null,
+      motivo: row.motivo ?? null,
+    }
+  })
 }

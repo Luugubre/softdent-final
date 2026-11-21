@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { crearBloqueo } from "@/app/agenda/actions"
+import { contarCitasAfectadasBloqueo, crearBloqueo } from "@/app/agenda/actions"
 import { Modal } from "@/components/odontograma/Modales"
 import { TIPOS_BLOQUEO, TIPO_BLOQUEO, type Box, type ProfesionalAgenda } from "@/types/cita"
 
@@ -38,7 +38,7 @@ export function ModalBloqueo({
   function guardar() {
     setError(null)
     startTransition(async () => {
-      const res = await crearBloqueo({
+      const payload = {
         tipo,
         motivo,
         fechaInicio,
@@ -47,7 +47,17 @@ export function ModalBloqueo({
         horaFin: todoElDia ? "23:59" : horaFin,
         profesionalId: alcance === "PROFESIONAL" ? profesionalId : null,
         boxId: alcance === "BOX" ? boxId : null,
-      })
+      }
+
+      const afectadas = await contarCitasAfectadasBloqueo(payload)
+      if (afectadas > 0) {
+        const confirmar = window.confirm(
+          `Esto deja ${afectadas} cita${afectadas === 1 ? "" : "s"} dentro de un bloqueo.\n¿Deseas crear el bloqueo de todas formas?`
+        )
+        if (!confirmar) return
+      }
+
+      const res = await crearBloqueo(payload)
       if (res.ok) onListo(res.mensaje)
       else setError(res.mensaje)
     })

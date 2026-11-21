@@ -6,6 +6,7 @@ import { obtenerPaciente } from "@/lib/paciente"
 import { formatearPesos } from "@/lib/formato"
 import { ListaTratamientos } from "@/components/tratamientos/ListaTratamientos"
 import { NuevoTratamiento } from "@/components/tratamientos/NuevoTratamiento"
+import { BotonEnviarPresupuestoTratamientos } from "@/components/tratamientos/BotonEnviarPresupuestoTratamientos"
 
 export default async function TratamientosPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await requerirPermiso("pacientes.ver")
@@ -13,7 +14,8 @@ export default async function TratamientosPage({ params }: { params: Promise<{ i
   const [paciente, tratamientos] = await Promise.all([obtenerPaciente(id), obtenerTratamientos(id)])
 
   const puedeCrear = !!paciente?.activo && puede(usuario.rol, "presupuestos.gestionar")
-  const porPagar = tratamientos.filter((t) => t.estado !== "ANULADO").reduce((s, t) => s + t.porPagar, 0)
+  const vigentes = tratamientos.filter((t) => t.estado !== "ANULADO")
+  const porPagar = vigentes.reduce((s, t) => s + t.porPagar, 0)
 
   let formulario = null
   if (puedeCrear) {
@@ -44,12 +46,23 @@ export default async function TratamientosPage({ params }: { params: Promise<{ i
             Cada tratamiento tiene su propio odontograma y sus prestaciones. Todo se refleja en el odontograma general.
           </p>
         </div>
-        {porPagar > 0 && (
-          <div className="rounded-xl border-2 border-orange-300 bg-orange-50 px-4 py-2 text-right">
-            <p className="text-[10px] font-black uppercase text-orange-700">Total por pagar</p>
-            <p className="text-lg font-black text-orange-700">{formatearPesos(porPagar)}</p>
-          </div>
-        )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {paciente && vigentes.length > 0 && (
+            <BotonEnviarPresupuestoTratamientos
+              pacienteId={id}
+              pacienteNombre={`${paciente.nombres} ${paciente.apellidos}`.trim()}
+              pacienteTelefono={paciente.telefono}
+            />
+          )}
+
+          {porPagar > 0 && (
+            <div className="rounded-xl border-2 border-orange-300 bg-orange-50 px-4 py-2 text-right">
+              <p className="text-[10px] font-black uppercase text-orange-700">Total por pagar</p>
+              <p className="text-lg font-black text-orange-700">{formatearPesos(porPagar)}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {formulario}

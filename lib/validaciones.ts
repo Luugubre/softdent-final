@@ -86,6 +86,80 @@ export const REFERENCIAS = [
   "Otro",
 ] as const
 
+// ==========================================
+// ESQUEMAS ZOD REUTILIZABLES (COMPARTIDOS)
+// ==========================================
+
+export const rutSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresa el RUT")
+  .refine((r) => validarRut(r), "RUT inválido. Revisa el dígito verificador.")
+
+export const telefonoSchema = z
+  .string()
+  .trim()
+  .refine((v) => telefonoValido(v), "Teléfono inválido (ej: +56 9 1234 5678)")
+
+export const correoSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Correo electrónico inválido")
+
+export const montoSchema = z
+  .number({ message: "El monto debe ser un número válido" })
+  .min(0, "El monto no puede ser negativo")
+
+export const fechaSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)")
+
+export const fechaNacimientoSchema = fechaSchema.refine((fecha) => {
+  const edad = calcularEdad(fecha)
+  if (edad === null) return false
+  return edad >= 0 && edad <= 120
+}, "Fecha de nacimiento inválida o fuera de rango")
+
+// ==========================================
+// ESQUEMAS PARA PERFIL DE USUARIO
+// ==========================================
+
+export const perfilUsuarioSchema = z.object({
+  nombres: z.string().trim().min(2, "Ingresa los nombres").max(80),
+  apellidos: z.string().trim().min(2, "Ingresa los apellidos").max(80),
+  telefono: telefonoSchema.optional().or(z.literal("")),
+  firma_svg: z.string().optional().nullable(),
+  preferencias: z
+    .object({
+      notificaciones_email: z.boolean().default(true),
+      tema: z.enum(["light", "dark", "system"]).default("light"),
+    })
+    .optional(),
+})
+
+export const cambioPasswordSchema = z
+  .object({
+    password_actual: z.string().min(1, "Ingresa tu contraseña actual"),
+    nueva_password: z.string().min(10, "La nueva contraseña debe tener al menos 10 caracteres").max(72, "Máximo 72 caracteres"),
+    confirmar_password: z.string().min(1, "Confirma la nueva contraseña"),
+  })
+  .refine((data) => data.nueva_password === data.confirmar_password, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmar_password"],
+  })
+  .refine((data) => data.nueva_password !== data.password_actual, {
+    message: "La nueva contraseña debe ser distinta de la actual",
+    path: ["nueva_password"],
+  })
+
+export type PerfilUsuarioFormData = z.infer<typeof perfilUsuarioSchema>
+export type CambioPasswordFormData = z.infer<typeof cambioPasswordSchema>
+
+// ==========================================
+// PACIENTE SCHEMA
+// ==========================================
+
 const textoOpcional = (max: number) =>
   z.string().trim().max(max, `Máximo ${max} caracteres`).optional()
 
@@ -152,3 +226,49 @@ export const pacienteSchema = z
   })
 
 export type PacienteFormData = z.infer<typeof pacienteSchema>
+
+// ==========================================
+// RECETARIO
+// ==========================================
+
+const textoReceta = (campo: string, max: number) =>
+  z.string().trim().min(1, `Completa ${campo}`).max(max, `${campo}: máximo ${max} caracteres`)
+
+export const itemRecetaSchema = z.object({
+  medicamento: textoReceta("el medicamento", 120),
+  presentacion: textoReceta("la presentación", 120),
+  dosis: textoReceta("la dosis", 80),
+  frecuencia: textoReceta("la frecuencia", 80),
+  duracion: textoReceta("la duración", 80),
+  via: z.string().trim().max(40).optional().default("Oral"),
+  cantidad: textoReceta("la cantidad", 60),
+})
+
+export const recetaSchema = z.object({
+  paciente_id: z.string().uuid("Selecciona un paciente"),
+  profesional_id: z.string().uuid("Selecciona el dentista").optional(),
+  diagnostico: z.string().trim().min(3, "Escribe el diagnóstico").max(500, "Diagnóstico: máximo 500 caracteres"),
+  indicaciones_generales: z.string().trim().max(2000, "Indicaciones: máximo 2000 caracteres").optional(),
+  items: z.array(itemRecetaSchema).min(1, "Agrega al menos un medicamento").max(15, "Máximo 15 medicamentos por receta"),
+})
+
+export const anulacionRecetaSchema = z.object({
+  receta_id: z.string().uuid("Receta no válida"),
+  motivo: z.string().trim().min(5, "Indica el motivo de la anulación (mínimo 5 caracteres)").max(300),
+})
+
+export type RecetaFormData = z.infer<typeof recetaSchema>
+
+// ==========================================
+// PLANTILLAS DE DOCUMENTOS
+// ==========================================
+
+export const plantillaSchema = z.object({
+  tipo: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z0-9_]{3,60}$/, "Tipo: solo letras, números y guion bajo (3 a 60)"),
+  nombre: z.string().trim().min(3, "Escribe el nombre de la plantilla").max(150),
+  contenido: z.string().trim().min(20, "El contenido es muy corto").max(60000, "Contenido: máximo 60.000 caracteres"),
+})

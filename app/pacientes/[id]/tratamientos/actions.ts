@@ -128,3 +128,34 @@ export async function asignarFase(pacienteId: string, itemId: string, faseId: st
   refrescar(pacienteId)
   return { ok: true, mensaje: "Prestación movida de fase." }
 }
+
+export async function aplicarPackATratamiento(
+  pacienteId: string,
+  tratamientoId: string,
+  plantillaId: string,
+  faseId: string | null = null
+): Promise<Resultado> {
+  const usuario = await autorizar("presupuestos.gestionar")
+  if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
+  if (!plantillaId) return { ok: false, mensaje: "Selecciona un pack de prestaciones." }
+  if (![pacienteId, tratamientoId, plantillaId].every((v) => /^[0-9a-f-]{36}$/i.test(v)) || (faseId && !/^[0-9a-f-]{36}$/i.test(faseId))) {
+    return { ok: false, mensaje: "Datos no válidos." }
+  }
+
+  const { data, error } = await getSupabase().rpc("aplicar_plantilla_tratamiento", {
+    p_presupuesto: tratamientoId,
+    p_plantilla: plantillaId,
+    p_usuario: usuario.id,
+    p_fase: faseId || null,
+  })
+
+  if (error) {
+    return { ok: false, mensaje: mensajeBD(error, "No se pudo agregar el pack al tratamiento.") }
+  }
+
+  refrescar(pacienteId)
+  return {
+    ok: true,
+    mensaje: `Se agregaron ${data} prestación(es) del pack al tratamiento.`,
+  }
+}

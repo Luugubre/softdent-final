@@ -29,6 +29,7 @@ export type ConfigAgendar = {
   bloques?: BloqueElegido[]
   paciente?: PacienteBusqueda | null
   motivo?: string
+  prestacion?: PrestacionAgenda | null
 }
 
 type Ticket = { paciente: string; telefono: string | null; profesional: string; bloques: BloqueElegido[]; reprogramada?: CitaAgenda }
@@ -131,7 +132,7 @@ function Formulario({
 
   const [motivo, setMotivo] = useState(config.motivo ?? reprogramando?.motivo ?? "")
   const [presupuestoId, setPresupuestoId] = useState<string>("")
-  const [prestacion, setPrestacion] = useState<PrestacionAgenda | null>(null)
+  const [prestacion, setPrestacion] = useState<PrestacionAgenda | null>(config.prestacion ?? null)
   const [filtroPrestacion, setFiltroPrestacion] = useState("")
   const [sugeridas, setSugeridas] = useState<PrestacionAgenda[]>([])
   const [boxId, setBoxId] = useState(reprogramando?.box_id ?? "")

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { requerirPermiso } from "@/lib/auth"
 import { obtenerBloqueosFuturos, obtenerBoxes, obtenerHorarios, obtenerProfesionalesAgenda } from "@/lib/agenda"
 import { ConfigBoxes, ConfigHorarios, ListaBloqueos } from "@/components/agenda/ConfigAgenda"
+import { SeccionHorariosEspeciales } from "@/components/agenda/SeccionHorariosEspeciales"
 import { ComoFunciona, Encabezado, Termino } from "@/components/ui/Ayuda"
 
 export default async function ConfiguracionAgendaPage() {
@@ -19,7 +20,7 @@ export default async function ConfiguracionAgendaPage() {
       <Encabezado
         icono="🕘"
         titulo="Horarios y boxes"
-        descripcion="Cuándo atiende cada dentista, en qué salas, y los bloqueos (vacaciones, reuniones) que ya están cargados."
+        descripcion="Cuándo atiende cada dentista, en qué salas, horarios especiales por fecha y bloqueos."
         migas={[{ href: "/agenda", etiqueta: "Agenda" }, { etiqueta: "Horarios y boxes" }]}
         acciones={
           <Link href="/agenda" className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-100">
@@ -31,14 +32,14 @@ export default async function ConfiguracionAgendaPage() {
         pasos={[
           <>Elige un dentista, marca los días y el tramo de horas y presiona <strong>Agregar</strong>.</>,
           <>Para jornada partida (mañana y tarde) agrega <strong>dos tramos</strong> el mismo día.</>,
+          <>Usa <strong>Horarios Especiales y Bloqueos</strong> para días puntuales o repeticiones cada N semanas (reemplaza el horario semanal en esas fechas).</>,
           <>Crea los <Termino t="box">boxes</Termino> (salas o sillones) donde se atiende.</>,
-          <>Las vacaciones o días libres se cargan desde la Agenda con el botón <strong>🔒 Bloquear</strong>.</>,
         ]}
         reglas={[
           <>Fuera del <Termino t="horario">horario</Termino> solo se puede agendar como <Termino t="sobrecupo" />.</>,
+          <>Un horario especial o día bloqueado reemplaza por completo el horario semanal del dentista en esa fecha.</>,
           <>Dos citas no pueden usar el mismo box a la misma hora.</>,
           <>Un box que ya se usó no se borra: se desactiva.</>,
-          <>Los dentistas se crean en <strong>Usuarios y roles</strong> con el rol Dentista.</>,
         ]}
       />
 
@@ -47,7 +48,10 @@ export default async function ConfiguracionAgendaPage() {
           No hay dentistas activos. Créalos en Usuarios con el rol Dentista.
         </p>
       ) : (
-        <ConfigHorarios profesionales={profesionales} horarios={horarios} />
+        <>
+          <ConfigHorarios profesionales={profesionales} horarios={horarios} />
+          <SeccionHorariosEspeciales profesionales={profesionales} />
+        </>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
