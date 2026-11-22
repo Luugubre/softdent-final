@@ -51,7 +51,7 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
           ]}
         />
         {puede(usuario.rol, "administracion.gestionar") && (
-          <SeConfigura items={[{ que: "Métodos de pago y si entran a caja", etiqueta: "Administración › Métodos de pago", href: "/administracion#metodos-pago" }]} />
+          <SeConfigura items={[{ que: "Métodos de pago y si entran a caja", etiqueta: "Administración › Métodos de pago", href: "/administracion/metodos-pago" }]} />
         )}
       </div>
 

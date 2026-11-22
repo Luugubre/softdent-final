@@ -2,101 +2,222 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+import {
+  Banknote,
+  Building2,
+  CalendarDays,
+  ChartColumn,
+  ChevronDown,
+  CircleUserRound,
+  ClipboardList,
+  CreditCard,
+  DoorOpen,
+  FileSignature,
+  FileSpreadsheet,
+  FileText,
+  FlaskConical,
+  FolderTree,
+  GraduationCap,
+  Handshake,
+  HandCoins,
+  HeartPulse,
+  History,
+  House,
+  Landmark,
+  LifeBuoy,
+  Menu,
+  ScanSearch,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Stethoscope,
+  Tags,
+  UserX,
+  Users,
+  UsersRound,
+  Wallet,
+  X,
+  type LucideIcon,
+} from "lucide-react"
 
 export type EnlaceMenu = { href: string; icono: string; etiqueta: string; ayuda: string; visible: boolean }
 export type GrupoMenu = { titulo: string; enlaces: EnlaceMenu[] }
 
-type UsuarioMenu = { nombre: string; email: string; rol: string; colorRol: string }
+type UsuarioMenu = { nombre: string; email: string; rol: string }
+
+const ICONOS: Record<string, LucideIcon> = {
+  inicio: House,
+  agenda: CalendarDays,
+  pacientes: Users,
+  caja: Wallet,
+  seguimiento: ScanSearch,
+  perfil: CircleUserRound,
+  inasistencias: UserX,
+  firma: FileSignature,
+  convenios: Handshake,
+  liquidaciones: HandCoins,
+  aranceles: Stethoscope,
+  presupuestos: ClipboardList,
+  pagos: Banknote,
+  reportes: ChartColumn,
+  excel: FileSpreadsheet,
+  administracion: Settings,
+  clinica: Building2,
+  personal: UsersRound,
+  especialidades: GraduationCap,
+  previsiones: HeartPulse,
+  box: DoorOpen,
+  laboratorios: FlaskConical,
+  historial: History,
+  auditoria: ShieldCheck,
+  carpetas: FolderTree,
+  tipos: Tags,
+  metodos: CreditCard,
+  bancos: Landmark,
+  plantillas: ScrollText,
+  documentos: FileText,
+  ayuda: LifeBuoy,
+}
+
+const PLEGADOS_DE_INICIO = ["Administración", "Configuración"]
+
+function rutaDe(href: string) {
+  return href.split("?")[0]
+}
 
 function enlaceActivo(grupos: GrupoMenu[], pathname: string) {
-  const hrefs = grupos.flatMap((g) => g.enlaces.map((e) => e.href))
-  return hrefs
-    .filter((h) => (h === "/" ? pathname === "/" : pathname === h || pathname.startsWith(h + "/")))
-    .sort((a, b) => b.length - a.length)[0]
+  return grupos
+    .flatMap((g) => g.enlaces.map((e) => e.href))
+    .filter((h) => {
+      const r = rutaDe(h)
+      return r === "/" ? pathname === "/" : pathname === r || pathname.startsWith(r + "/")
+    })
+    .sort((a, b) => rutaDe(b).length - rutaDe(a).length || a.length - b.length)[0]
+}
+
+function iniciales(nombre: string) {
+  return nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("")
 }
 
 export function MenuLateralCliente({ grupos, usuario, salir }: { grupos: GrupoMenu[]; usuario: UsuarioMenu; salir: ReactNode }) {
   const pathname = usePathname()
   const [abierto, setAbierto] = useState(false)
   const activo = enlaceActivo(grupos, pathname)
+  const grupoActivo = grupos.find((g) => g.enlaces.some((e) => e.href === activo))?.titulo
+  const [plegados, setPlegados] = useState<Record<string, boolean>>({})
 
-  useEffect(() => setAbierto(false), [pathname])
+  const estaPlegado = (titulo: string) =>
+    titulo !== grupoActivo && (plegados[titulo] ?? PLEGADOS_DE_INICIO.includes(titulo))
 
   const contenido = (
-    <div className="flex h-full flex-col">
-      <Link href="/" className="flex items-center gap-2 px-5 h-14 shrink-0 border-b border-gray-100">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-lg text-white shadow-sm">🦷</span>
-        <span className="leading-tight">
-          <span className="block text-lg font-black text-gray-900">SoftDent</span>
-          <span className="block text-[10px] font-bold uppercase tracking-widest text-gray-400">Gestión clínica</span>
-        </span>
-      </Link>
+    <div className="flex h-full flex-col bg-blue-950 text-gray-300">
+      <div className="flex h-16 shrink-0 items-center justify-between px-5">
+        <Link href="/" onClick={() => setAbierto(false)} className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-lg shadow-blue-900/40">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+              <path d="M7.5 2.5c-2.6 0-4.5 2.2-4.5 5 0 1.9.6 3.4 1.2 5 .6 1.7 1 3.6 1.3 6 .2 1.7.9 3 2 3 1.2 0 1.6-1.2 1.9-2.7.3-1.6.6-3.3 1.6-3.3h1c1 0 1.3 1.7 1.6 3.3.3 1.5.7 2.7 1.9 2.7 1.1 0 1.8-1.3 2-3 .3-2.4.7-4.3 1.3-6 .6-1.6 1.2-3.1 1.2-5 0-2.8-1.9-5-4.5-5-1.6 0-2.5.8-3.5.8S9.1 2.5 7.5 2.5Z" />
+            </svg>
+          </span>
+          <span className="leading-tight">
+            <span className="block text-base font-bold text-white">SoftDent</span>
+            <span className="block text-[10px] font-medium uppercase tracking-[0.18em] text-blue-300/70">Gestión clínica</span>
+          </span>
+        </Link>
+        <button onClick={() => setAbierto(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-white/10 lg:hidden" aria-label="Cerrar menú">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {grupos.map((g) => (
-          <div key={g.titulo || "inicio"} className="space-y-0.5">
-            {g.titulo && <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-widest text-gray-400">{g.titulo}</p>}
-            {g.enlaces.map((e) => {
-              const esActivo = e.href === activo
-              return (
-                <Link
-                  key={e.href}
-                  href={e.href}
-                  aria-current={esActivo ? "page" : undefined}
-                  className={`group flex items-start gap-3 rounded-xl px-3 py-1.5 transition-colors ${
-                    esActivo ? "bg-blue-600 text-white shadow-sm" : "text-gray-700 hover:bg-gray-100"
-                  }`}
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-4 pt-2 [scrollbar-color:rgb(255_255_255/0.15)_transparent]">
+        {grupos.map((g) => {
+          const plegado = g.titulo ? estaPlegado(g.titulo) : false
+          return (
+            <div key={g.titulo || "inicio"}>
+              {g.titulo && (
+                <button
+                  type="button"
+                  onClick={() => setPlegados((prev) => ({ ...prev, [g.titulo]: !plegado }))}
+                  aria-expanded={!plegado}
+                  className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 hover:text-gray-300"
                 >
-                  <span aria-hidden className="mt-0.5 text-base leading-none">
-                    {e.icono}
-                  </span>
-                  <span className="min-w-0 leading-tight">
-                    <span className="block text-sm font-bold">{e.etiqueta}</span>
-                    <span className={`block truncate text-[11px] font-medium ${esActivo ? "text-blue-100" : "text-gray-400 group-hover:text-gray-500"}`}>{e.ayuda}</span>
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
-        ))}
+                  {g.titulo}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${plegado ? "-rotate-90" : ""}`} aria-hidden />
+                </button>
+              )}
+              {!plegado && (
+                <ul className="space-y-0.5">
+                  {g.enlaces.map((e) => {
+                    const esActivo = e.href === activo
+                    const Icono = ICONOS[e.icono] ?? Settings
+                    return (
+                      <li key={e.href}>
+                        <Link
+                          href={e.href}
+                          title={e.ayuda}
+                          onClick={() => setAbierto(false)}
+                          aria-current={esActivo ? "page" : undefined}
+                          className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                            esActivo ? "bg-blue-600 text-white shadow-sm shadow-black/20" : "text-gray-300 hover:bg-white/[0.06] hover:text-white"
+                          }`}
+                        >
+                          <Icono className={`h-[18px] w-[18px] shrink-0 ${esActivo ? "text-white" : "text-gray-400 group-hover:text-blue-300"}`} aria-hidden />
+                          <span className="truncate">{e.etiqueta}</span>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
-      <div className="shrink-0 border-t border-gray-100 p-3 space-y-1">
-        <div className="flex items-center justify-between gap-2 px-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-extrabold text-gray-900">{usuario.nombre}</p>
-            <p className="truncate text-[11px] font-medium text-gray-500">{usuario.email}</p>
+      <div className="shrink-0 border-t border-white/10 p-3">
+        <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-2.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-500/20 text-sm font-bold text-blue-200">
+            {iniciales(usuario.nombre) || "?"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-white">{usuario.nombre}</p>
+            <p className="truncate text-xs text-gray-400">{usuario.rol}</p>
           </div>
-          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${usuario.colorRol}`}>{usuario.rol}</span>
+          {salir}
         </div>
-        {salir}
       </div>
     </div>
   )
 
   return (
     <>
-      <aside className="hidden lg:block sticky top-0 h-screen w-64 shrink-0 border-r border-gray-200 bg-white print:hidden">{contenido}</aside>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 print:hidden lg:block">{contenido}</aside>
 
-      <div className="lg:hidden sticky top-0 z-40 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 print:hidden">
+      <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur print:hidden lg:hidden">
         <button
           onClick={() => setAbierto(true)}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-bold text-gray-700"
+          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700"
           aria-label="Abrir menú"
         >
-          ☰ Menú
+          <Menu className="h-4 w-4" aria-hidden /> Menú
         </button>
-        <Link href="/" className="text-lg font-black text-gray-900">
-          🦷 SoftDent
+        <Link href="/" className="text-base font-bold text-gray-900">
+          SoftDent
         </Link>
-        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${usuario.colorRol}`}>{usuario.rol}</span>
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-blue-100 text-xs font-bold text-blue-800" title={usuario.email}>
+          {iniciales(usuario.nombre) || "?"}
+        </span>
       </div>
 
       {abierto && (
-        <div className="lg:hidden fixed inset-0 z-50 print:hidden">
-          <button aria-label="Cerrar menú" onClick={() => setAbierto(false)} className="absolute inset-0 bg-gray-900/40" />
-          <aside className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-white shadow-2xl">{contenido}</aside>
+        <div className="fixed inset-0 z-50 print:hidden lg:hidden">
+          <button aria-label="Cerrar menú" onClick={() => setAbierto(false)} className="absolute inset-0 bg-gray-950/50 backdrop-blur-sm" />
+          <aside className="absolute left-0 top-0 h-full w-72 max-w-[85vw] shadow-2xl">{contenido}</aside>
         </div>
       )}
     </>

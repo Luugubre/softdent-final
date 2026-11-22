@@ -16,7 +16,7 @@ export const GLOSARIO = {
     termino: "Previsión",
     modulo: "Pacientes",
     definicion: "Sistema de salud del paciente (FONASA, Isapre, particular…). Define qué arancel se le sugiere al crear un tratamiento.",
-    donde: { etiqueta: "Administración › Previsiones", href: "/administracion#previsiones" },
+    donde: { etiqueta: "Administración › Previsiones", href: "/administracion/previsiones" },
   },
   odontograma: {
     termino: "Odontograma",
@@ -87,13 +87,13 @@ export const GLOSARIO = {
     termino: "Método de pago",
     modulo: "Pagos",
     definicion: "Forma en que se recibe el dinero (efectivo, débito, transferencia…). Cada método indica si pide N° de operación y si entra a la caja.",
-    donde: { etiqueta: "Administración › Métodos de pago", href: "/administracion#metodos-pago" },
+    donde: { etiqueta: "Administración › Métodos de pago", href: "/administracion/metodos-pago" },
   },
   entra_caja: {
     termino: "Entra a caja",
     modulo: "Pagos",
     definicion: "Si está marcado, los pagos con ese método exigen una caja abierta y se registran solos como ingreso en ella. Ej.: Bono FONASA no entra a caja.",
-    donde: { etiqueta: "Administración › Métodos de pago", href: "/administracion#metodos-pago" },
+    donde: { etiqueta: "Administración › Métodos de pago", href: "/administracion/metodos-pago" },
   },
   pide_referencia: {
     termino: "Pide N° de operación",
@@ -245,7 +245,7 @@ export const GLOSARIO = {
     termino: "Tipo de atención",
     modulo: "Agenda",
     definicion: "Clasificación de la cita (primera consulta, control, urgencia…) con una duración sugerida.",
-    donde: { etiqueta: "Administración › Tipos de atención", href: "/administracion#tipos_atencion" },
+    donde: { etiqueta: "Administración › Tipos de atención", href: "/administracion/tipos-atencion" },
   },
   hoja_ruta: {
     termino: "Hoja de ruta",
@@ -269,13 +269,13 @@ export const GLOSARIO = {
     termino: "Parámetro",
     modulo: "Administración",
     definicion: "Valor de configuración general (nombre de la clínica, minutos de inactividad…). Cada uno tiene un rango permitido.",
-    donde: { etiqueta: "Administración › Parámetros", href: "/administracion#parametros" },
+    donde: { etiqueta: "Administración › Parámetros", href: "/administracion/parametros" },
   },
   auditoria: {
     termino: "Registro de cambios",
     modulo: "Administración",
     definicion: "Historial de quién cambió qué configuración, cuándo, y cuál era el valor anterior.",
-    donde: { etiqueta: "Administración › Registro de cambios", href: "/administracion#auditoria" },
+    donde: { etiqueta: "Administración › Registro de cambios", href: "/administracion/registro-cambios" },
   },
 } satisfies Record<string, EntradaGlosario>
 

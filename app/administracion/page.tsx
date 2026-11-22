@@ -1,138 +1,75 @@
+import Link from "next/link"
 import { requerirPermiso } from "@/lib/auth"
-import { obtenerAuditoria, obtenerCatalogo, obtenerMetodosPago, obtenerParametros } from "@/lib/catalogos"
-import { formatearFechaHora } from "@/lib/formato"
-import { TablaCatalogo, TablaMetodosPago, TablaParametros } from "@/components/admin/TablasAdmin"
-import type { RegistroAuditoria } from "@/types/admin"
-import { ComoFunciona, Encabezado, Termino } from "@/components/ui/Ayuda"
-
-const NOMBRE_TABLA: Record<string, string> = {
-  especialidades: "Especialidad",
-  categorias_prestaciones: "Categoría",
-  boxes: "Box",
-  previsiones: "Previsión",
-  tipos_atencion: "Tipo de atención",
-  metodos_pago: "Método de pago",
-  parametros_sistema: "Parámetro",
-  convenios: "Convenio",
-  laboratorios: "Laboratorio",
-  bancos: "Banco",
-}
-
-function cambios(r: RegistroAuditoria) {
-  if (!r.anterior || !r.nuevo) return r.nuevo ? String(r.nuevo.nombre ?? r.nuevo.valor ?? r.registro_id) : ""
-  return Object.keys(r.nuevo)
-    .filter((k) => !["updated_at", "created_at"].includes(k) && JSON.stringify(r.anterior?.[k]) !== JSON.stringify(r.nuevo?.[k]))
-    .map((k) => `${k}: ${String(r.anterior?.[k] ?? "—")} → ${String(r.nuevo?.[k] ?? "—")}`)
-    .join(" · ")
-}
+import { obtenerCatalogo, obtenerMetodosPago } from "@/lib/catalogos"
+import { GRUPOS_ADMIN, SECCIONES_ADMIN } from "@/lib/admin-secciones"
+import { Encabezado } from "@/components/ui/Ayuda"
+import { NavAdmin } from "@/components/admin/NavAdmin"
 
 export default async function AdministracionPage() {
   await requerirPermiso("administracion.gestionar")
 
-  const [especialidades, categorias, boxes, previsiones, tipos, metodos, parametros, auditoria, laboratorios, bancos] = await Promise.all([
-    obtenerCatalogo("especialidades"),
-    obtenerCatalogo("categorias_prestaciones"),
-    obtenerCatalogo("boxes"),
-    obtenerCatalogo("previsiones"),
-    obtenerCatalogo("tipos_atencion"),
-    obtenerMetodosPago(false),
-    obtenerParametros(),
-    obtenerAuditoria(),
-    obtenerCatalogo("laboratorios"),
-    obtenerCatalogo("bancos"),
-  ])
+  const conteos = Object.fromEntries(
+    await Promise.all(
+      SECCIONES_ADMIN.map(async (s) => {
+        if (s.tabla) {
+          const items = await obtenerCatalogo(s.tabla)
+          return [s.slug, `${items.filter((i) => i.activo).length} activos`] as const
+        }
+        if (s.slug === "metodos-pago") {
+          const metodos = await obtenerMetodosPago(false)
+          return [s.slug, `${metodos.filter((m) => m.activo).length} activos`] as const
+        }
+        return [s.slug, ""] as const
+      })
+    )
+  )
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-6 md:p-10 space-y-6">
+    <div className="w-full min-h-screen p-6 md:p-10 space-y-6">
       <Encabezado
         icono="⚙️"
         titulo="Administración"
-        descripcion="Las opciones generales del sistema: datos de la clínica, métodos de pago y las listas que aparecen en otras pantallas."
+        descripcion="Configuración general de la clínica. Elige una sección: cada una tiene su propia página."
         migas={[{ etiqueta: "Administración" }]}
       >
-        <nav aria-label="Secciones" className="flex flex-wrap gap-2 text-xs font-bold">
-          {[
-            ["#parametros", "🔧 Parámetros"],
-            ["#metodos-pago", "💳 Métodos de pago"],
-            ["#previsiones", "🩺 Previsiones"],
-            ["#tipos_atencion", "🏷️ Tipos de atención"],
-            ["#especialidades", "🎓 Especialidades"],
-            ["#categorias_prestaciones", "🗂️ Categorías"],
-            ["#boxes", "🚪 Boxes"],
-            ["#laboratorios", "🧪 Laboratorios"],
-            ["#bancos", "🏦 Bancos"],
-            ["#auditoria", "🕵️ Registro de cambios"],
-          ].map(([href, etiqueta]) => (
-            <a key={href} href={href} className="rounded-full border border-gray-200 bg-white px-3 py-1 text-gray-700 hover:border-blue-300 hover:text-blue-700">
-              {etiqueta}
-            </a>
-          ))}
-        </nav>
+        <NavAdmin />
       </Encabezado>
-      <ComoFunciona
-        pasos={[
-          <>Usa los botones de arriba para saltar a la sección que quieres cambiar.</>,
-          <>En cada <Termino t="catalogo" />, escribe el nombre y presiona <strong>Agregar</strong>; usa <strong>Editar</strong> para corregir.</>,
-          <>En los <Termino t="parametro">parámetros</Termino>, cambia el valor y presiona el botón <strong>Guardar</strong> que aparece.</>,
-          <>Cada sección dice <strong>📍 dónde se usa</strong> ese dato en el resto del sistema.</>,
-        ]}
-        reglas={[
-          <>Nada se borra: lo que ya se usó se <strong>desactiva</strong> y deja de aparecer en las listas.</>,
-          <>Los parámetros solo aceptan valores dentro de su rango.</>,
-          <>Todo cambio queda en el <Termino t="auditoria" /> con tu nombre.</>,
-        ]}
-      />
 
-      <TablaParametros parametros={parametros} />
-      <TablaMetodosPago metodos={metodos} />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TablaCatalogo tabla="previsiones" items={previsiones} />
-        <TablaCatalogo tabla="tipos_atencion" items={tipos} />
-        <TablaCatalogo tabla="especialidades" items={especialidades} />
-        <TablaCatalogo tabla="categorias_prestaciones" items={categorias} />
-        <TablaCatalogo tabla="boxes" items={boxes} />
-        <TablaCatalogo tabla="laboratorios" items={laboratorios} />
-        <TablaCatalogo tabla="bancos" items={bancos} />
-      </div>
-
-      <section id="auditoria" className="scroll-mt-20 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
-        <div>
-          <h2 className="text-lg font-extrabold text-gray-900">🕵️ Registro de cambios</h2>
-          <p className="text-xs font-semibold text-gray-600">
-            Quién cambió qué configuración y cuándo. En “Cambio” se ve el valor anterior → el nuevo. Este registro no se puede editar.
-          </p>
-        </div>
-        {auditoria.length === 0 ? (
-          <p className="text-sm font-semibold text-gray-400">Aún no hay cambios registrados.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-[11px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-2">Fecha</th>
-                  <th className="text-left py-2">Usuario</th>
-                  <th className="text-left py-2">Qué</th>
-                  <th className="text-left py-2">Cambio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {auditoria.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-100 align-top">
-                    <td className="py-2 whitespace-nowrap text-gray-500">{formatearFechaHora(r.fecha)}</td>
-                    <td className="py-2 font-semibold">{r.usuario?.nombre_completo ?? "Sistema"}</td>
-                    <td className="py-2">
-                      <span className="font-bold">{NOMBRE_TABLA[r.tabla] ?? r.tabla}</span>{" "}
-                      <span className={`text-[10px] font-black ${r.accion === "CREADO" ? "text-emerald-600" : "text-blue-600"}`}>{r.accion}</span>
-                    </td>
-                    <td className="py-2 text-xs text-gray-600 break-all">{cambios(r)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {GRUPOS_ADMIN.map((grupo) => (
+        <section key={grupo} className="space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">{grupo}</h2>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {SECCIONES_ADMIN.filter((s) => s.grupo === grupo).map((s) => (
+              <Link
+                key={s.slug}
+                href={`/administracion/${s.slug}`}
+                className="group flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+              >
+                <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-xl">
+                  {s.icono}
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-bold text-gray-900 group-hover:text-blue-700">{s.titulo}</span>
+                  <span className="block text-sm text-gray-500">{s.descripcion}</span>
+                  {conteos[s.slug] && <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">{conteos[s.slug]}</span>}
+                </span>
+              </Link>
+            ))}
+            {grupo === "Seguridad" && (
+              <Link
+                href="/administracion/auditoria"
+                className="group flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+              >
+                <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-xl">🛡️</span>
+                <span className="min-w-0">
+                  <span className="block font-bold text-gray-900 group-hover:text-blue-700">Auditoría y accesos</span>
+                  <span className="block text-sm text-gray-500">Bitácora de cambios clínicos, firmas y accesos a fichas.</span>
+                </span>
+              </Link>
+            )}
           </div>
-        )}
-      </section>
+        </section>
+      ))}
     </div>
   )
 }

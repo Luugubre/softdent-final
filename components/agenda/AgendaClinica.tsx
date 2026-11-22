@@ -132,14 +132,14 @@ export function AgendaClinica(p: Props) {
     onDetalle: setDetalle,
   }
 
-  const boton = "w-full lg:w-auto justify-center px-3 md:px-4 py-2.5 rounded-lg border text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 bg-white"
+  const boton = "w-full lg:w-auto justify-center px-3 md:px-3.5 py-2 rounded-lg border text-xs font-semibold flex items-center gap-2 bg-white shadow-sm transition-colors"
 
   return (
     <div className="min-h-full bg-gray-50 text-gray-800 p-4 sm:p-6 md:p-10 pb-24">
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            📅 Agenda <span className="italic font-serif text-blue-600">Clínica</span>
+            📅 Agenda
           </h1>
           <p className="text-sm font-medium text-gray-500">
             Citas del día o la semana. Haz clic en una cita para ver su detalle o cambiar su estado.
@@ -179,7 +179,7 @@ export function AgendaClinica(p: Props) {
           {permisos.gestionar && (
             <button
               onClick={() => abrirAgendar()}
-              className="col-span-2 lg:col-span-1 justify-center px-6 py-2.5 rounded-lg font-black text-[11px] uppercase tracking-wider shadow-md flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700"
+              className="col-span-2 lg:col-span-1 justify-center px-5 py-2 rounded-lg font-semibold text-sm shadow-sm flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700"
             >
               + Agendar
             </button>
@@ -240,7 +240,7 @@ export function AgendaClinica(p: Props) {
             <Link
               key={v}
               href={url({ vista: v })}
-              className={`flex-1 text-center px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider ${vista === v ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
+              className={`flex-1 text-center px-5 py-2 rounded-full text-xs font-semibold ${vista === v ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
             >
               {v === "dia" ? "☰ Día" : "▦ Semana"}
             </Link>

@@ -1,0 +1,48 @@
+SOFTDENT — VERSIÓN 8: ADMINISTRACIÓN EN PÁGINAS Y NUEVO DISEÑO (22 de noviembre)
+
+Se copia encima de lo que hoy está en main. Son 19 archivos: 16 modificados y 3 nuevos.
+No necesita SQL nuevo en Supabase.
+
+IMPORTANTE: trae una librería nueva de íconos (lucide-react). Por eso vienen package.json y
+package-lock.json. Antes de probar en tu PC hay que ejecutar "npm install". Vercel la instala solo.
+
+QUÉ CAMBIÓ
+ 1. Administración separada en páginas.
+    Antes todo estaba en una sola página larga. Ahora:
+      /administracion                  → resumen con tarjetas de cada sección
+      /administracion/parametros       → Datos de la clínica
+      /administracion/especialidades
+      /administracion/previsiones
+      /administracion/tipos-atencion
+      /administracion/boxes
+      /administracion/categorias       → Carpetas de prestaciones (tipo de pago)
+      /administracion/laboratorios
+      /administracion/metodos-pago
+      /administracion/bancos
+      /administracion/registro-cambios
+    Cada página tiene arriba una barra para saltar a las otras secciones.
+    El menú lateral y los enlaces de ayuda ("Se configura en", Centro de ayuda, glosario) apuntan a
+    las páginas nuevas.
+
+ 2. Nuevo diseño.
+    - Color principal azul petróleo, grises más suaves y sombras más livianas.
+    - Tipografía Plus Jakarta Sans, con textos menos gruesos.
+    - Menú lateral oscuro con íconos. Las secciones Administración y Configuración se pliegan
+      (se abren solas cuando estás en una de sus páginas).
+    - Inicio rediseñado: banner de bienvenida con buscador y tarjetas limpias con íconos.
+    - Pantalla de inicio de sesión rediseñada.
+    - Encabezados de página y agenda con el mismo estilo.
+    El cambio de colores y tipografía se aplica a toda la app.
+
+CÓMO SUBIRLO (terminal de VS Code, en la carpeta softdent-final)
+  1. Copiar el contenido del ZIP encima del proyecto (reemplazar archivos).
+  2. npm install
+  3. npm run build
+  4. git add -A
+  5. git commit -m "Administración en páginas separadas y nuevo diseño"
+  6. git push origin main
+
+Comprobado:
+ - "npm ci", tsc y build OK sobre una copia limpia de main.
+ - Lint sin errores nuevos.
+ - Páginas revisadas en el navegador (escritorio y celular) sin errores.

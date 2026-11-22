@@ -24,7 +24,7 @@ function useAviso() {
   return { ejecutar, pendiente, Aviso }
 }
 
-export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: ItemCatalogo[] }) {
+export function TablaCatalogo({ tabla, items, completa = false }: { tabla: TablaCatalogo; items: ItemCatalogo[]; completa?: boolean }) {
   const meta = CATALOGOS[tabla]
   const vacio = { nombre: "", descripcion: "", tipo: "OTRA", duracion_min: 30, reparto: "PROFESIONAL", porcentaje_doctor: 15 }
   const [nuevo, setNuevo] = useState(vacio)
@@ -34,12 +34,14 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
   return (
     <section id={tabla} className={`${caja} scroll-mt-20`}>
       <div>
-        <h2 className="text-lg font-extrabold text-gray-900">
-          <span aria-hidden className="mr-1.5">
-            {meta.icono}
-          </span>
-          {meta.titulo}
-        </h2>
+        {!completa && (
+          <h2 className="text-lg font-extrabold text-gray-900">
+            <span aria-hidden className="mr-1.5">
+              {meta.icono}
+            </span>
+            {meta.titulo}
+          </h2>
+        )}
         <p className="text-xs font-semibold text-gray-600">{meta.que}</p>
         <p className="text-[11px] font-bold text-blue-700">📍 Se usa en: {meta.ayuda}</p>
       </div>
@@ -76,7 +78,7 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
       </div>
       {Aviso}
 
-      <ul className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+      <ul className={`divide-y divide-gray-100 ${completa ? "" : "max-h-80 overflow-y-auto"}`}>
         {items.map((it) =>
           editando?.id === it.id ? (
             <li key={it.id} className="py-2 flex flex-wrap items-center gap-2">

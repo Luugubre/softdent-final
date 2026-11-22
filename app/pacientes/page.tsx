@@ -73,7 +73,7 @@ export default async function PacientesPage({
           </div>
         </details>
       )}
-      {puedeEditar && <SeConfigura items={puede(usuario.rol, "administracion.gestionar") ? [{ que: "Opciones de previsión", etiqueta: "Administración › Previsiones", href: "/administracion#previsiones" }] : []} />}
+      {puedeEditar && <SeConfigura items={puede(usuario.rol, "administracion.gestionar") ? [{ que: "Opciones de previsión", etiqueta: "Administración › Previsiones", href: "/administracion/previsiones" }] : []} />}
 
       <form method="GET" className="flex gap-2 max-w-lg">
         <input

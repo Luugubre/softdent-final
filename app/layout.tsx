@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
+import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 import { MenuLateral } from "@/components/navegacion/MenuLateral"
 import { obtenerUsuarioActual } from "@/lib/auth"
 import { AvisoSalaEspera } from "@/components/agenda/AvisoSalaEspera"
+
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", display: "swap" })
 
 export const metadata: Metadata = {
   title: "SoftDent · Clínica Dental",
@@ -13,8 +16,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const usuario = await obtenerUsuarioActual()
 
   return (
-    <html lang="es">
-      <body className="antialiased bg-gray-50 text-gray-900">
+    <html lang="es" className={jakarta.variable}>
+      <body className="font-sans antialiased bg-gray-50 text-gray-900">
         <div className="lg:flex lg:min-h-screen">
           <MenuLateral />
           <main className="min-w-0 flex-1">{children}</main>

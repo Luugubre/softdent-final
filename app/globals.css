@@ -1,1 +1,108 @@
 @import "tailwindcss";
+
+/* Tema SoftDent: azul petróleo como color principal, grises fríos y tipografía Plus Jakarta Sans */
+@theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@theme {
+
+  --color-blue-50: #edfbfa;
+  --color-blue-100: #d3f3f1;
+  --color-blue-200: #aae6e4;
+  --color-blue-300: #74d2d2;
+  --color-blue-400: #3cb6ba;
+  --color-blue-500: #1f9aa0;
+  --color-blue-600: #167c84;
+  --color-blue-700: #14646c;
+  --color-blue-800: #155259;
+  --color-blue-900: #16444a;
+  --color-blue-950: #072a2f;
+
+  --color-gray-50: #f6f8fa;
+  --color-gray-100: #eef2f6;
+  --color-gray-200: #e1e7ee;
+  --color-gray-300: #cbd4de;
+  --color-gray-400: #97a3b4;
+  --color-gray-500: #66748a;
+  --color-gray-600: #4a5669;
+  --color-gray-700: #354052;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111a2b;
+  --color-gray-950: #070c18;
+
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 650;
+  --font-weight-extrabold: 700;
+  --font-weight-black: 750;
+
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow: 0 2px 4px rgb(16 24 40 / 0.05), 0 4px 10px rgb(16 24 40 / 0.06);
+  --shadow-md: 0 4px 8px rgb(16 24 40 / 0.05), 0 10px 24px rgb(16 24 40 / 0.08);
+  --shadow-lg: 0 10px 20px rgb(16 24 40 / 0.06), 0 20px 40px rgb(16 24 40 / 0.10);
+  --shadow-xl: 0 20px 50px rgb(16 24 40 / 0.14);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-gray-50);
+    color: var(--color-gray-900);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background-color: var(--color-blue-200);
+    color: var(--color-blue-950);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 2px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--color-blue-500);
+    box-shadow: 0 0 0 3px rgb(31 154 160 / 0.18);
+    outline: none;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-blue-600);
+  }
+
+  button:not(:disabled),
+  [role="button"],
+  summary {
+    cursor: pointer;
+  }
+
+  thead th {
+    letter-spacing: 0.04em;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-300) transparent;
+  }
+}

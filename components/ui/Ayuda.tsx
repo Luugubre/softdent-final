@@ -22,7 +22,7 @@ export function Encabezado({
   return (
     <header className="space-y-3">
       {migas && migas.length > 0 && (
-        <nav aria-label="Ruta" className="flex flex-wrap items-center gap-1 text-xs font-bold text-gray-400">
+        <nav aria-label="Ruta" className="flex flex-wrap items-center gap-1 text-xs font-medium text-gray-400">
           <Link href="/" className="hover:text-blue-600">
             Inicio
           </Link>
@@ -34,7 +34,7 @@ export function Encabezado({
                   {m.etiqueta}
                 </Link>
               ) : (
-                <span className="text-gray-600">{m.etiqueta}</span>
+                <span className="font-semibold text-gray-600">{m.etiqueta}</span>
               )}
             </span>
           ))}
@@ -43,13 +43,13 @@ export function Encabezado({
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3 min-w-0">
           {icono && (
-            <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white border border-gray-200 shadow-sm text-2xl">
+            <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-50 to-white text-2xl shadow-sm ring-1 ring-blue-100">
               {icono}
             </span>
           )}
           <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">{titulo}</h1>
-            {descripcion && <p className="mt-0.5 text-sm font-medium text-gray-500 max-w-3xl">{descripcion}</p>}
+            <h1 className="text-2xl md:text-[28px] font-bold leading-tight text-gray-900 tracking-tight">{titulo}</h1>
+            {descripcion && <p className="mt-1 text-sm text-gray-500 max-w-3xl">{descripcion}</p>}
           </div>
         </div>
         {acciones && <div className="flex items-center gap-2 flex-wrap">{acciones}</div>}
@@ -150,7 +150,7 @@ export function Seccion({
     <section id={id} className={`scroll-mt-20 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4 ${className}`}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <h2 className="text-lg font-extrabold text-gray-900">
+          <h2 className="text-lg font-bold text-gray-900">
             {icono && <span aria-hidden className="mr-1.5">{icono}</span>}
             {titulo}
           </h2>
