@@ -21,7 +21,7 @@ export default async function TratamientosPage({ params }: { params: Promise<{ i
   if (puedeCrear) {
     const supabase = getSupabase()
     const [{ data: profesionales }, { data: aranceles }, { data: sugerido }] = await Promise.all([
-      supabase.from("perfiles").select("id, nombre_completo").in("rol", ["DENTISTA", "ADMINISTRADOR"]).eq("activo", true).order("nombre_completo"),
+      supabase.from("perfiles").select("id, nombre_completo").eq("rol", "DENTISTA").eq("activo", true).order("nombre_completo"),
       supabase.from("aranceles").select("id, nombre").eq("activo", true).order("es_base", { ascending: false }).order("nombre"),
       supabase.rpc("arancel_paciente", { p_paciente: id }),
     ])

@@ -25,6 +25,16 @@ export async function crearTratamiento(pacienteId: string, formData: FormData): 
   const descripcion = String(formData.get("descripcion") ?? "").trim() || null
 
   if (nombre.length < 3) return { ok: false, mensaje: "Ingresa un nombre para el tratamiento." }
+  if (profesional) {
+    const { data: dentista } = await getSupabase()
+      .from("perfiles")
+      .select("id")
+      .eq("id", profesional)
+      .eq("rol", "DENTISTA")
+      .eq("activo", true)
+      .maybeSingle()
+    if (!dentista) return { ok: false, mensaje: "El profesional tratante debe ser un dentista activo." }
+  }
 
   const { data, error } = await getSupabase().rpc("crear_tratamiento", {
     p_paciente: pacienteId,
