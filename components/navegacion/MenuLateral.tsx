@@ -67,6 +67,7 @@ export async function MenuLateral() {
       titulo: "Configuración",
       enlaces: [
         { href: "/prestaciones", icono: "🦷", etiqueta: "Aranceles y precios", ayuda: "Catálogo de prestaciones, aranceles y códigos", visible: admin && p("prestaciones.ver") },
+        { href: "/administracion#categorias_prestaciones", icono: "🗂️", etiqueta: "Carpetas de prestaciones", ayuda: "Categorías y su pago: 100% doctor, 100% clínica o x%", visible: p("administracion.gestionar") },
         { href: "/administracion/plantillas", icono: "📝", etiqueta: "Plantillas", ayuda: "Plantillas de documentos con variables", visible: p("plantillas.gestionar") },
         { href: "/administracion#bancos", icono: "🏦", etiqueta: "Bancos", ayuda: "Bancos para transferencias y cheques", visible: p("administracion.gestionar") },
         { href: "/administracion#metodos-pago", icono: "💳", etiqueta: "Métodos de pago", ayuda: "Formas de pago aceptadas en caja", visible: p("administracion.gestionar") },
