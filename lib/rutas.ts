@@ -5,7 +5,7 @@ export function rutaSegura(destino: string | null | undefined): string {
   if (destino.includes("\\") || /[\u0000-\u001f\u007f]/.test(destino)) return "/"
 
   try {
-    const base = "http://softdent.local"
+    const base = "https://softdent.local"
     const url = new URL(destino, base)
     if (url.origin !== base) return "/"
     if (url.pathname === "/login" || url.pathname.startsWith("/login/")) return "/"

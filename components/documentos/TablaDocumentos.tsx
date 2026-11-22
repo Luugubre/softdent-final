@@ -109,8 +109,9 @@ function ModalAnular({ documento, onClose }: { documento: DocumentoClinico; onCl
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 cursor-default" />
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4">
         <h3 className="text-base font-extrabold text-gray-900">Anular documento folio #{documento.folio}</h3>
         <p className="text-xs text-gray-500">El documento queda en el historial marcado como anulado y puedes emitir uno nuevo corregido.</p>
         <textarea

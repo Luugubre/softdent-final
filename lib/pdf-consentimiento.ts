@@ -1,13 +1,14 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { normalizarFirmaSvg } from '@/lib/firma';
+import { quitarEtiquetas } from '@/lib/texto';
 
 function limpiarHtml(html: string): string {
   if (!html) return '';
-  return html
+  const conSaltos = html
     .replace(/<br\s*[\/]?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
-    .replace(/<\/h[1-6]>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
+    .replace(/<\/h[1-6]>/gi, '\n');
+  return quitarEtiquetas(conSaltos)
     .replace(/&nbsp;/g, ' ')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")

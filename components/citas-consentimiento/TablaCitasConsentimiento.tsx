@@ -499,8 +499,8 @@ export default function TablaCitasConsentimiento({ citasIniciales = [], plantill
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700">Nombre de quien firma</label>
-                  <input
+                  <label htmlFor="tablacitasconsentimi-nombre-de-quien" className="block text-xs font-bold text-gray-700">Nombre de quien firma</label>
+                  <input id="tablacitasconsentimi-nombre-de-quien"
                     type="text"
                     required
                     value={firmanteNombre}
@@ -509,8 +509,8 @@ export default function TablaCitasConsentimiento({ citasIniciales = [], plantill
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700">RUT de quien firma</label>
-                  <input
+                  <label htmlFor="tablacitasconsentimi-rut-de-quien" className="block text-xs font-bold text-gray-700">RUT de quien firma</label>
+                  <input id="tablacitasconsentimi-rut-de-quien"
                     type="text"
                     required
                     value={firmanteRut}

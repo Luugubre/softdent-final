@@ -269,7 +269,15 @@ export function TarjetaCitaSemana({ cita: c, info, ahoraMs, puedeGestionar, acci
   const color = colorAvatar(c.paciente_nombre)
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => acciones.onDetalle(c)}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault()
+          acciones.onDetalle(c)
+        }
+      }}
       className={`bg-white p-3 rounded-xl border border-gray-200 border-l-4 ${color.split(" ")[2]} shadow-sm hover:shadow-md cursor-pointer ${
         c.sobrecupo ? "bg-red-50/40" : ""
       } ${fondoSemaforo(sem?.nivel)}`}
@@ -287,7 +295,7 @@ export function TarjetaCitaSemana({ cita: c, info, ahoraMs, puedeGestionar, acci
         {c.profesional_nombre}
         {c.motivo ? ` · ${c.motivo}` : ""}
       </p>
-      <div className="flex items-center justify-between mt-2 gap-1" onClick={(e) => e.stopPropagation()}>
+      <div role="presentation" className="flex items-center justify-between mt-2 gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <span className="text-[10px] font-black text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded-md">{c.hora_inicio}</span>
         <SelectorEstado cita={c} habilitado={puedeGestionar} onCambiar={(e) => acciones.onCambiarEstado(c, e)} compacto />
       </div>

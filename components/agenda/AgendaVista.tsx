@@ -436,13 +436,16 @@ function Grilla({
                   const pasado = col.fecha < hoy || (esHoy && m + PASO <= ahoraMin)
                   const clic = puedeAgendar && !pasado
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={m}
-                      onClick={clic ? () => onSlot(col, m) : undefined}
+                      disabled={!clic}
+                      onClick={() => onSlot(col, m)}
                       title={clic ? `Agendar a las ${minutosAHora(m)}` : undefined}
-                      className={`absolute inset-x-0 border-b ${m % 60 === 45 ? "border-gray-200" : "border-gray-100"} ${
+                      aria-label={clic ? `Agendar a las ${minutosAHora(m)}` : undefined}
+                      className={`absolute inset-x-0 block w-full border-b ${m % 60 === 45 ? "border-gray-200" : "border-gray-100"} ${
                         enHorario ? (pasado ? "bg-gray-50/60" : "bg-white") : "bg-gray-100"
-                      } ${clic ? "cursor-pointer hover:bg-blue-50" : ""}`}
+                      } ${clic ? "cursor-pointer hover:bg-blue-50" : "cursor-default"}`}
                       style={{ top: (m - inicio) * PX, height: PASO * PX }}
                     />
                   )

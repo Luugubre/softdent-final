@@ -157,7 +157,9 @@ function Formulario({
       return
     }
     let vigente = true
-    resumenPacienteAgenda(paciente.id).then((r) => vigente && setResumen(r))
+    resumenPacienteAgenda(paciente.id)
+      .then((r) => vigente && setResumen(r))
+      .catch(console.error)
     return () => {
       vigente = false
     }
@@ -228,7 +230,7 @@ function Formulario({
     const tramos = dispo.tramos[fecha] ?? []
     const res: string[] = []
     for (const [ini, fin] of tramos) for (let m = ini; m + duracion <= fin; m += PASO) res.push(minutosAHora(m))
-    return [...new Set(res)].sort()
+    return [...new Set(res)].sort((a, b) => a.localeCompare(b))
   }
 
   function clicSlot(fecha: string, hora: string) {
@@ -466,7 +468,7 @@ function Formulario({
             <div className="space-y-2">
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input autoFocus value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por RUT o nombre…" className={`${campo} pl-11`} />
+                <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por RUT o nombre…" className={`${campo} pl-11`} />
               </div>
               {resultados.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">

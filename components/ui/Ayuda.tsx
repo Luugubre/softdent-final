@@ -166,7 +166,7 @@ export function Seccion({
 export function Termino({ t, children, abajo = false }: { t: TerminoId; children?: ReactNode; abajo?: boolean }) {
   const e = GLOSARIO[t]
   return (
-    <span tabIndex={0} className="group/termino relative inline-flex items-baseline gap-0.5 cursor-help outline-none">
+    <button type="button" className="group/termino relative inline-flex items-baseline gap-0.5 cursor-help outline-none text-left font-[inherit] text-[length:inherit] [text-transform:inherit] [letter-spacing:inherit]">
       <span className="border-b border-dotted border-current">{children ?? e.termino}</span>
       <span
         aria-hidden
@@ -184,7 +184,7 @@ export function Termino({ t, children, abajo = false }: { t: TerminoId; children
         {e.definicion}
         {"donde" in e && e.donde ? <span className="mt-1.5 block font-bold text-blue-300">⚙️ {e.donde.etiqueta}</span> : null}
       </span>
-    </span>
+    </button>
   )
 }
 

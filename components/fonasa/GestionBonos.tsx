@@ -27,7 +27,7 @@ export function GestionBonos({ bonos, hoy }: { bonos: BonoFonasa[]; hoy: string 
   useEffect(() => {
     setItemId("")
     if (!paciente || !prestacion) return setItems([])
-    itemsBonificables(paciente.id, prestacion.id).then(setItems)
+    itemsBonificables(paciente.id, prestacion.id).then(setItems).catch(console.error)
   }, [paciente, prestacion])
 
   const ejecutar = (fn: () => Promise<{ ok: boolean; mensaje: string }>, alTerminar?: () => void) =>

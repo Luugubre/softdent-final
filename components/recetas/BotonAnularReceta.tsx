@@ -46,8 +46,8 @@ export function BotonAnularReceta({ recetaId, folio }: { recetaId: string; folio
             </p>
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Motivo de anulación *</label>
-              <textarea
+              <label htmlFor="botonanularreceta-motivo-de-anulacion" className="block text-xs font-bold text-gray-700 mb-1">Motivo de anulación *</label>
+              <textarea id="botonanularreceta-motivo-de-anulacion"
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Ej: Error en posología, cambio de tratamiento..."

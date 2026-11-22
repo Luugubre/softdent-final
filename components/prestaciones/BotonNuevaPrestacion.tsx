@@ -26,9 +26,9 @@ export function BotonNuevaPrestacion(props: {
           aria-modal="true"
           aria-label="Nueva prestación"
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 md:p-10"
-          onClick={() => setAbierto(false)}
         >
-          <div className="w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+          <button type="button" aria-label="Cerrar" onClick={() => setAbierto(false)} className="absolute inset-0 cursor-default" />
+          <div className="relative w-full max-w-4xl">
             <PrestacionForm {...props} abiertoInicial onCerrar={() => setAbierto(false)} />
           </div>
         </div>

@@ -109,7 +109,7 @@ export async function guardarHorariosEspecialesLote(payload: {
       return { error: "No se pudieron guardar los horarios especiales." }
     }
 
-    const fechasOrdenadas = filas.map((f) => f.fecha).sort()
+    const fechasOrdenadas = filas.map((f) => f.fecha).sort((a, b) => a.localeCompare(b))
     const { data: huerfanas } = await supabase.rpc("citas_huerfanas", {
       p_desde: fechasOrdenadas[0],
       p_hasta: fechasOrdenadas[fechasOrdenadas.length - 1],

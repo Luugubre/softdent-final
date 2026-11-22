@@ -361,6 +361,7 @@ export function Odontograma({
 
       {menu && (
         <div
+          role="menu"
           className="fixed z-40 w-56 rounded-xl bg-white border border-gray-200 shadow-xl py-1"
           style={{ left: menu.x, top: menu.y }}
           onClick={(e) => e.stopPropagation()}

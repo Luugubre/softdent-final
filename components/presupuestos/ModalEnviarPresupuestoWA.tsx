@@ -79,7 +79,7 @@ export function ModalEnviarPresupuestoWA({
         }
       }
     }
-    cargar()
+    cargar().catch(console.error)
   }, [pacienteId, presupuestoIdInicial, armarTextoMensaje])
 
   const handleCambioPresupuesto = (id: string) => {
@@ -151,8 +151,8 @@ export function ModalEnviarPresupuestoWA({
             )}
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-600 mb-1">Teléfono WhatsApp</label>
-              <input
+              <label htmlFor="modalenviarpresupues-telefono-whatsapp" className="block text-[11px] font-bold text-gray-600 mb-1">Teléfono WhatsApp</label>
+              <input id="modalenviarpresupues-telefono-whatsapp"
                 type="text"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
@@ -162,8 +162,8 @@ export function ModalEnviarPresupuestoWA({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-600 mb-1">Mensaje (Editable)</label>
-              <textarea
+              <label htmlFor="modalenviarpresupues-mensaje-editable" className="block text-[11px] font-bold text-gray-600 mb-1">Mensaje (Editable)</label>
+              <textarea id="modalenviarpresupues-mensaje-editable"
                 value={mensaje}
                 onChange={(e) => setMensaje(e.target.value)}
                 rows={10}

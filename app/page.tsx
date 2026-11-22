@@ -171,7 +171,7 @@ export default async function InicioPage() {
                 placeholder="Buscar paciente por nombre o RUT…"
                 className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-white placeholder:text-blue-100/70 focus:!shadow-none focus:outline-none"
               />
-              <button className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50">Buscar</button>
+              <button type="submit" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50">Buscar</button>
             </form>
           )}
         </div>

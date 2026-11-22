@@ -40,7 +40,7 @@ export default async function ExportarExcelPage({ searchParams }: { searchParams
           Hasta
           <input type="date" name="hasta" defaultValue={hasta} max={hoy} className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm" />
         </label>
-        <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-gray-700">Aplicar período</button>
+        <button type="submit" className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white hover:bg-gray-700">Aplicar período</button>
         <p className="text-xs text-gray-500">El período se usa en los reportes de citas y pagos.</p>
       </form>
 

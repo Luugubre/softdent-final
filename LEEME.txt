@@ -1,48 +1,39 @@
-SOFTDENT — VERSIÓN 8: ADMINISTRACIÓN EN PÁGINAS Y NUEVO DISEÑO (22 de noviembre)
+SOFTDENT — VERSIÓN 9: CORRECCIONES DE SONARQUBE CLOUD (22 de noviembre)
 
-Se copia encima de lo que hoy está en main. Son 19 archivos: 16 modificados y 3 nuevos.
-No necesita SQL nuevo en Supabase.
+Corrige los 107 hallazgos del primer análisis de SonarQube Cloud (106 de fiabilidad y 1 de seguridad).
+Se copia encima de lo que hoy está en main: 42 archivos (41 modificados y 1 nuevo, lib/texto.ts).
+No necesita SQL ni "npm install".
 
-IMPORTANTE: trae una librería nueva de íconos (lucide-react). Por eso vienen package.json y
-package-lock.json. Antes de probar en tu PC hay que ejecutar "npm install". Vercel la instala solo.
+IMPORTANTE: borra el LEEME.txt que quedó subido en main (ver los pasos abajo).
 
-QUÉ CAMBIÓ
- 1. Administración separada en páginas.
-    Antes todo estaba en una sola página larga. Ahora:
-      /administracion                  → resumen con tarjetas de cada sección
-      /administracion/parametros       → Datos de la clínica
-      /administracion/especialidades
-      /administracion/previsiones
-      /administracion/tipos-atencion
-      /administracion/boxes
-      /administracion/categorias       → Carpetas de prestaciones (tipo de pago)
-      /administracion/laboratorios
-      /administracion/metodos-pago
-      /administracion/bancos
-      /administracion/registro-cambios
-    Cada página tiene arriba una barra para saltar a las otras secciones.
-    El menú lateral y los enlaces de ayuda ("Se configura en", Centro de ayuda, glosario) apuntan a
-    las páginas nuevas.
-
- 2. Nuevo diseño.
-    - Color principal azul petróleo, grises más suaves y sombras más livianas.
-    - Tipografía Plus Jakarta Sans, con textos menos gruesos.
-    - Menú lateral oscuro con íconos. Las secciones Administración y Configuración se pliegan
-      (se abren solas cuando estás en una de sus páginas).
-    - Inicio rediseñado: banner de bienvenida con buscador y tarjetas limpias con íconos.
-    - Pantalla de inicio de sesión rediseñada.
-    - Encabezados de página y agenda con el mismo estilo.
-    El cambio de colores y tipografía se aplica a toda la app.
+QUÉ SE CORRIGIÓ
+ · 68  Etiquetas de formulario sin campo asociado: cada etiqueta queda unida a su campo
+       (al hacer clic en la etiqueta se enfoca el campo, y los lectores de pantalla la leen).
+ · 13  Elementos con clic que no eran botones: el fondo de los modales, las celdas de la grilla
+       de agenda, el número de pieza del odontograma y la tarjeta de cita ahora son botones
+       o se pueden usar con teclado.
+ ·  7  Botones sin "type": se agregó type="submit".
+ ·  7  Expresiones regulares lentas (riesgo de bloqueo con textos maliciosos): reemplazadas por
+       funciones de costo lineal en lib/texto.ts (quitar etiquetas HTML, validar correo,
+       formatear RUT con puntos).
+ ·  7  Promesas sin manejo de error: ahora registran el error en consola.
+ ·  2  Ordenamientos de texto sin comparador: usan localeCompare.
+ ·  1  Uso de "http": cambiado a "https".
+ ·  1  tabIndex en un elemento no interactivo: los términos del glosario ("?") son botones.
+ ·  1  autoFocus: eliminado del buscador de pacientes al agendar.
 
 CÓMO SUBIRLO (terminal de VS Code, en la carpeta softdent-final)
   1. Copiar el contenido del ZIP encima del proyecto (reemplazar archivos).
-  2. npm install
+  2. git rm LEEME.txt
   3. npm run build
   4. git add -A
-  5. git commit -m "Administración en páginas separadas y nuevo diseño"
+  5. git commit -m "Correcciones SonarQube"
   6. git push origin main
+  SonarQube Cloud analiza solo el nuevo push. En unos minutos se ve el resultado nuevo.
 
 Comprobado:
- - "npm ci", tsc y build OK sobre una copia limpia de main.
+ - tsc y build OK sobre una copia limpia de main.
  - Lint sin errores nuevos.
- - Páginas revisadas en el navegador (escritorio y celular) sin errores.
+ - En el navegador: clic en celdas de la agenda abre "Agendar", el modal de nueva prestación cierra
+   con clic fuera, la ayuda "?" aparece al pasar el mouse y con teclado, y las etiquetas enfocan su
+   campo. Sin errores.

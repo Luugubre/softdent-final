@@ -50,8 +50,8 @@ export function SelectorMedicamentos({ catalogo, onSeleccionar }: Props) {
 
   return (
     <div className="relative">
-      <label className="block text-xs font-bold text-gray-700 mb-1">Buscar Fármaco Frecuente</label>
-      <input
+      <label htmlFor="selectormedicamentos-buscar-farmaco-frecuente" className="block text-xs font-bold text-gray-700 mb-1">Buscar Fármaco Frecuente</label>
+      <input id="selectormedicamentos-buscar-farmaco-frecuente"
         type="text"
         value={busqueda}
         onChange={(e) => {

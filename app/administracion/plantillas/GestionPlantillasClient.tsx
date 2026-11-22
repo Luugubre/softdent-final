@@ -328,8 +328,8 @@ export default function GestionPlantillasClient({ plantillas, esAdmin }: Props) 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {modoNuevo && (
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Tipo / Categoría del Documento</label>
-                    <select
+                    <label htmlFor="gestionplantillas-tipo-categoria-del" className="block text-xs font-bold text-gray-700 mb-1">Tipo / Categoría del Documento</label>
+                    <select id="gestionplantillas-tipo-categoria-del"
                       value={categoriaNueva}
                       onChange={(e) => handleCambioCategoria(e.target.value)}
                       className="w-full rounded-xl border border-gray-300 p-2.5 text-sm font-medium bg-white focus:ring-2 focus:ring-blue-500"
@@ -344,8 +344,8 @@ export default function GestionPlantillasClient({ plantillas, esAdmin }: Props) 
                 )}
 
                 <div className={modoNuevo ? "" : "md:col-span-2"}>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Nombre del Documento *</label>
-                  <input
+                  <label htmlFor="gestionplantillas-nombre-del-documento" className="block text-xs font-bold text-gray-700 mb-1">Nombre del Documento *</label>
+                  <input id="gestionplantillas-nombre-del-documento"
                     type="text"
                     required
                     disabled={!esAdmin}
@@ -359,9 +359,9 @@ export default function GestionPlantillasClient({ plantillas, esAdmin }: Props) 
 
               {esAdmin && (
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 mb-1.5">
+                  <p className="block text-[11px] font-bold text-gray-500 mb-1.5">
                     Insertar Variable (se inserta en la posición del cursor):
-                  </label>
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {VARIABLES_DISPONIBLES.map((v) => (
                       <button
@@ -380,9 +380,9 @@ export default function GestionPlantillasClient({ plantillas, esAdmin }: Props) 
 
               {/* Editor de Texto Enriquecido tipo Word */}
               <div>
-                <label className="block text-[11px] font-black uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
+                <p className="block text-[11px] font-black uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
                   <span>📄</span> Cuerpo del Documento *
-                </label>
+                </p>
                 <EditorTextoEnriquecido
                   value={contenido}
                   onChange={setContenido}

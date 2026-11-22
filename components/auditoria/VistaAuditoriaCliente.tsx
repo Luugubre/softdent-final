@@ -195,8 +195,8 @@ export function VistaAuditoriaCliente({
 
       <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
         <div className={tab === "CAMBIOS" ? "md:col-span-2" : "md:col-span-4"}>
-          <label className={etiqueta}>Buscar</label>
-          <input
+          <label htmlFor="vistaauditoriae-buscar" className={etiqueta}>Buscar</label>
+          <input id="vistaauditoriae-buscar"
             type="text"
             value={busqueda}
             onChange={(e) => {
@@ -210,8 +210,8 @@ export function VistaAuditoriaCliente({
         {tab === "CAMBIOS" && (
           <>
             <div>
-              <label className={etiqueta}>Módulo</label>
-              <select value={filtroModulo} onChange={(e) => setFiltroModulo(e.target.value)} className={control}>
+              <label htmlFor="vistaauditoriae-modulo" className={etiqueta}>Módulo</label>
+              <select id="vistaauditoriae-modulo" value={filtroModulo} onChange={(e) => setFiltroModulo(e.target.value)} className={control}>
                 <option value="TODOS">Todos los módulos</option>
                 {MODULOS.map((m) => (
                   <option key={m.valor} value={m.valor}>
@@ -221,8 +221,8 @@ export function VistaAuditoriaCliente({
               </select>
             </div>
             <div>
-              <label className={etiqueta}>Tipo de acción</label>
-              <select value={filtroAccion} onChange={(e) => setFiltroAccion(e.target.value)} className={control}>
+              <label htmlFor="vistaauditoriae-tipo-de-accion" className={etiqueta}>Tipo de acción</label>
+              <select id="vistaauditoriae-tipo-de-accion" value={filtroAccion} onChange={(e) => setFiltroAccion(e.target.value)} className={control}>
                 <option value="TODAS">Todas las acciones</option>
                 {Object.entries(BADGE_ACCION).map(([valor, b]) => (
                   <option key={valor} value={valor}>
@@ -235,12 +235,12 @@ export function VistaAuditoriaCliente({
         )}
         <form onSubmit={aplicarRango} className="md:col-span-2 grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
           <div>
-            <label className={etiqueta}>Desde</label>
-            <input type="date" max={hoy} value={rango.desde} onChange={(e) => setRango({ ...rango, desde: e.target.value })} className={control} />
+            <label htmlFor="vistaauditoriae-desde" className={etiqueta}>Desde</label>
+            <input id="vistaauditoriae-desde" type="date" max={hoy} value={rango.desde} onChange={(e) => setRango({ ...rango, desde: e.target.value })} className={control} />
           </div>
           <div>
-            <label className={etiqueta}>Hasta</label>
-            <input type="date" max={hoy} value={rango.hasta} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} className={control} />
+            <label htmlFor="vistaauditoriae-hasta" className={etiqueta}>Hasta</label>
+            <input id="vistaauditoriae-hasta" type="date" max={hoy} value={rango.hasta} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} className={control} />
           </div>
           <button type="submit" className="rounded-xl bg-gray-900 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800">
             Ver
@@ -380,8 +380,9 @@ export function VistaAuditoriaCliente({
       )}
 
       {eventoDetalle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={() => setEventoDetalle(null)}>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-xl max-w-lg w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <button type="button" aria-label="Cerrar" onClick={() => setEventoDetalle(null)} className="absolute inset-0 cursor-default" />
+          <div className="relative bg-white rounded-2xl border border-gray-200 shadow-xl max-w-lg w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-base font-extrabold text-gray-900">🔍 Detalle del registro</h3>
               <button type="button" onClick={() => setEventoDetalle(null)} className="text-gray-400 hover:text-gray-600 font-bold text-sm">

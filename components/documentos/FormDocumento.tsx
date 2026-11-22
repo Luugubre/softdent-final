@@ -115,8 +115,8 @@ export function FormDocumento({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className={etiqueta}>Tipo de documento</label>
-          <select value={tipo} onChange={(e) => elegirTipo(e.target.value as TipoDocumento)} className={control}>
+          <label htmlFor="documento-tipo-de-documento" className={etiqueta}>Tipo de documento</label>
+          <select id="documento-tipo-de-documento" value={tipo} onChange={(e) => elegirTipo(e.target.value as TipoDocumento)} className={control}>
             {Object.entries(TIPOS_DOCUMENTO).map(([valor, texto]) => (
               <option key={valor} value={valor}>
                 {texto}
@@ -125,8 +125,8 @@ export function FormDocumento({
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className={etiqueta}>Plantilla</label>
-          <select value={plantillaId} onChange={(e) => elegirPlantilla(e.target.value)} className={control}>
+          <label htmlFor="documento-plantilla" className={etiqueta}>Plantilla</label>
+          <select id="documento-plantilla" value={plantillaId} onChange={(e) => elegirPlantilla(e.target.value)} className={control}>
             <option value="">{delTipo.length ? "Texto base" : "Texto base (no hay plantillas de este tipo)"}</option>
             {delTipo.map((p) => (
               <option key={p.id} value={p.id}>
@@ -136,13 +136,13 @@ export function FormDocumento({
           </select>
         </div>
         <div className={tipo === "DERIVACION" ? "" : "md:col-span-3"}>
-          <label className={etiqueta}>Título</label>
-          <input value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={150} required className={control} />
+          <label htmlFor="documento-titulo" className={etiqueta}>Título</label>
+          <input id="documento-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={150} required className={control} />
         </div>
         {tipo === "DERIVACION" && (
           <div className="md:col-span-2">
-            <label className={etiqueta}>Derivar a</label>
-            <input
+            <label htmlFor="documento-derivar-a" className={etiqueta}>Derivar a</label>
+            <input id="documento-derivar-a"
               value={destinatario}
               onChange={(e) => setDestinatario(e.target.value)}
               maxLength={200}
@@ -155,7 +155,7 @@ export function FormDocumento({
       </div>
 
       <div>
-        <label className={etiqueta}>Contenido</label>
+        <p className={etiqueta}>Contenido</p>
         <EditorTextoEnriquecido value={contenido} onChange={setContenido} />
       </div>
 

@@ -6,6 +6,7 @@ import { autorizar } from "@/lib/auth"
 import { MENSAJE_SIN_PERMISO } from "@/lib/permisos"
 import { getSupabase } from "@/lib/supabase"
 import { limpiarHtmlDocumento } from "@/lib/html-seguro"
+import { quitarEtiquetas } from "@/lib/texto"
 import { TIPOS_DOCUMENTO, type TipoDocumento } from "@/lib/documentos-tipos"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -26,7 +27,7 @@ export async function emitirDocumento(datos: z.input<typeof documentoSchema>): P
   const v = documentoSchema.safeParse(datos)
   if (!v.success) return { error: v.error.issues[0]?.message ?? "Datos inválidos" }
   const contenido = limpiarHtmlDocumento(v.data.contenido)
-  if (contenido.replace(/<[^>]*>/g, "").trim().length < 10) return { error: "El contenido del documento está vacío." }
+  if (quitarEtiquetas(contenido).trim().length < 10) return { error: "El contenido del documento está vacío." }
   if (v.data.tipo === "DERIVACION" && !v.data.destinatario) return { error: "Indica a quién se deriva al paciente." }
 
   const { data, error } = await getSupabase().rpc("emitir_documento", {

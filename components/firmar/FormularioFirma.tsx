@@ -140,8 +140,8 @@ export default function FormularioFirma({ token, documento }: Props) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-bold text-gray-700">RUT del Paciente (para validar identidad)</label>
-            <input
+            <label htmlFor="ulariofirma-rut-del-paciente" className="block text-sm font-bold text-gray-700">RUT del Paciente (para validar identidad)</label>
+            <input id="ulariofirma-rut-del-paciente"
               type="text"
               required
               placeholder="11.111.111-1"
@@ -152,8 +152,8 @@ export default function FormularioFirma({ token, documento }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700">Nombre completo de quien firma</label>
-            <input
+            <label htmlFor="ulariofirma-nombre-completo-de" className="block text-sm font-bold text-gray-700">Nombre completo de quien firma</label>
+            <input id="ulariofirma-nombre-completo-de"
               type="text"
               required
               placeholder="Juan Pérez"
@@ -190,7 +190,7 @@ export default function FormularioFirma({ token, documento }: Props) {
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-bold text-gray-700">Traza tu firma en el recuadro:</label>
+            <p className="block text-sm font-bold text-gray-700">Traza tu firma en el recuadro:</p>
             <button
               type="button"
               onClick={limpiarFirma}

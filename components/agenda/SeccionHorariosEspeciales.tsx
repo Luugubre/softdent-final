@@ -76,7 +76,7 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
   const [fechaInspeccion, setFechaInspeccion] = useState<string | null>(hoyISO)
 
   useEffect(() => {
-    listarHorariosEspeciales().then(setLista)
+    listarHorariosEspeciales().then(setLista).catch(console.error)
   }, [])
 
   const toggleFechaCalendario = (fechaISO: string) => {
@@ -260,8 +260,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
         <form onSubmit={handleGuardar} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
             <div className="md:col-span-2">
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Dentista</label>
-              <select
+              <label htmlFor="seccionhorariosespec-dentista" className="block text-[11px] font-bold text-gray-700 mb-1">Dentista</label>
+              <select id="seccionhorariosespec-dentista"
                 value={profesionalId}
                 onChange={(e) => setProfesionalId(e.target.value)}
                 className="w-full rounded-xl border border-gray-300 p-2 text-xs font-semibold bg-white"
@@ -275,8 +275,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Modalidad por defecto</label>
-              <select
+              <label htmlFor="seccionhorariosespec-modalidad-por-defecto" className="block text-[11px] font-bold text-gray-700 mb-1">Modalidad por defecto</label>
+              <select id="seccionhorariosespec-modalidad-por-defecto"
                 value={bloqueadoDefecto ? "BLOQUEADO" : "ESPECIAL"}
                 onChange={(e) => setBloqueadoDefecto(e.target.value === "BLOQUEADO")}
                 className="w-full rounded-xl border border-gray-300 p-2 text-xs font-semibold bg-white"
@@ -287,8 +287,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Motivo / Nota</label>
-              <input
+              <label htmlFor="seccionhorariosespec-motivo-nota" className="block text-[11px] font-bold text-gray-700 mb-1">Motivo / Nota</label>
+              <input id="seccionhorariosespec-motivo-nota"
                 type="text"
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
@@ -300,8 +300,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
             {!bloqueadoDefecto && (
               <div className="md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-gray-200/80">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase">Hora inicio base</label>
-                  <input
+                  <label htmlFor="seccionhorariosespec-hora-inicio-base" className="block text-[10px] font-bold text-gray-500 uppercase">Hora inicio base</label>
+                  <input id="seccionhorariosespec-hora-inicio-base"
                     type="time"
                     value={horaInicioDef}
                     onChange={(e) => setHoraInicioDef(e.target.value)}
@@ -309,8 +309,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase">Hora fin base</label>
-                  <input
+                  <label htmlFor="seccionhorariosespec-hora-fin-base" className="block text-[10px] font-bold text-gray-500 uppercase">Hora fin base</label>
+                  <input id="seccionhorariosespec-hora-fin-base"
                     type="time"
                     value={horaFinDef}
                     onChange={(e) => setHoraFinDef(e.target.value)}
@@ -409,8 +409,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end bg-blue-50/40 p-4 rounded-xl border border-blue-100">
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">Fecha inicial</label>
-                <input
+                <label htmlFor="seccionhorariosespec-fecha-inicial" className="block text-[11px] font-bold text-gray-700 mb-1">Fecha inicial</label>
+                <input id="seccionhorariosespec-fecha-inicial"
                   type="date"
                   value={fechaInicioRec}
                   onChange={(e) => setFechaInicioRec(e.target.value)}
@@ -418,8 +418,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">Frecuencia (semanas)</label>
-                <select
+                <label htmlFor="seccionhorariosespec-frecuencia-semanas" className="block text-[11px] font-bold text-gray-700 mb-1">Frecuencia (semanas)</label>
+                <select id="seccionhorariosespec-frecuencia-semanas"
                   value={cadaNSemanas}
                   onChange={(e) => setCadaNSemanas(Number(e.target.value))}
                   className="w-full rounded-xl border border-gray-300 p-2 text-xs bg-white font-semibold"
@@ -431,8 +431,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">Repetir hasta</label>
-                <input
+                <label htmlFor="seccionhorariosespec-repetir-hasta" className="block text-[11px] font-bold text-gray-700 mb-1">Repetir hasta</label>
+                <input id="seccionhorariosespec-repetir-hasta"
                   type="date"
                   value={fechaHastaRec}
                   onChange={(e) => setFechaHastaRec(e.target.value)}
@@ -587,8 +587,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
         {/* Barra de Filtros del Visor */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200">
           <div>
-            <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Filtrar por dentista</label>
-            <select
+            <label htmlFor="seccionhorariosespec-filtrar-por-dentista" className="block text-[10px] font-black uppercase text-gray-400 mb-1">Filtrar por dentista</label>
+            <select id="seccionhorariosespec-filtrar-por-dentista"
               value={visorProfesional}
               onChange={(e) => setVisorProfesional(e.target.value)}
               className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold bg-white"
@@ -603,8 +603,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Tipo de excepción</label>
-            <select
+            <label htmlFor="seccionhorariosespec-tipo-de-excepcion" className="block text-[10px] font-black uppercase text-gray-400 mb-1">Tipo de excepción</label>
+            <select id="seccionhorariosespec-tipo-de-excepcion"
               value={visorTipo}
               onChange={(e) => setVisorTipo(e.target.value as "TODOS" | "ESPECIAL" | "BLOQUEADO")}
               className="w-full rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold bg-white"
@@ -616,8 +616,8 @@ export function SeccionHorariosEspeciales({ profesionales }: Props) {
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Buscar motivo o fecha</label>
-            <input
+            <label htmlFor="seccionhorariosespec-buscar-motivo-o" className="block text-[10px] font-black uppercase text-gray-400 mb-1">Buscar motivo o fecha</label>
+            <input id="seccionhorariosespec-buscar-motivo-o"
               type="text"
               value={visorBusqueda}
               onChange={(e) => setVisorBusqueda(e.target.value)}

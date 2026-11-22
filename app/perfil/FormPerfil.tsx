@@ -89,20 +89,20 @@ export function FormPerfil({ perfil, puedeFirmar, rol }: PerfilProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Nombres</label>
-            <input name="nombres" defaultValue={perfil.nombres} required className={inputClass} />
+            <label htmlFor="perfil-nombres" className="block text-xs font-bold text-gray-700 mb-1">Nombres</label>
+            <input id="perfil-nombres" name="nombres" defaultValue={perfil.nombres} required className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Apellidos</label>
-            <input name="apellidos" defaultValue={perfil.apellidos} required className={inputClass} />
+            <label htmlFor="perfil-apellidos" className="block text-xs font-bold text-gray-700 mb-1">Apellidos</label>
+            <input id="perfil-apellidos" name="apellidos" defaultValue={perfil.apellidos} required className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Correo (Lectura)</label>
-            <input value={perfil.email} disabled className={`${inputClass} bg-gray-100 cursor-not-allowed`} />
+            <label htmlFor="perfil-correo-lectura" className="block text-xs font-bold text-gray-700 mb-1">Correo (Lectura)</label>
+            <input id="perfil-correo-lectura" value={perfil.email} disabled className={`${inputClass} bg-gray-100 cursor-not-allowed`} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
-            <input name="telefono" defaultValue={perfil.telefono} placeholder="+56 9 1234 5678" className={inputClass} />
+            <label htmlFor="perfil-telefono" className="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
+            <input id="perfil-telefono" name="telefono" defaultValue={perfil.telefono} placeholder="+56 9 1234 5678" className={inputClass} />
           </div>
         </div>
 
@@ -132,8 +132,8 @@ export function FormPerfil({ perfil, puedeFirmar, rol }: PerfilProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Tema de Interfaz</label>
-            <select name="tema" defaultValue={perfil.preferencias?.tema ?? "light"} className={inputClass}>
+            <label htmlFor="perfil-tema-de-interfaz" className="block text-xs font-bold text-gray-700 mb-1">Tema de Interfaz</label>
+            <select id="perfil-tema-de-interfaz" name="tema" defaultValue={perfil.preferencias?.tema ?? "light"} className={inputClass}>
               <option value="light">Claro</option>
               <option value="dark">Oscuro</option>
               <option value="system">Sistema</option>
@@ -156,16 +156,16 @@ export function FormPerfil({ perfil, puedeFirmar, rol }: PerfilProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Contraseña Actual</label>
-            <input type="password" name="password_actual" required className={inputClass} />
+            <label htmlFor="perfil-contrasena-actual" className="block text-xs font-bold text-gray-700 mb-1">Contraseña Actual</label>
+            <input id="perfil-contrasena-actual" type="password" name="password_actual" required className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Nueva Contraseña</label>
-            <input type="password" name="nueva_password" required minLength={10} autoComplete="new-password" placeholder="Mínimo 10 caracteres" className={inputClass} />
+            <label htmlFor="perfil-nueva-contrasena" className="block text-xs font-bold text-gray-700 mb-1">Nueva Contraseña</label>
+            <input id="perfil-nueva-contrasena" type="password" name="nueva_password" required minLength={10} autoComplete="new-password" placeholder="Mínimo 10 caracteres" className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Confirmar Contraseña</label>
-            <input type="password" name="confirmar_password" required className={inputClass} />
+            <label htmlFor="perfil-confirmar-contrasena" className="block text-xs font-bold text-gray-700 mb-1">Confirmar Contraseña</label>
+            <input id="perfil-confirmar-contrasena" type="password" name="confirmar_password" required className={inputClass} />
           </div>
         </div>
 

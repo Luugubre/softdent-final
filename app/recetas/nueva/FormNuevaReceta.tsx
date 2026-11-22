@@ -168,8 +168,8 @@ export default function FormNuevaReceta({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Selector de Paciente */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">Paciente *</label>
-            <select
+            <label htmlFor="nuevareceta-paciente" className="block text-xs font-bold text-gray-700 mb-1">Paciente *</label>
+            <select id="nuevareceta-paciente"
               required
               value={pacienteId}
               onChange={(e) => setPacienteId(e.target.value)}
@@ -188,8 +188,8 @@ export default function FormNuevaReceta({
           {/* Selector de dentista */}
           {esRecepcionista && (
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Dentista Emisor *</label>
-              <select
+              <label htmlFor="nuevareceta-dentista-emisor" className="block text-xs font-bold text-gray-700 mb-1">Dentista Emisor *</label>
+              <select id="nuevareceta-dentista-emisor"
                 required
                 value={profesionalId}
                 onChange={(e) => setProfesionalId(e.target.value)}
@@ -209,8 +209,8 @@ export default function FormNuevaReceta({
 
         {/* Diagnóstico */}
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Diagnóstico Clínico *</label>
-          <input
+          <label htmlFor="nuevareceta-diagnostico-clinico" className="block text-xs font-bold text-gray-700 mb-1">Diagnóstico Clínico *</label>
+          <input id="nuevareceta-diagnostico-clinico"
             type="text"
             required
             value={diagnostico}
@@ -223,8 +223,8 @@ export default function FormNuevaReceta({
 
         {/* Indicaciones Generales */}
         <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Indicaciones Generales / Recomendaciones</label>
-          <textarea
+          <label htmlFor="nuevareceta-indicaciones-generales-recomendaciones" className="block text-xs font-bold text-gray-700 mb-1">Indicaciones Generales / Recomendaciones</label>
+          <textarea id="nuevareceta-indicaciones-generales-recomendaciones"
             value={indicaciones}
             onChange={(e) => setIndicaciones(e.target.value)}
             disabled={!!recetaEmitidaId}
@@ -257,8 +257,8 @@ export default function FormNuevaReceta({
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Medicamento</label>
-                <input
+                <label htmlFor="nuevareceta-medicamento" className="block text-[11px] font-bold text-gray-500">Medicamento</label>
+                <input id="nuevareceta-medicamento"
                   type="text"
                   value={medActual.medicamento}
                   onChange={(e) => setMedActual({ ...medActual, medicamento: e.target.value })}
@@ -267,8 +267,8 @@ export default function FormNuevaReceta({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Presentación</label>
-                <input
+                <label htmlFor="nuevareceta-presentacion" className="block text-[11px] font-bold text-gray-500">Presentación</label>
+                <input id="nuevareceta-presentacion"
                   type="text"
                   value={medActual.presentacion}
                   onChange={(e) => setMedActual({ ...medActual, presentacion: e.target.value })}
@@ -277,8 +277,8 @@ export default function FormNuevaReceta({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Dosis</label>
-                <input
+                <label htmlFor="nuevareceta-dosis" className="block text-[11px] font-bold text-gray-500">Dosis</label>
+                <input id="nuevareceta-dosis"
                   type="text"
                   value={medActual.dosis}
                   onChange={(e) => setMedActual({ ...medActual, dosis: e.target.value })}
@@ -286,8 +286,8 @@ export default function FormNuevaReceta({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Frecuencia</label>
-                <input
+                <label htmlFor="nuevareceta-frecuencia" className="block text-[11px] font-bold text-gray-500">Frecuencia</label>
+                <input id="nuevareceta-frecuencia"
                   type="text"
                   value={medActual.frecuencia}
                   onChange={(e) => setMedActual({ ...medActual, frecuencia: e.target.value })}
@@ -295,8 +295,8 @@ export default function FormNuevaReceta({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Duración</label>
-                <input
+                <label htmlFor="nuevareceta-duracion" className="block text-[11px] font-bold text-gray-500">Duración</label>
+                <input id="nuevareceta-duracion"
                   type="text"
                   value={medActual.duracion}
                   onChange={(e) => setMedActual({ ...medActual, duracion: e.target.value })}
@@ -305,8 +305,8 @@ export default function FormNuevaReceta({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Vía de Adm.</label>
-                <input
+                <label htmlFor="nuevareceta-via-de-adm" className="block text-[11px] font-bold text-gray-500">Vía de Adm.</label>
+                <input id="nuevareceta-via-de-adm"
                   type="text"
                   value={medActual.via}
                   onChange={(e) => setMedActual({ ...medActual, via: e.target.value })}
@@ -315,8 +315,8 @@ export default function FormNuevaReceta({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500">Cantidad Prescrita</label>
-                <input
+                <label htmlFor="nuevareceta-cantidad-prescrita" className="block text-[11px] font-bold text-gray-500">Cantidad Prescrita</label>
+                <input id="nuevareceta-cantidad-prescrita"
                   type="text"
                   value={medActual.cantidad}
                   onChange={(e) => setMedActual({ ...medActual, cantidad: e.target.value })}

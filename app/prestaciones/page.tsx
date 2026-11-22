@@ -122,7 +122,7 @@ export default async function PrestacionesPage({
           <option value="inactivas">Inactivas</option>
           <option value="todas">Todas</option>
         </select>
-        <button className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700">Filtrar</button>
+        <button type="submit" className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700">Filtrar</button>
         {(q || categoria || estado !== "activas") && (
           <Link href="/prestaciones" className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 bg-gray-200 hover:bg-gray-300">
             Limpiar

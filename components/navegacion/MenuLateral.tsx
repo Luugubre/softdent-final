@@ -95,6 +95,7 @@ export async function MenuLateral() {
       salir={
         <form action={cerrarSesion}>
           <button
+            type="submit"
             className="grid h-8 w-8 place-items-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
             title="Cerrar sesión"
             aria-label="Cerrar sesión"

@@ -28,10 +28,10 @@ export default function TestEmailPage() {
       <h1 className="text-xl font-bold mb-4">Probar Envío con Resend</h1>
       <form onSubmit={handleEnviar} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label htmlFor="page-correo-de-prueba" className="block text-sm font-medium mb-1">
             Correo de prueba (debe ser el que usaste en Resend):
           </label>
-          <input
+          <input id="page-correo-de-prueba"
             type="email"
             required
             placeholder="tu-correo@ejemplo.com"

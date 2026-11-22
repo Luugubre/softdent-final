@@ -170,9 +170,9 @@ export function Diente({
         )}
       </svg>
 
-      <span onClick={onClick} className="cursor-pointer text-[10px] font-black italic text-slate-400 leading-none">
+      <button type="button" onClick={onClick} className="cursor-pointer text-[10px] font-black italic text-slate-400 leading-none">
         {pieza}
-      </span>
+      </button>
 
       <div className={estado.ausente ? "opacity-30 pointer-events-none" : ""}>
         <CarasCirculo pieza={pieza} colores={estado.caras} onClickCara={onClickCara} />

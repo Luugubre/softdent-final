@@ -78,7 +78,7 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
               Hasta
               <input type="date" name="hasta" defaultValue={hasta} className="block rounded-lg border border-gray-300 px-2 py-1 text-sm font-semibold" />
             </label>
-            <button className="px-3 py-1.5 rounded-lg text-xs font-black text-white bg-blue-600">Ver</button>
+            <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-black text-white bg-blue-600">Ver</button>
           </div>
         </form>
         {resumen.length === 0 ? (

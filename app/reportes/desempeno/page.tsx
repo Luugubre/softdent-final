@@ -129,7 +129,7 @@ export default async function DesempenoPage({
             Hasta
             <input type="date" name="hasta" max={hoy} defaultValue={hasta} required className="block mt-1 rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold" />
           </label>
-          <button className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800">Ver</button>
+          <button type="submit" className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-gray-800">Ver</button>
         </form>
       </div>
 

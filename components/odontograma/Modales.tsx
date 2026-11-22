@@ -30,11 +30,9 @@ export function Modal({ titulo, onClose, children }: { titulo: string; onClose: 
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={onClose}>
-      <div
-        className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl p-6 space-y-4"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 cursor-default" />
+      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-extrabold text-gray-900">{titulo}</h2>
           <button onClick={onClose} className="text-sm font-bold text-gray-500 hover:text-gray-800">✕</button>

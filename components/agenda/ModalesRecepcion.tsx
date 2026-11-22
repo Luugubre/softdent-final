@@ -39,7 +39,9 @@ export function ModalBuscarHora({
     if (prestacion || textoPrestacion.trim().length < 2) return
     let vigente = true
     const t = setTimeout(() => {
-      buscarPrestaciones(textoPrestacion).then((r) => vigente && setSugeridas(r))
+      buscarPrestaciones(textoPrestacion)
+        .then((r) => vigente && setSugeridas(r))
+        .catch(console.error)
     }, 250)
     return () => {
       vigente = false
@@ -196,7 +198,9 @@ export function ModalRecordatorios({ profesionalId, onClose }: { profesionalId?:
   useEffect(() => {
     let vigente = true
     setCitas(null)
-    citasParaRecordar(fecha, profesionalId).then((c) => vigente && setCitas(c))
+    citasParaRecordar(fecha, profesionalId)
+      .then((c) => vigente && setCitas(c))
+      .catch(console.error)
     return () => {
       vigente = false
     }

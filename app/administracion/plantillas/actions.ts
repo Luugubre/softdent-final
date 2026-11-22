@@ -7,6 +7,7 @@ import { getSupabase } from "@/lib/supabase"
 import { MENSAJE_SIN_PERMISO } from "@/lib/permisos"
 import { plantillaSchema } from "@/lib/validaciones"
 import { limpiarHtmlDocumento } from "@/lib/html-seguro"
+import { quitarEtiquetas, recortarCaracter } from "@/lib/texto"
 
 type PlantillaPayload = {
   tipo: string
@@ -158,7 +159,7 @@ async function plantillaActiva(tipo: string): Promise<PlantillaFila | null> {
 
 function codigoTipo(categoria: string, nombre: string): string {
   const limpiar = (t: string) =>
-    t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+    recortarCaracter(t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_"), "_")
   return `${limpiar(categoria) || "DOCUMENTO"}_${limpiar(nombre).slice(0, 40) || Date.now()}`
 }
 
@@ -217,12 +218,12 @@ export async function guardarPlantilla(payload: PlantillaPayload): Promise<Resul
     registroId: plantilla?.id ?? datos.data.tipo,
     accion: "MODIFICADO",
     anterior: previa
-      ? { nombre: previa.nombre, version: previa.version, contenido: `${previa.contenido.replace(/<[^>]*>/g, " ").trim().slice(0, 120)}…` }
+      ? { nombre: previa.nombre, version: previa.version, contenido: `${quitarEtiquetas(previa.contenido, " ").trim().slice(0, 120)}…` }
       : null,
     nuevo: {
       nombre: datos.data.nombre,
       version: Number(version),
-      contenido: `${datos.data.contenido.replace(/<[^>]*>/g, " ").trim().slice(0, 120)}…`,
+      contenido: `${quitarEtiquetas(datos.data.contenido, " ").trim().slice(0, 120)}…`,
     },
     usuarioId: usuario.id,
   })

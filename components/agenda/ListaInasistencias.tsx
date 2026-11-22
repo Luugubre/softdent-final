@@ -101,8 +101,8 @@ export function ListaInasistencias({
 
       <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
         <div className="md:col-span-2">
-          <label className={etiqueta}>Buscar</label>
-          <input
+          <label htmlFor="listainasistencias-buscar" className={etiqueta}>Buscar</label>
+          <input id="listainasistencias-buscar"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Paciente, RUT, dentista o prestación…"
@@ -110,8 +110,8 @@ export function ListaInasistencias({
           />
         </div>
         <div>
-          <label className={etiqueta}>Mostrar</label>
-          <select value={filtro} onChange={(e) => setFiltro(e.target.value as Filtro)} className={control}>
+          <label htmlFor="listainasistencias-mostrar" className={etiqueta}>Mostrar</label>
+          <select id="listainasistencias-mostrar" value={filtro} onChange={(e) => setFiltro(e.target.value as Filtro)} className={control}>
             <option value="TODAS">Todas</option>
             <option value="SIN_HORA">Sin hora futura</option>
             <option value="SIN_CONTACTO">Sin contactar</option>
@@ -121,8 +121,8 @@ export function ListaInasistencias({
         <form onSubmit={aplicar} className="md:col-span-3 grid grid-cols-2 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
           {verTodos && (
             <div className="col-span-2 md:col-span-1">
-              <label className={etiqueta}>Dentista</label>
-              <select value={rango.profesional} onChange={(e) => setRango({ ...rango, profesional: e.target.value })} className={control}>
+              <label htmlFor="listainasistencias-dentista" className={etiqueta}>Dentista</label>
+              <select id="listainasistencias-dentista" value={rango.profesional} onChange={(e) => setRango({ ...rango, profesional: e.target.value })} className={control}>
                 <option value="">Todos</option>
                 {datos.profesionales.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -133,12 +133,12 @@ export function ListaInasistencias({
             </div>
           )}
           <div>
-            <label className={etiqueta}>Desde</label>
-            <input type="date" max={hoy} value={rango.desde} onChange={(e) => setRango({ ...rango, desde: e.target.value })} className={control} />
+            <label htmlFor="listainasistencias-desde" className={etiqueta}>Desde</label>
+            <input id="listainasistencias-desde" type="date" max={hoy} value={rango.desde} onChange={(e) => setRango({ ...rango, desde: e.target.value })} className={control} />
           </div>
           <div>
-            <label className={etiqueta}>Hasta</label>
-            <input type="date" max={hoy} value={rango.hasta} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} className={control} />
+            <label htmlFor="listainasistencias-hasta" className={etiqueta}>Hasta</label>
+            <input id="listainasistencias-hasta" type="date" max={hoy} value={rango.hasta} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} className={control} />
           </div>
           <button type="submit" className="rounded-xl bg-gray-900 px-3 py-2 text-xs font-bold text-white hover:bg-gray-800">
             Ver
@@ -287,19 +287,19 @@ function ModalContacto({ inasistencia, onClose }: { inasistencia: Inasistencia; 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+      <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 cursor-default" />
       <form
         onSubmit={guardar}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl border border-gray-200 shadow-xl max-w-md w-full p-6 space-y-4"
+        className="relative bg-white rounded-2xl border border-gray-200 shadow-xl max-w-md w-full p-6 space-y-4"
       >
         <div>
           <h3 className="text-base font-extrabold text-gray-900">Registrar contacto</h3>
           <p className="text-xs text-gray-500">{inasistencia.paciente_nombre}</p>
         </div>
         <div>
-          <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Canal</label>
-          <select
+          <label htmlFor="listainasistencias-canal" className="block text-[10px] font-black uppercase text-gray-400 mb-1">Canal</label>
+          <select id="listainasistencias-canal"
             value={canal}
             onChange={(e) => setCanal(e.target.value as typeof canal)}
             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm font-semibold bg-white"
@@ -311,8 +311,8 @@ function ModalContacto({ inasistencia, onClose }: { inasistencia: Inasistencia; 
           </select>
         </div>
         <div>
-          <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Resultado del contacto</label>
-          <textarea
+          <label htmlFor="listainasistencias-resultado-del-contacto" className="block text-[10px] font-black uppercase text-gray-400 mb-1">Resultado del contacto</label>
+          <textarea id="listainasistencias-resultado-del-contacto"
             value={nota}
             onChange={(e) => setNota(e.target.value)}
             maxLength={500}

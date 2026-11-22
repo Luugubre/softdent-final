@@ -44,7 +44,7 @@ export function DetalleCita({
   const whatsapp = enlaceWhatsapp(cita.paciente_telefono, mensajeRecordatorio([cita]))
 
   useEffect(() => {
-    historialCita(cita.id).then(setHistorial)
+    historialCita(cita.id).then(setHistorial).catch(console.error)
   }, [cita.id])
 
   function cambiar(estado: EstadoCita) {

@@ -184,8 +184,8 @@ export function GestionPacksClient({ packs, prestaciones, puedeGestionar }: Prop
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nombre del Pack *</label>
-              <input
+              <label htmlFor="gestionpacks-nombre-del-pack" className="block text-xs font-bold text-gray-700 mb-1">Nombre del Pack *</label>
+              <input id="gestionpacks-nombre-del-pack"
                 type="text"
                 required
                 value={nombre}
@@ -195,8 +195,8 @@ export function GestionPacksClient({ packs, prestaciones, puedeGestionar }: Prop
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Descripción comercial (opcional)</label>
-              <input
+              <label htmlFor="gestionpacks-descripcion-comercial-opcional" className="block text-xs font-bold text-gray-700 mb-1">Descripción comercial (opcional)</label>
+              <input id="gestionpacks-descripcion-comercial-opcional"
                 type="text"
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
@@ -211,8 +211,8 @@ export function GestionPacksClient({ packs, prestaciones, puedeGestionar }: Prop
             <p className="text-xs font-black uppercase text-gray-600">Agregar prestación al pack</p>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
               <div className="md:col-span-5">
-                <label className="block text-[11px] font-bold text-gray-600 mb-1">Prestación</label>
-                <input
+                <label htmlFor="gestionpacks-prestacion" className="block text-[11px] font-bold text-gray-600 mb-1">Prestación</label>
+                <input id="gestionpacks-prestacion"
                   type="text"
                   value={busquedaPrest}
                   onChange={(e) => setBusquedaPrest(e.target.value)}
@@ -233,8 +233,8 @@ export function GestionPacksClient({ packs, prestaciones, puedeGestionar }: Prop
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-[11px] font-bold text-gray-600 mb-1">Cantidad</label>
-                <input
+                <label htmlFor="gestionpacks-cantidad" className="block text-[11px] font-bold text-gray-600 mb-1">Cantidad</label>
+                <input id="gestionpacks-cantidad"
                   type="number"
                   min={1}
                   max={32}
@@ -245,8 +245,8 @@ export function GestionPacksClient({ packs, prestaciones, puedeGestionar }: Prop
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-[11px] font-bold text-gray-600 mb-1">Precio Pack ($)</label>
-                <input
+                <label htmlFor="gestionpacks-precio-pack" className="block text-[11px] font-bold text-gray-600 mb-1">Precio Pack ($)</label>
+                <input id="gestionpacks-precio-pack"
                   type="text"
                   value={precioPackAdd}
                   onChange={(e) => setPrecioPackAdd(e.target.value)}

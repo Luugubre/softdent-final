@@ -10,7 +10,7 @@ export default function SinAcceso() {
           Tu cuenta existe, pero no tiene un perfil activo en el sistema. Pide al administrador que te asigne un rol.
         </p>
         <form action={cerrarSesion}>
-          <button className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm">
+          <button type="submit" className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm">
             Cerrar sesión
           </button>
         </form>

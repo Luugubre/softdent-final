@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase"
 import { autorizar } from "@/lib/auth"
 import { MENSAJE_SIN_PERMISO, ROLES, type Rol } from "@/lib/permisos"
 import { normalizarRut, validarRut } from "@/lib/validaciones"
+import { correoValido } from "@/lib/texto"
 
 type Resultado = { ok: boolean; mensaje: string; errores?: Record<string, string> }
 
@@ -37,7 +38,7 @@ export async function crearUsuario(formData: FormData): Promise<Resultado> {
 
   const errores: Record<string, string> = {}
   if (nombre.length < 3) errores.nombre_completo = "Ingresa el nombre completo"
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errores.email = "Correo inválido"
+  if (!correoValido(email)) errores.email = "Correo inválido"
   if (password.length < 8) errores.password = "Mínimo 8 caracteres"
   if (!ROLES.includes(rol)) errores.rol = "Selecciona un rol"
   if (rutTexto && !validarRut(rutTexto)) errores.rut = "RUT inválido"
