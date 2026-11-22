@@ -5,7 +5,6 @@ import { obtenerHallazgos, obtenerItems, obtenerTratamientos } from "@/lib/trata
 import { obtenerPaciente } from "@/lib/paciente"
 import { Odontograma } from "@/components/odontograma/Odontograma"
 import { ListaTratamientos } from "@/components/tratamientos/ListaTratamientos"
-import { obtenerCatalogo } from "@/lib/catalogo"
 
 export default async function OdontogramaGeneralPage({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await requerirPermiso("clinico.ver")
@@ -20,9 +19,6 @@ export default async function OdontogramaGeneralPage({ params }: { params: Promi
 
   const activo = !!paciente?.activo
   const activos = tratamientos.filter((t) => t.estado === "ACTIVO")
-  const puedeAgregar = activo && puede(usuario.rol, "presupuestos.gestionar")
-
-  const catalogo = puedeAgregar ? await obtenerCatalogo([...new Set(activos.map((t) => t.arancel_id))].sort().join(",")) : null
 
   return (
     <div className="space-y-5">
@@ -38,10 +34,10 @@ export default async function OdontogramaGeneralPage({ params }: { params: Promi
         items={items.filter((i) => i.presupuesto?.estado !== "ANULADO")}
         avances={avances}
         tratamientos={activos.map((t) => ({ id: t.id, numero: t.numero, nombre: t.nombre, arancel_id: t.arancel_id }))}
-        catalogo={catalogo}
+        catalogo={null}
         permisos={{
           editar: activo && puede(usuario.rol, "odontograma.editar"),
-          agregar: puedeAgregar,
+          agregar: false,
         }}
       />
 

@@ -1,8 +1,8 @@
 import { getSupabase } from "@/lib/supabase"
 import { formatearRut } from "@/lib/validaciones"
 
-export type TipoAccion = "CREAR" | "EDITAR" | "ANULAR" | "ESTADO"
-export type Modulo = "PACIENTES" | "CLINICO" | "AGENDA" | "TRATAMIENTOS" | "CAJA" | "RECETARIO" | "DOCUMENTOS" | "CONFIGURACION"
+export type TipoAccion = "CREAR" | "EDITAR" | "ANULAR" | "ESTADO" | "FIRMA"
+export type Modulo = "PACIENTES" | "CLINICO" | "AGENDA" | "TRATAMIENTOS" | "CAJA" | "RECETARIO" | "DOCUMENTOS" | "USUARIOS" | "CONFIGURACION"
 
 export type EventoAuditoria = {
   id: string
@@ -58,9 +58,19 @@ const ETIQUETA_TABLA: Record<string, string> = {
   metodos_pago: "Método de pago",
   parametros_sistema: "Parámetro del sistema",
   convenios: "Convenio",
+  laboratorios: "Laboratorio",
+  bancos: "Banco",
+  perfiles: "Perfil de usuario",
+  plantillas_documento: "Plantilla de documento",
+}
+
+const MODULO_TABLA: Record<string, Modulo> = {
+  perfiles: "USUARIOS",
+  plantillas_documento: "DOCUMENTOS",
 }
 
 function tipoAccion(accion: string): TipoAccion {
+  if (accion === "FIRMADO") return "FIRMA"
   if (accion === "CREADO") return "CREAR"
   if (["MODIFICADO", "ACTUALIZADO"].includes(accion)) return "EDITAR"
   if (["ANULADO", "CANCELADA", "ELIMINADO", "REVOCADO"].includes(accion)) return "ANULAR"
@@ -184,7 +194,7 @@ export async function listarEventos(desde: string, hasta: string): Promise<{ eve
     }),
     ...cambios.map((c) => {
       const u = c.usuario_id ? perfiles.get(c.usuario_id) : undefined
-      const nombre = (c.nuevo?.nombre ?? c.nuevo?.descripcion ?? c.registro_id) as string
+      const nombre = (c.nuevo?.nombre ?? c.nuevo?.nombre_completo ?? c.nuevo?.titulo ?? c.nuevo?.descripcion ?? c.registro_id) as string
       const { antes, despues } = diferencias(c.anterior, c.nuevo)
       return {
         id: `a-${c.id}`,
@@ -192,7 +202,7 @@ export async function listarEventos(desde: string, hasta: string): Promise<{ eve
         fecha: fechaHora(c.fecha),
         usuario_nombre: u?.nombre ?? "Sistema",
         usuario_rol: u?.rol ?? "—",
-        modulo: "CONFIGURACION" as Modulo,
+        modulo: MODULO_TABLA[c.tabla] ?? ("CONFIGURACION" as Modulo),
         accion: tipoAccion(c.accion),
         descripcion: `${ETIQUETA_TABLA[c.tabla] ?? c.tabla} ${c.accion === "CREADO" ? "creado" : "modificado"}: ${valorCorto(nombre)}`,
         detalle_antes: antes,

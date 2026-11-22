@@ -40,20 +40,22 @@ type Props = {
   categorias: ItemCatalogo[]
   especialidades: ItemCatalogo[]
   prestacion?: Prestacion
+  laboratorios?: ItemCatalogo[]
+  abiertoInicial?: boolean
   onCerrar?: () => void
 }
 
-export function PrestacionForm({ aranceles, categorias, especialidades, prestacion: p, onCerrar }: Props) {
+export function PrestacionForm({ aranceles, categorias, especialidades, prestacion: p, laboratorios = [], abiertoInicial = false, onCerrar }: Props) {
   const editando = !!p
   const router = useRouter()
-  const [abierto, setAbierto] = useState(editando)
+  const [abierto, setAbierto] = useState(editando || abiertoInicial)
   const [resultado, setResultado] = useState<Resultado | null>(null)
   const [guardando, startTransition] = useTransition()
   const [icono, setIcono] = useState(p?.icono ?? "")
   const e = resultado?.errores
 
   function cerrar() {
-    if (editando) onCerrar?.()
+    if (editando || abiertoInicial) onCerrar?.()
     else setAbierto(false)
   }
 
@@ -154,7 +156,20 @@ export function PrestacionForm({ aranceles, categorias, especialidades, prestaci
             className={inputClass}
           />
         </Campo>
-        <div className="md:col-span-1" />
+        <Campo nombre="laboratorio_id" etiqueta="Laboratorio" errores={e}>
+          <select id="laboratorio_id" name="laboratorio_id" defaultValue={p?.laboratorio_id ?? ""} className={inputClass}>
+            <option value="">— Sin laboratorio —</option>
+            {laboratorios
+              .filter((l) => l.activo || l.id === p?.laboratorio_id)
+              .map((l) => (
+                <option key={l.id} value={l.id}>{l.nombre}</option>
+              ))}
+          </select>
+        </Campo>
+        <p className="md:col-span-3 self-center text-[11px] font-semibold text-gray-500">
+          El pago al doctor depende de la carpeta (categoría): 100% doctor, 100% clínica, x% doctor o el % de cada dentista.
+          Se configura en Administración → Categorías.
+        </p>
 
         <div className="md:col-span-4">
           <p className={labelClass}>Ícono en el odontograma</p>

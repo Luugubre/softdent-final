@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { normalizarFirmaSvg } from '@/lib/firma';
 
 function limpiarHtml(html: string): string {
   if (!html) return '';
@@ -47,6 +48,13 @@ function extraerBytesPng(dataUrlOrBase64?: string | null): Uint8Array | null {
     return Buffer.from(trimmed, 'base64');
   }
   return null;
+}
+
+// Trazos (atributo d) de una firma SVG normalizada de 400x160
+function trazosFirma(svg?: string | null): string[] {
+  const normal = normalizarFirmaSvg(svg);
+  if (!normal) return [];
+  return [...normal.matchAll(/\sd="([^"]+)"/g)].map((m) => m[1]);
 }
 
 export interface DatosPdfConsentimiento {
@@ -230,9 +238,17 @@ export async function generarPdfConsentimientoBase64(doc: DatosPdfConsentimiento
     });
   }
 
-  // Incrustar firma del doctor (si es PNG base64 o timbre profesional)
+  // Firma del doctor: PNG guardado en el consentimiento o trazos SVG de su perfil
   const bytesFirmaDoctor = extraerBytesPng(doc.firma_doctor_url || doc.doctor_firma_svg);
-  if (bytesFirmaDoctor) {
+  const trazosDoctor = trazosFirma(doc.doctor_firma_svg);
+  if (!bytesFirmaDoctor && trazosDoctor.length > 0) {
+    const escala = Math.min((anchoCaja - 16) / 400, (altoCajaFirma - 10) / 160);
+    const x0 = colDerX + (anchoCaja - 400 * escala) / 2;
+    const yArriba = baseCajaY + altoCajaFirma - (altoCajaFirma - 160 * escala) / 2;
+    for (const d of trazosDoctor) {
+      page.drawSvgPath(d, { x: x0, y: yArriba, scale: escala, borderColor: rgb(0.05, 0.05, 0.1), borderWidth: 1.4 });
+    }
+  } else if (bytesFirmaDoctor) {
     try {
       const imgDoctor = await pdfDoc.embedPng(bytesFirmaDoctor);
       const dims = imgDoctor.scaleToFit(anchoCaja - 16, altoCajaFirma - 10);

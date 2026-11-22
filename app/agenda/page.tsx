@@ -2,6 +2,7 @@ import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
 import { getSupabase } from "@/lib/supabase"
 import {
+  obtenerBloqueos,
   obtenerBoxes,
   obtenerCitas,
   obtenerCitasHuerfanas,
@@ -36,7 +37,7 @@ export default async function AgendaPage({
   const desde = vista === "dia" ? fecha : lunes
   const hasta = vista === "dia" ? fecha : sumarDias(lunes, 6)
 
-  const [citas, huerfanas, profesionales, boxes, pacienteInicial, tiposAtencion] = await Promise.all([
+  const [citas, huerfanas, profesionales, boxes, pacienteInicial, tiposAtencion, bloqueosRango] = await Promise.all([
     obtenerCitas(desde, hasta, { profesional }),
     obtenerCitasHuerfanas(hoy, sumarDias(hoy, 90), profesional),
     obtenerProfesionalesAgenda(),
@@ -51,7 +52,9 @@ export default async function AgendaPage({
           .then((r) => (r.data as PacienteBusqueda | null) ?? null)
       : Promise.resolve(null),
     obtenerTiposAtencion(),
+    obtenerBloqueos(desde, hasta),
   ])
+  const bloqueos = bloqueosRango.filter((b) => !profesional || !b.profesional_id || b.profesional_id === profesional)
 
   const vigentes = citas.filter((c) => c.estado !== "CANCELADA" && c.estado !== "REAGENDADA")
   const info = await obtenerInfoPacientes(
@@ -71,6 +74,7 @@ export default async function AgendaPage({
       dias={dias}
       citas={citas}
       huerfanas={huerfanas}
+      bloqueos={bloqueos}
       info={info}
       profesionales={profesionales}
       boxes={boxes}

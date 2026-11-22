@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { actualizarParametro, guardarCatalogo, guardarMetodoPago } from "@/app/administracion/actions"
 import { formatearFechaHora } from "@/lib/formato"
 import { Termino } from "@/components/ui/Ayuda"
-import { CATALOGOS, TIPOS_PREVISION, type ItemCatalogo, type MetodoPagoCatalogo, type Parametro, type TablaCatalogo } from "@/types/admin"
+import { CATALOGOS, REPARTOS, TIPOS_PREVISION, textoReparto, type ItemCatalogo, type MetodoPagoCatalogo, type Parametro, type TablaCatalogo } from "@/types/admin"
 
 const input = "rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
 const caja = "bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-4"
@@ -26,7 +26,8 @@ function useAviso() {
 
 export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: ItemCatalogo[] }) {
   const meta = CATALOGOS[tabla]
-  const [nuevo, setNuevo] = useState({ nombre: "", descripcion: "", tipo: "OTRA", duracion_min: 30 })
+  const vacio = { nombre: "", descripcion: "", tipo: "OTRA", duracion_min: 30, reparto: "PROFESIONAL", porcentaje_doctor: 15 }
+  const [nuevo, setNuevo] = useState(vacio)
   const [editando, setEditando] = useState<ItemCatalogo | null>(null)
   const { ejecutar, pendiente, Aviso } = useAviso()
 
@@ -55,12 +56,19 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
             ))}
           </select>
         )}
+        {tabla === "categorias_prestaciones" && (
+          <SelectorReparto
+            reparto={nuevo.reparto}
+            porcentaje={nuevo.porcentaje_doctor}
+            onChange={(reparto, porcentaje_doctor) => setNuevo({ ...nuevo, reparto, porcentaje_doctor })}
+          />
+        )}
         {tabla === "tipos_atencion" && (
           <input type="number" min={5} max={480} step={5} value={nuevo.duracion_min} onChange={(e) => setNuevo({ ...nuevo, duracion_min: Number(e.target.value) })} className={`${input} w-24`} title="Duración (min)" />
         )}
         <button
           disabled={pendiente || !nuevo.nombre.trim()}
-          onClick={() => ejecutar(() => guardarCatalogo(tabla, nuevo), () => setNuevo({ nombre: "", descripcion: "", tipo: "OTRA", duracion_min: 30 }))}
+          onClick={() => ejecutar(() => guardarCatalogo(tabla, nuevo), () => setNuevo(vacio))}
           className="px-4 py-1.5 rounded-lg text-sm font-black text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40"
         >
           Agregar
@@ -83,6 +91,13 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
                   ))}
                 </select>
               )}
+              {tabla === "categorias_prestaciones" && (
+                <SelectorReparto
+                  reparto={editando.reparto ?? "PROFESIONAL"}
+                  porcentaje={editando.porcentaje_doctor ?? 15}
+                  onChange={(reparto, porcentaje_doctor) => setEditando({ ...editando, reparto, porcentaje_doctor })}
+                />
+              )}
               {tabla === "tipos_atencion" && (
                 <input type="number" min={5} max={480} step={5} value={editando.duracion_min ?? 30} onChange={(e) => setEditando({ ...editando, duracion_min: Number(e.target.value) })} className={`${input} w-24`} />
               )}
@@ -98,6 +113,8 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
                         descripcion: editando.descripcion ?? undefined,
                         tipo: editando.tipo ?? undefined,
                         duracion_min: editando.duracion_min ?? undefined,
+                        reparto: editando.reparto ?? undefined,
+                        porcentaje_doctor: editando.porcentaje_doctor ?? undefined,
                       }),
                     () => setEditando(null)
                   )
@@ -119,6 +136,13 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
                   {tabla === "tipos_atencion" && it.duracion_min ? <span className="ml-2 text-[10px] font-black text-gray-400">{it.duracion_min} min</span> : null}
                 </p>
                 {it.descripcion && <p className="text-xs text-gray-500 truncate">{it.descripcion}</p>}
+                {tabla === "categorias_prestaciones" && (
+                  <p className="mt-0.5">
+                    <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-black text-violet-700">
+                      💰 {textoReparto(it.reparto, it.porcentaje_doctor)}
+                    </span>
+                  </p>
+                )}
               </div>
               <div className="flex gap-1.5 shrink-0">
                 <button onClick={() => setEditando(it)} className="px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100">
@@ -135,6 +159,8 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
                         descripcion: it.descripcion ?? undefined,
                         tipo: it.tipo ?? undefined,
                         duracion_min: it.duracion_min ?? undefined,
+                        reparto: it.reparto ?? undefined,
+                        porcentaje_doctor: it.porcentaje_doctor ?? undefined,
                       })
                     )
                   }
@@ -148,6 +174,42 @@ export function TablaCatalogo({ tabla, items }: { tabla: TablaCatalogo; items: I
         )}
       </ul>
     </section>
+  )
+}
+
+function SelectorReparto({
+  reparto,
+  porcentaje,
+  onChange,
+}: {
+  reparto: string
+  porcentaje: number
+  onChange: (reparto: string, porcentaje: number) => void
+}) {
+  return (
+    <>
+      <select value={reparto} onChange={(e) => onChange(e.target.value, porcentaje)} className={input} title="Cómo se reparte el pago">
+        {Object.entries(REPARTOS).map(([valor, etiqueta]) => (
+          <option key={valor} value={valor}>
+            {etiqueta}
+          </option>
+        ))}
+      </select>
+      {reparto === "PORCENTAJE" && (
+        <label className="flex items-center gap-1 text-xs font-bold text-gray-600">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            value={porcentaje}
+            onChange={(e) => onChange(reparto, Number(e.target.value))}
+            className={`${input} w-20`}
+          />
+          % doctor
+        </label>
+      )}
+    </>
   )
 }
 

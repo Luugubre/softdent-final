@@ -54,11 +54,12 @@ const prestacionSchema = z.object({
     .refine((n) => n % 5 === 0, "Usa múltiplos de 5 minutos"),
   descripcion: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
   icono: z.string().regex(/^[a-z_]{2,30}$/, "Ícono inválido").optional(),
+  laboratorio_id: z.string().uuid("Laboratorio no válido").optional(),
 })
 
 function leerPrestacion(formData: FormData) {
   const datos: Record<string, string> = {}
-  for (const campo of ["codigo_interno", "codigo_fonasa", "nombre", "categoria_id", "especialidad_id", "duracion_min", "descripcion", "icono"]) {
+  for (const campo of ["codigo_interno", "codigo_fonasa", "nombre", "categoria_id", "especialidad_id", "duracion_min", "descripcion", "icono", "laboratorio_id"]) {
     const valor = texto(formData, campo)
     if (valor) datos[campo] = valor
   }
@@ -153,6 +154,7 @@ export async function actualizarPrestacion(prestacionId: string, formData: FormD
       especialidad_id: d.especialidad_id ?? null,
       descripcion: d.descripcion ?? null,
       icono: d.icono ?? null,
+      laboratorio_id: d.laboratorio_id ?? null,
     })
     .eq("id", prestacionId)
 

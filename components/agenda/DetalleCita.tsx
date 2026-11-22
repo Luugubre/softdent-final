@@ -6,10 +6,10 @@ import { cambiarEstadoCita, historialCita } from "@/app/agenda/actions"
 import { Modal } from "@/components/odontograma/Modales"
 import { ModalEnviarPresupuestoWA } from "@/components/presupuestos/ModalEnviarPresupuestoWA"
 import { enlaceWhatsapp } from "@/lib/clinica"
-import { fechaTitulo } from "@/lib/fechas-agenda"
+import { fechaTitulo, hoyEnChile } from "@/lib/fechas-agenda"
 import { formatearFechaHora } from "@/lib/formato"
 import { mensajeRecordatorio } from "@/lib/mensajes-agenda"
-import { ESTADO_CITA, puedePasarA, type CitaAgenda, type EstadoCita } from "@/types/cita"
+import { ESTADO_CITA, estadoDisponible, puedePasarA, type CitaAgenda, type EstadoCita } from "@/types/cita"
 
 type Historial = Awaited<ReturnType<typeof historialCita>>
 
@@ -115,7 +115,7 @@ export function DetalleCita({
 
         {puedeGestionar && (
           <div className="flex flex-wrap gap-2">
-            {ACCIONES.filter((a) => puedePasarA(cita.estado, a.estado)).map((a) => (
+            {ACCIONES.filter((a) => puedePasarA(cita.estado, a.estado) && estadoDisponible(cita, a.estado, hoyEnChile())).map((a) => (
               <button
                 key={a.estado}
                 disabled={pendiente}

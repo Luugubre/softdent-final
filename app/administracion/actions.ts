@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { getSupabase } from "@/lib/supabase"
 import { autorizar } from "@/lib/auth"
 import { MENSAJE_SIN_PERMISO } from "@/lib/permisos"
-import { CATALOGOS, TIPOS_PREVISION, type TablaCatalogo } from "@/types/admin"
+import { CATALOGOS, TIPOS_PREVISION, type TablaCatalogo, REPARTOS } from "@/types/admin"
 
 type Resultado = { ok: boolean; mensaje: string }
 
@@ -17,7 +17,16 @@ function refrescar() {
 
 export async function guardarCatalogo(
   tabla: TablaCatalogo,
-  datos: { id?: string; nombre: string; activo?: boolean; descripcion?: string; tipo?: string; duracion_min?: number }
+  datos: {
+    id?: string
+    nombre: string
+    activo?: boolean
+    descripcion?: string
+    tipo?: string
+    duracion_min?: number
+    reparto?: string
+    porcentaje_doctor?: number | null
+  }
 ): Promise<Resultado> {
   const usuario = await autorizar("administracion.gestionar")
   if (!usuario) return { ok: false, mensaje: MENSAJE_SIN_PERMISO }
@@ -28,6 +37,15 @@ export async function guardarCatalogo(
   if (tabla === "previsiones" && datos.tipo) {
     if (!(TIPOS_PREVISION as readonly string[]).includes(datos.tipo)) return { ok: false, mensaje: "Tipo de previsión no válido." }
     extra.tipo = datos.tipo
+  }
+  if (tabla === "categorias_prestaciones" && datos.reparto) {
+    if (!(datos.reparto in REPARTOS)) return { ok: false, mensaje: "Tipo de pago no válido." }
+    extra.reparto = datos.reparto
+    if (datos.reparto === "PORCENTAJE") {
+      const pct = Number(datos.porcentaje_doctor)
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) return { ok: false, mensaje: "El % del doctor debe estar entre 0 y 100." }
+      extra.porcentaje_doctor = Math.round(pct * 100) / 100
+    }
   }
   if (tabla === "tipos_atencion" && datos.duracion_min !== undefined) {
     const d = Math.round(Number(datos.duracion_min))

@@ -84,6 +84,7 @@ export default async function PrestacionPage({ params }: { params: Promise<{ id:
           aranceles={catalogos.aranceles}
           categorias={catalogos.categorias.filter((c) => c.activo || c.id === p.categoria_id)}
           especialidades={catalogos.especialidades.filter((x) => x.activo || x.id === p.especialidad_id)}
+          laboratorios={catalogos.laboratorios}
         />
 
         <ProfesionalesHabilitados

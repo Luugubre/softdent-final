@@ -4,7 +4,7 @@ import { requerirPermiso } from "@/lib/auth"
 import { puede } from "@/lib/permisos"
 import { obtenerCatalogos } from "@/lib/prestaciones"
 import { formatearPesos } from "@/lib/formato"
-import { PrestacionForm } from "@/components/prestaciones/PrestacionForm"
+import { BotonNuevaPrestacion } from "@/components/prestaciones/BotonNuevaPrestacion"
 import type { PrecioVigente, Prestacion } from "@/types/prestacion"
 import { IconoMuestra } from "@/lib/iconos-dentales"
 import { iconoPorNombre } from "@/lib/iconos-datos"
@@ -24,7 +24,7 @@ export default async function PrestacionesPage({
   const gestionar = puede(usuario.rol, "prestaciones.gestionar")
   const { q = "", categoria = "", estado = "activas" } = await searchParams
 
-  const { aranceles, categorias, especialidades } = await obtenerCatalogos()
+  const { aranceles, categorias, especialidades, laboratorios } = await obtenerCatalogos()
   const arancelesActivos = aranceles.filter((a) => a.activo)
   const supabase = getSupabase()
 
@@ -64,6 +64,14 @@ export default async function PrestacionesPage({
         migas={[{ etiqueta: "Prestaciones" }]}
         acciones={
           <div className="flex flex-wrap items-center gap-2">
+            {gestionar && (
+              <BotonNuevaPrestacion
+                aranceles={arancelesActivos}
+                categorias={categorias.filter((c) => c.activo)}
+                especialidades={especialidades.filter((e) => e.activo)}
+                laboratorios={laboratorios}
+              />
+            )}
             <Link
               href="/prestaciones/packs"
               className="px-4 py-2 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100"
@@ -85,7 +93,7 @@ export default async function PrestacionesPage({
         pasos={[
           <>Busca una <Termino t="prestacion" /> por nombre o código y haz clic en ella para ver su detalle.</>,
           <>En el detalle puedes editar sus <strong>Datos</strong> (incluido el <Termino t="codigo_fonasa" />) y sus <strong>Precios por arancel</strong>.</>,
-          <>Para crear una nueva, abre <strong>➕ Nueva prestación</strong> y escribe sus precios iniciales.</>,
+          <>Para crear una nueva, presiona <strong>➕ Nueva prestación</strong> (arriba a la derecha) y escribe sus precios iniciales.</>,
           <>Los <Termino t="arancel">aranceles</Termino> (listas de precios) se crean en <strong>⚙ Aranceles y categorías</strong>.</>,
         ]}
         reglas={[
@@ -95,22 +103,6 @@ export default async function PrestacionesPage({
         ]}
       />
 
-      {gestionar && (
-        <details className="group rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
-            <span className="text-base font-extrabold text-gray-900">➕ Nueva prestación</span>
-            <span className="text-xs font-bold text-blue-600 group-open:hidden">Abrir formulario ▾</span>
-            <span className="hidden text-xs font-bold text-blue-600 group-open:inline">Cerrar ▴</span>
-          </summary>
-          <div className="border-t border-gray-100 p-2">
-            <PrestacionForm
-              aranceles={arancelesActivos}
-              categorias={categorias.filter((c) => c.activo)}
-              especialidades={especialidades.filter((e) => e.activo)}
-            />
-          </div>
-        </details>
-      )}
 
       <form method="GET" className="flex flex-wrap gap-2">
         <input

@@ -21,7 +21,7 @@ const FICHA: Item[] = [
   { ruta: "/rx-documentos", etiqueta: "RX y Multimedia", disponible: true, clinico: true },
   { ruta: "/recetas", etiqueta: "Recetario", disponible: true, clinico: true },
   { ruta: "/documentos", etiqueta: "Documentos", disponible: true, clinico: true },
-  { ruta: "/consentimientos", etiqueta: "Consentimientos", disponible: false, clinico: true },
+  { ruta: "/consentimientos", etiqueta: "Consentimientos", disponible: true, clinico: true },
 ]
 
 export function NavPaciente({ pacienteId, verClinico }: { pacienteId: string; verClinico: boolean }) {

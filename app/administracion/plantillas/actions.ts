@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { registrarCambio } from "@/lib/registro-auditoria"
 import { autorizar } from "@/lib/auth"
 import { getSupabase } from "@/lib/supabase"
 import { MENSAJE_SIN_PERMISO } from "@/lib/permisos"
@@ -182,6 +183,13 @@ export async function crearPlantilla(payload: { categoria: string; nombre: strin
 
   revalidatePath("/administracion/plantillas")
   const plantilla = await plantillaActiva(datos.data.tipo)
+  await registrarCambio({
+    tabla: "plantillas_documento",
+    registroId: plantilla?.id ?? datos.data.tipo,
+    accion: "CREADO",
+    nuevo: { nombre: datos.data.nombre, tipo: datos.data.tipo, version: 1 },
+    usuarioId: usuario.id,
+  })
   return plantilla ? { success: true, plantilla } : { error: "La plantilla se creó, pero no se pudo leer." }
 }
 
@@ -192,6 +200,7 @@ export async function guardarPlantilla(payload: PlantillaPayload): Promise<Resul
 
   const datos = plantillaSchema.safeParse({ ...payload, contenido: limpiarHtmlDocumento(payload.contenido ?? "") })
   if (!datos.success) return { error: datos.error.issues[0].message }
+  const previa = await plantillaActiva(datos.data.tipo)
 
   const { data: version, error } = await getSupabase().rpc("guardar_plantilla", {
     p_tipo: datos.data.tipo,
@@ -203,6 +212,20 @@ export async function guardarPlantilla(payload: PlantillaPayload): Promise<Resul
 
   revalidatePath("/administracion/plantillas")
   const plantilla = await plantillaActiva(datos.data.tipo)
+  await registrarCambio({
+    tabla: "plantillas_documento",
+    registroId: plantilla?.id ?? datos.data.tipo,
+    accion: "MODIFICADO",
+    anterior: previa
+      ? { nombre: previa.nombre, version: previa.version, contenido: `${previa.contenido.replace(/<[^>]*>/g, " ").trim().slice(0, 120)}…` }
+      : null,
+    nuevo: {
+      nombre: datos.data.nombre,
+      version: Number(version),
+      contenido: `${datos.data.contenido.replace(/<[^>]*>/g, " ").trim().slice(0, 120)}…`,
+    },
+    usuarioId: usuario.id,
+  })
   return { success: true, version: Number(version), ...(plantilla ? { plantilla } : {}) }
 }
 
@@ -222,6 +245,13 @@ export async function cargarPlantillasBase() {
       faltantes.map((b) => ({ tipo: b.tipo, nombre: b.nombre, contenido: b.contenido, version: 1, activa: true, creado_por: usuario.id }))
     )
     if (error) return { error: "No se pudieron cargar las plantillas base." }
+    await registrarCambio({
+      tabla: "plantillas_documento",
+      registroId: "plantillas-base",
+      accion: "CREADO",
+      nuevo: { nombre: `${faltantes.length} plantilla(s) base`, plantillas: faltantes.map((b) => b.nombre).join(", ") },
+      usuarioId: usuario.id,
+    })
   }
 
   revalidatePath("/administracion/plantillas")

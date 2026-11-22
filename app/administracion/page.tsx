@@ -14,6 +14,8 @@ const NOMBRE_TABLA: Record<string, string> = {
   metodos_pago: "Método de pago",
   parametros_sistema: "Parámetro",
   convenios: "Convenio",
+  laboratorios: "Laboratorio",
+  bancos: "Banco",
 }
 
 function cambios(r: RegistroAuditoria) {
@@ -27,7 +29,7 @@ function cambios(r: RegistroAuditoria) {
 export default async function AdministracionPage() {
   await requerirPermiso("administracion.gestionar")
 
-  const [especialidades, categorias, boxes, previsiones, tipos, metodos, parametros, auditoria] = await Promise.all([
+  const [especialidades, categorias, boxes, previsiones, tipos, metodos, parametros, auditoria, laboratorios, bancos] = await Promise.all([
     obtenerCatalogo("especialidades"),
     obtenerCatalogo("categorias_prestaciones"),
     obtenerCatalogo("boxes"),
@@ -36,6 +38,8 @@ export default async function AdministracionPage() {
     obtenerMetodosPago(false),
     obtenerParametros(),
     obtenerAuditoria(),
+    obtenerCatalogo("laboratorios"),
+    obtenerCatalogo("bancos"),
   ])
 
   return (
@@ -55,6 +59,8 @@ export default async function AdministracionPage() {
             ["#especialidades", "🎓 Especialidades"],
             ["#categorias_prestaciones", "🗂️ Categorías"],
             ["#boxes", "🚪 Boxes"],
+            ["#laboratorios", "🧪 Laboratorios"],
+            ["#bancos", "🏦 Bancos"],
             ["#auditoria", "🕵️ Registro de cambios"],
           ].map(([href, etiqueta]) => (
             <a key={href} href={href} className="rounded-full border border-gray-200 bg-white px-3 py-1 text-gray-700 hover:border-blue-300 hover:text-blue-700">
@@ -86,6 +92,8 @@ export default async function AdministracionPage() {
         <TablaCatalogo tabla="especialidades" items={especialidades} />
         <TablaCatalogo tabla="categorias_prestaciones" items={categorias} />
         <TablaCatalogo tabla="boxes" items={boxes} />
+        <TablaCatalogo tabla="laboratorios" items={laboratorios} />
+        <TablaCatalogo tabla="bancos" items={bancos} />
       </div>
 
       <section id="auditoria" className="scroll-mt-20 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">

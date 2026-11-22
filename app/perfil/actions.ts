@@ -7,6 +7,7 @@ import { getSupabase } from "@/lib/supabase"
 import { crearClienteAuth } from "@/lib/supabase-auth"
 import { puede } from "@/lib/permisos"
 import { normalizarFirmaSvg } from "@/lib/firma"
+import { registrarCambio } from "@/lib/registro-auditoria"
 import { perfilUsuarioSchema, cambioPasswordSchema } from "@/lib/validaciones"
 
 export async function actualizarPerfil(formData: FormData): Promise<{ error?: string; ok?: boolean }> {
@@ -42,9 +43,41 @@ export async function actualizarPerfil(formData: FormData): Promise<{ error?: st
     if (firma) cambios.firma_svg = firma
   }
 
+  const { data: antes } = await getSupabase()
+    .from("perfiles")
+    .select("nombre_completo, telefono, firma_svg")
+    .eq("id", usuario.id)
+    .maybeSingle()
+
   // Solo columnas editables por el propio usuario
   const { error } = await getSupabase().from("perfiles").update(cambios).eq("id", usuario.id)
   if (error) return { error: "No se pudo guardar el perfil." }
+
+  // Auditoría: datos cambiados; la firma se registra como evento, sin guardar su imagen
+  const anterior: Record<string, unknown> = {}
+  const nuevo: Record<string, unknown> = {}
+  if (antes && antes.nombre_completo !== cambios.nombre_completo) {
+    anterior.nombre_completo = antes.nombre_completo
+    nuevo.nombre_completo = cambios.nombre_completo
+  }
+  if (antes && (antes.telefono ?? null) !== (cambios.telefono ?? null)) {
+    anterior.telefono = antes.telefono
+    nuevo.telefono = cambios.telefono
+  }
+  if (antes && cambios.firma_svg && antes.firma_svg !== cambios.firma_svg) {
+    anterior.firma = antes.firma_svg ? "Firma registrada" : "Sin firma"
+    nuevo.firma = "Firma actualizada"
+  }
+  if (Object.keys(nuevo).length > 0) {
+    await registrarCambio({
+      tabla: "perfiles",
+      registroId: usuario.id,
+      accion: "MODIFICADO",
+      anterior: { nombre: usuario.nombre_completo, ...anterior },
+      nuevo: { nombre: cambios.nombre_completo, ...nuevo },
+      usuarioId: usuario.id,
+    })
+  }
 
   revalidatePath("/perfil")
   return { ok: true }

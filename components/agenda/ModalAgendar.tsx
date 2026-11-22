@@ -659,10 +659,13 @@ function Formulario({
               <span className="w-3 h-3 rounded bg-white border border-gray-300" /> Libre
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Ocupado {puedeSobrecupo ? "(sobrecupo)" : ""}
+              <span className="w-3 h-3 rounded bg-amber-50 border border-amber-300" /> Ocupado {puedeSobrecupo ? "(sobrecupo)" : ""}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-slate-200 border border-slate-300" /> Bloqueado / pasado
+              <span className="w-3 h-3 rounded bg-red-100 border border-red-400" /> Bloqueado
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-slate-200 border border-slate-300" /> Pasado
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-emerald-500" /> Seleccionado
@@ -693,8 +696,10 @@ function Formulario({
                               ? "bg-red-500 text-white border-red-600 shadow-md"
                               : "bg-emerald-500 text-white border-emerald-600 shadow-md"
                             : est === "ocupado"
-                              ? "bg-red-50 text-red-500 border-red-200 opacity-70"
-                              : est === "bloqueado" || est === "pasado"
+                              ? "bg-amber-50 text-amber-700 border-amber-300 opacity-80"
+                              : est === "bloqueado"
+                                ? "bg-red-100 text-red-700 border-red-400 line-through cursor-not-allowed"
+                                : est === "pasado"
                                 ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                                 : "bg-white text-gray-600 border-gray-200 hover:border-blue-500 hover:text-blue-600 shadow-sm"
                           return (

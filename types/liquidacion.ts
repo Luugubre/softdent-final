@@ -55,6 +55,8 @@ export type DetalleLiquidacion = {
   monto_base: number
   porcentaje: number
   monto: number
+  monto_clinica?: number | null
+  reparto?: string | null
 }
 
 export type Liquidacion = {

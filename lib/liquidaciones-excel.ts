@@ -192,7 +192,7 @@ export function libroLiquidacion(l: Liquidacion, detalle: DetalleLiquidacion[], 
   const hojaDetalle: Hoja = {
     nombre: "Detalle",
     titulo: `Detalle de prestaciones · ${l.profesional?.nombre_completo ?? ""}`,
-    subtitulo: `${periodo(l.periodo)} · ${l.porcentaje}% para el profesional`,
+    subtitulo: `${periodo(l.periodo)} · ${l.porcentaje}% para el profesional, salvo carpetas con otro reparto`,
     columnas: [
       { titulo: "Paciente", ancho: 28 },
       { titulo: "Prestación", ancho: 34 },
@@ -201,7 +201,9 @@ export function libroLiquidacion(l: Liquidacion, detalle: DetalleLiquidacion[], 
       { titulo: "Terminada", ancho: 12 },
       { titulo: "Pagada", ancho: 12 },
       { titulo: "Valor", ancho: 14, tipo: "pesos" },
+      { titulo: "Pago al doctor", ancho: 15 },
       { titulo: "%", ancho: 8, tipo: "porcentaje" },
+      { titulo: "Clínica", ancho: 14, tipo: "pesos" },
       { titulo: "Monto profesional", ancho: 17, tipo: "pesos" },
     ],
     filas: detalle.map((d): Celda[] => [
@@ -212,12 +214,26 @@ export function libroLiquidacion(l: Liquidacion, detalle: DetalleLiquidacion[], 
       fecha(d.fecha_realizado),
       fecha(d.fecha_pagado),
       d.monto_base,
+      d.reparto === "DOCTOR" ? "100% doctor" : d.reparto === "CLINICA" ? "100% clínica" : d.reparto === "PORCENTAJE" ? "% de la carpeta" : "% del dentista",
       d.porcentaje,
+      d.monto_clinica ?? d.monto_base - d.monto,
       d.monto,
     ]),
     totales:
       detalle.length > 0
-        ? ["Total", `${detalle.length} prestación(es)`, "", "", "", "", detalle.reduce((s, d) => s + d.monto_base, 0), "", detalle.reduce((s, d) => s + d.monto, 0)]
+        ? [
+            "Total",
+            `${detalle.length} prestación(es)`,
+            "",
+            "",
+            "",
+            "",
+            detalle.reduce((s, d) => s + d.monto_base, 0),
+            "",
+            "",
+            detalle.reduce((s, d) => s + (d.monto_clinica ?? d.monto_base - d.monto), 0),
+            detalle.reduce((s, d) => s + d.monto, 0),
+          ]
         : undefined,
   }
 

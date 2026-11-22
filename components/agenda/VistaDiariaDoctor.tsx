@@ -469,14 +469,14 @@ export function VistaDiariaDoctor(props: Props) {
                           <div
                             key={b.id}
                             title={`${TIPO_BLOQUEO[b.tipo]}: ${b.motivo}`}
-                            className="absolute inset-x-0 z-[1] border-y border-slate-300 bg-[repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0_6px,#f8fafc_6px,#f8fafc_12px)] px-2.5 py-1 overflow-hidden"
+                            className="absolute inset-x-0 z-[1] border-y-2 border-red-400 bg-[repeating-linear-gradient(45deg,#fecaca,#fecaca_6px,#fee2e2_6px,#fee2e2_12px)] px-2.5 py-1 overflow-hidden"
                             style={{
                               top: (a - inicioMin) * PX_POR_MIN,
                               height: (z - a) * PX_POR_MIN,
                             }}
                           >
-                            <span className="text-[10px] font-black uppercase text-slate-600">
-                              🚫 {TIPO_BLOQUEO[b.tipo]} · {b.motivo}
+                            <span className="text-[10px] font-black uppercase text-red-700">
+                              🔒 {TIPO_BLOQUEO[b.tipo]} · {b.motivo}
                             </span>
                           </div>
                         )

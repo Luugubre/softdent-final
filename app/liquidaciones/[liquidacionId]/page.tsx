@@ -82,7 +82,7 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
           <div>
             <p className="text-[11px] font-black uppercase tracking-wider text-gray-500">Porcentajes</p>
             <p className="font-bold text-gray-900">Profesional {l.porcentaje}%</p>
-            <p className="text-xs text-gray-500">Clínica {porcentajeClinica}%</p>
+            <p className="text-xs text-gray-500">Clínica {porcentajeClinica}% · salvo carpetas con otro reparto</p>
           </div>
         </section>
 
@@ -94,7 +94,9 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
               <th className="text-left py-2">Terminada</th>
               <th className="text-left py-2">Pagada</th>
               <th className="text-right py-2">Valor</th>
-              <th className="text-right py-2">{l.porcentaje}%</th>
+              <th className="text-right py-2">Pago al doctor</th>
+              <th className="text-right py-2">Clínica</th>
+              <th className="text-right py-2">Profesional</th>
             </tr>
           </thead>
           <tbody>
@@ -109,6 +111,10 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
                 <td className="py-2 whitespace-nowrap text-gray-600">{formatearFecha(fechaChile(d.fecha_realizado))}</td>
                 <td className="py-2 whitespace-nowrap text-gray-600">{formatearFecha(fechaChile(d.fecha_pagado))}</td>
                 <td className="py-2 text-right">{formatearPesos(d.monto_base)}</td>
+                <td className="py-2 text-right whitespace-nowrap text-xs font-bold text-violet-700">
+                  {d.reparto === "DOCTOR" ? "100% doctor" : d.reparto === "CLINICA" ? "100% clínica" : `${Number(d.porcentaje)}%`}
+                </td>
+                <td className="py-2 text-right text-gray-500">{formatearPesos(d.monto_clinica ?? d.monto_base - d.monto)}</td>
                 <td className="py-2 text-right font-bold">{formatearPesos(d.monto)}</td>
               </tr>
             ))}
@@ -119,32 +125,30 @@ export default async function LiquidacionPage({ params }: { params: Promise<{ li
                 Producción ({l.cantidad} prestaciones)
               </td>
               <td className="pt-3 text-right font-bold">{formatearPesos(l.total_base)}</td>
+              <td />
+              <td className="pt-3 text-right font-bold text-gray-500">{formatearPesos(l.total_clinica ?? l.total_base - baseProfesional)}</td>
               <td className="pt-3 text-right font-bold">{formatearPesos(baseProfesional)}</td>
-            </tr>
-            <tr>
-              <td colSpan={5} className="text-right text-gray-500">Para la clínica ({porcentajeClinica}%)</td>
-              <td className="text-right text-gray-500">{formatearPesos(l.total_clinica ?? l.total_base - baseProfesional)}</td>
             </tr>
             {l.bonificacion !== 0 && (
               <tr>
-                <td colSpan={5} className="text-right text-emerald-700 font-semibold">+ Bonificación</td>
+                <td colSpan={7} className="text-right text-emerald-700 font-semibold">+ Bonificación</td>
                 <td className="text-right text-emerald-700 font-semibold">{formatearPesos(l.bonificacion)}</td>
               </tr>
             )}
             {l.ajuste !== 0 && (
               <tr>
-                <td colSpan={5} className="text-right text-blue-700 font-semibold">{l.ajuste > 0 ? "+" : "−"} Ajuste</td>
+                <td colSpan={7} className="text-right text-blue-700 font-semibold">{l.ajuste > 0 ? "+" : "−"} Ajuste</td>
                 <td className="text-right text-blue-700 font-semibold">{formatearPesos(l.ajuste)}</td>
               </tr>
             )}
             {l.descuento !== 0 && (
               <tr>
-                <td colSpan={5} className="text-right text-rose-700 font-semibold">− Descuento</td>
+                <td colSpan={7} className="text-right text-rose-700 font-semibold">− Descuento</td>
                 <td className="text-right text-rose-700 font-semibold">{formatearPesos(-l.descuento)}</td>
               </tr>
             )}
             <tr>
-              <td colSpan={5} className="pt-2 text-right font-black text-gray-900 border-t border-gray-200">
+              <td colSpan={7} className="pt-2 text-right font-black text-gray-900 border-t border-gray-200">
                 TOTAL A PAGAR AL PROFESIONAL
               </td>
               <td className="pt-2 text-right text-xl font-black text-gray-900 border-t border-gray-200">{formatearPesos(l.total)}</td>

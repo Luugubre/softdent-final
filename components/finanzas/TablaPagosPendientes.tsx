@@ -54,10 +54,13 @@ export function TablaPagosPendientes({
   const [busqueda, setBusqueda] = useState("")
   const [doctorId, setDoctorId] = useState("TODOS")
   const [antiguedad, setAntiguedad] = useState<FiltroAntiguedad>("TODOS")
+  const [modo, setModo] = useState<"REALIZADO" | "TRATAMIENTO">("REALIZADO")
+  const monto = (s: SaldoPaciente) => (modo === "REALIZADO" ? s.saldo : s.saldo_tratamiento)
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
     return saldos.filter((s) => {
+      if (monto(s) <= 0) return false
       if (q) {
         const match =
           s.paciente_nombre.toLowerCase().includes(q) ||
@@ -65,17 +68,19 @@ export function TablaPagosPendientes({
           s.doctor_nombre.toLowerCase().includes(q)
         if (!match) return false
       }
-      if (doctorId !== "TODOS" && s.doctor_id !== doctorId) return false
+      if (doctorId !== "TODOS" && !s.doctor_ids.includes(doctorId)) return false
       if (antiguedad === "0_30" && s.antiguedad_dias > 30) return false
       if (antiguedad === "31_60" && (s.antiguedad_dias < 31 || s.antiguedad_dias > 60)) return false
       if (antiguedad === "MAS_60" && s.antiguedad_dias <= 60) return false
       return true
     })
-  }, [saldos, busqueda, doctorId, antiguedad])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saldos, busqueda, doctorId, antiguedad, modo])
 
   const totalPorCobrar = useMemo(
-    () => filtrados.reduce((acc, s) => acc + s.saldo, 0),
-    [filtrados]
+    () => filtrados.reduce((acc, s) => acc + monto(s), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtrados, modo]
   )
 
   function enviarWhatsAppCobro(s: SaldoPaciente) {
@@ -83,7 +88,7 @@ export function TablaPagosPendientes({
     if (!wa) return
     const primerNombre = s.nombres?.split(" ")[0] || "Paciente"
     const mensaje = encodeURIComponent(
-      `Hola ${primerNombre}, te saludamos cordialmente desde la clínica dental. Queríamos recordarte que mantienes un saldo pendiente de ${formatoPesos(s.saldo)} correspondiente a tus prestaciones realizadas. Si necesitas coordinar tu abono o tienes alguna duda, estamos a tu disposición. ¡Muchas gracias!`
+      `Hola ${primerNombre}, te saludamos cordialmente desde la clínica dental. Queríamos recordarte que mantienes un saldo pendiente de ${formatoPesos(monto(s))} correspondiente a ${modo === "REALIZADO" ? "tus prestaciones realizadas" : "tu tratamiento"}. Si necesitas coordinar tu abono o tienes alguna duda, estamos a tu disposición. ¡Muchas gracias!`
     )
     window.open(`https://wa.me/${wa}?text=${mensaje}`, "_blank", "noopener,noreferrer")
   }
@@ -99,9 +104,11 @@ export function TablaPagosPendientes({
           <td>${escaparHtml(s.rut ?? "")}</td>
           <td>${escaparHtml(s.telefono ?? "")}</td>
           <td>${escaparHtml(s.doctor_nombre)}</td>
+          <td>${s.total_tratamiento}</td>
           <td>${s.total_habilitado}</td>
           <td>${s.total_abonado}</td>
           <td>${s.saldo}</td>
+          <td>${s.saldo_tratamiento}</td>
           <td>${s.antiguedad_dias}</td>
           <td>${escaparHtml(formatoFecha(s.ultimo_pago_at))}</td>
         </tr>`
@@ -119,9 +126,11 @@ export function TablaPagosPendientes({
               <th>RUT</th>
               <th>Teléfono</th>
               <th>Doctor</th>
-              <th>Total Habilitado (CLP)</th>
+              <th>Total Tratamiento (CLP)</th>
+              <th>Total Realizado (CLP)</th>
               <th>Total Abonado (CLP)</th>
-              <th>Saldo Pendiente (CLP)</th>
+              <th>Saldo Realizado sin pagar (CLP)</th>
+              <th>Saldo Total Tratamiento (CLP)</th>
               <th>Antigüedad (días)</th>
               <th>Último Pago</th>
             </tr>
@@ -161,7 +170,7 @@ export function TablaPagosPendientes({
           </p>
           <p className="mt-1 text-3xl font-black">{formatoPesos(totalPorCobrar)}</p>
           <p className="mt-1 text-xs font-semibold text-rose-100">
-            En {filtrados.length} paciente{filtrados.length === 1 ? "" : "s"} con saldo habilitado pendiente
+            En {filtrados.length} paciente{filtrados.length === 1 ? "" : "s"} · {modo === "REALIZADO" ? "lo realizado y no pagado" : "saldo total de los tratamientos"}
           </p>
         </div>
 
@@ -173,7 +182,7 @@ export function TablaPagosPendientes({
             {formatoPesos(
               filtrados
                 .filter((s) => s.antiguedad_dias > 30)
-                .reduce((acc, s) => acc + s.saldo, 0)
+                .reduce((acc, s) => acc + monto(s), 0)
             )}
           </p>
           <p className="mt-1 text-xs font-semibold text-gray-500">
@@ -200,6 +209,23 @@ export function TablaPagosPendientes({
 
       {/* Filtros */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+          {(
+            [
+              ["REALIZADO", "Realizado sin pagar"],
+              ["TRATAMIENTO", "Saldo total del tratamiento"],
+            ] as const
+          ).map(([v, t]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setModo(v)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black ${modo === v ? "bg-white text-blue-700 shadow-sm" : "text-gray-600"}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
         <div className="grid gap-3 md:grid-cols-3">
           <input
             value={busqueda}
@@ -244,7 +270,11 @@ export function TablaPagosPendientes({
       {filtrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
           <p className="text-base font-black text-gray-700">No hay saldos pendientes por cobrar</p>
-          <p className="mt-1 text-sm text-gray-500">Todos los tratamientos habilitados están al día o no coinciden con el filtro.</p>
+          <p className="mt-1 text-sm text-gray-500">
+            {modo === "REALIZADO"
+              ? "Lo realizado está pagado. Revisa “Saldo total del tratamiento” para ver lo presupuestado pendiente."
+              : "Los tratamientos están pagados o no coinciden con el filtro."}
+          </p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -287,10 +317,12 @@ export function TablaPagosPendientes({
 
                       <td className="px-4 py-3.5 text-right">
                         <span className="text-base font-black text-rose-700">
-                          {formatoPesos(s.saldo)}
+                          {formatoPesos(monto(s))}
                         </span>
                         <span className="block text-[11px] font-semibold text-gray-400">
-                          Hab. {formatoPesos(s.total_habilitado)} · Abon. {formatoPesos(s.total_abonado)}
+                          {modo === "REALIZADO"
+                            ? `Realizado ${formatoPesos(s.total_habilitado)} · Abon. ${formatoPesos(s.total_abonado)}`
+                            : `Tratamiento ${formatoPesos(s.total_tratamiento)} · Abon. ${formatoPesos(s.total_abonado)}`}
                         </span>
                       </td>
 

@@ -105,6 +105,13 @@ export function siguientesEstados(actual: EstadoCita): EstadoCita[] {
   return TRANSICIONES[actual].filter((e) => e !== "REAGENDADA")
 }
 
+const SOLO_DESDE_EL_DIA: EstadoCita[] = ["EN_ESPERA", "EN_ATENCION", "REALIZADA", "NO_ASISTIO"]
+
+// Llegada, atención e inasistencia solo se registran desde el día de la cita
+export function estadoDisponible(cita: { fecha: string }, nuevo: EstadoCita, hoy: string) {
+  return !(cita.fecha > hoy && SOLO_DESDE_EL_DIA.includes(nuevo))
+}
+
 export const ESTADOS_VIGENTES: EstadoCita[] = ["AGENDADA", "CONFIRMADA", "EN_ESPERA", "EN_ATENCION"]
 
 export const TIPOS_BLOQUEO = ["VACACIONES", "REUNION", "MANTENCION", "OTRO"] as const

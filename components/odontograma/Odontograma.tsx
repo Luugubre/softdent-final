@@ -104,7 +104,8 @@ export function Odontograma({
   const [menu, setMenu] = useState<{ pieza: number; x: number; y: number } | null>(null)
   const [modal, setModal] = useState<ModalAbierto>(null)
   const [panel, setPanel] = useState<{ pieza: number | null; caras: Cara[] } | null>(null)
-  const puedeAgregar = permisos.agregar && !!catalogo
+  // En el odontograma general solo se registran hallazgos; las prestaciones se planifican en cada tratamiento
+  const puedeAgregar = !esGeneral && permisos.agregar && !!catalogo
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
   const [pendiente, startTransition] = useTransition()
 
@@ -127,14 +128,16 @@ export function Odontograma({
   const esAusente = (pieza: number) => vigentes.some((h) => h.pieza === pieza && h.tipo === "AUSENTE")
   const tieneHallazgos = (pieza: number) => vigentes.some((h) => h.pieza === pieza)
 
-  function clicIzquierdo(pieza: number) {
+  function clicIzquierdo(e: React.MouseEvent, pieza: number) {
+    if (esGeneral && permisos.editar) return clicDerecho(e, pieza)
     setSeleccionada(pieza)
     setMenu(null)
     if (puedeAgregar) setPanel({ pieza, caras: [] })
     else setModal({ tipo: "INFO", pieza })
   }
 
-  function clicCara(pieza: number, cara: Cara) {
+  function clicCara(pieza: number, cara: Cara, e: React.MouseEvent) {
+    if (esGeneral && permisos.editar) return clicDerecho(e, pieza)
     setSeleccionada(pieza)
     setMenu(null)
     if (!puedeAgregar) return setModal({ tipo: "INFO", pieza })
@@ -232,9 +235,9 @@ export function Odontograma({
               superior={esSuperior(p)}
               estado={estadoDe(p)}
               seleccionado={seleccionada === p}
-              onClick={() => clicIzquierdo(p)}
+              onClick={(e) => clicIzquierdo(e, p)}
               onContextMenu={(e) => clicDerecho(e, p)}
-              onClickCara={(cara) => clicCara(p, cara)}
+              onClickCara={(cara, e) => clicCara(p, cara, e)}
             />
           ))}
         </div>
@@ -251,7 +254,7 @@ export function Odontograma({
           </h2>
           <p className="text-xs font-medium text-gray-500">
             {esGeneral
-              ? "Reúne los hallazgos y las prestaciones de todos los tratamientos · Clic en un diente: menú de prestaciones · Clic derecho: más opciones"
+              ? "Estado de la boca: preexistencias, lesiones y piezas ausentes · Clic en un diente para registrar un hallazgo · Las prestaciones se planifican dentro de cada tratamiento"
               : `Clic en un diente: ${puedeAgregar ? "menú de prestaciones" : "ver información"} · Clic derecho: más opciones`}
           </p>
         </div>

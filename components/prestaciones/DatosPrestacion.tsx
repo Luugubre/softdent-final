@@ -1,5 +1,6 @@
 "use client"
 
+import { textoReparto } from "@/types/admin"
 import { useState } from "react"
 import { PrestacionForm } from "@/components/prestaciones/PrestacionForm"
 import { formatearFechaHora } from "@/lib/formato"
@@ -24,6 +25,7 @@ export function DatosPrestacion({
   aranceles,
   categorias,
   especialidades,
+  laboratorios = [],
 }: {
   prestacion: Prestacion
   categoria?: string
@@ -32,8 +34,12 @@ export function DatosPrestacion({
   aranceles: Arancel[]
   categorias: ItemCatalogo[]
   especialidades: ItemCatalogo[]
+  laboratorios?: ItemCatalogo[]
 }) {
   const [editando, setEditando] = useState(false)
+  const labNombre = laboratorios.find((l) => l.id === p.laboratorio_id)?.nombre
+  const cat = categorias.find((c) => c.id === p.categoria_id)
+  const reparto = cat ? textoReparto(cat.reparto, cat.porcentaje_doctor) : undefined
 
   if (editando) {
     return (
@@ -42,6 +48,7 @@ export function DatosPrestacion({
         aranceles={aranceles}
         categorias={categorias}
         especialidades={especialidades}
+        laboratorios={laboratorios}
         onCerrar={() => setEditando(false)}
       />
     )
@@ -66,6 +73,8 @@ export function DatosPrestacion({
         <Dato etiqueta="Categoría" valor={categoria} />
         <Dato etiqueta="Especialidad" valor={especialidad} />
         <Dato etiqueta="Duración" valor={`${p.duracion_min} minutos`} />
+        <Dato etiqueta="Pago al doctor" valor={reparto ?? "% de cada dentista"} />
+        <Dato etiqueta="Laboratorio" valor={labNombre ?? "Sin laboratorio"} />
         <Dato etiqueta="Estado" valor={p.activo ? "Activa" : "Inactiva"} />
         <div>
           <dt className="text-xs font-bold text-gray-500 uppercase tracking-wide">Ícono en odontograma</dt>

@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { formatearPesos } from "@/lib/formato"
-import { partesChile } from "@/lib/fechas-agenda"
-import { ESTADO_CITA, siguientesEstados, type CitaAgenda, type EstadoCita, type InfoPaciente } from "@/types/cita"
+import { hoyEnChile, partesChile } from "@/lib/fechas-agenda"
+import { ESTADO_CITA, estadoDisponible, siguientesEstados, type CitaAgenda, type EstadoCita, type InfoPaciente } from "@/types/cita"
 
 export type AccionesCita = {
   onCambiarEstado: (cita: CitaAgenda, estado: EstadoCita) => void
@@ -57,7 +57,8 @@ const badge = "text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wid
 
 function SelectorEstado({ cita, habilitado, onCambiar, compacto }: { cita: CitaAgenda; habilitado: boolean; onCambiar: (e: EstadoCita) => void; compacto?: boolean }) {
   const estilo = ESTADO_CITA[cita.estado]
-  const opciones = habilitado ? siguientesEstados(cita.estado) : []
+  const hoy = hoyEnChile()
+  const opciones = habilitado ? siguientesEstados(cita.estado).filter((e) => estadoDisponible(cita, e, hoy)) : []
   const sem = cita.estado === "EN_ESPERA" && cita.hora_llegada ? ` desde ${horaChile(cita.hora_llegada)}` : ""
   return (
     <div className={`relative inline-flex items-center gap-1.5 rounded-full border shadow-sm ${estilo.pill} ${compacto ? "px-2 py-0.5" : "px-3 py-1.5"}`}>

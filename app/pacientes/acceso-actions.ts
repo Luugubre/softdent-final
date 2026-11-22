@@ -17,6 +17,7 @@ const SECCIONES: [RegExp, string][] = [
   [/^\/pagos(\/.*)?$/, "Pagos"],
   [/^\/recetas(\/.*)?$/, "Recetario"],
   [/^\/documentos(\/.*)?$/, "Documentos clínicos"],
+  [/^\/consentimientos$/, "Consentimientos"],
 ]
 
 export async function registrarAccesoFicha(pacienteId: string, subruta: string) {

@@ -9,59 +9,69 @@ export async function MenuLateral() {
 
   const p = (permiso: Parameters<typeof puede>[1]) => puede(usuario.rol, permiso)
 
+  const admin = usuario.rol === "ADMINISTRADOR"
+  const verPagosPendientes = p("pagos.registrar") || p("caja.gestionar") || usuario.rol === "DENTISTA"
+
   const grupos: GrupoMenu[] = [
     {
       titulo: "",
-      enlaces: [{ href: "/", icono: "🏠", etiqueta: "Inicio", ayuda: "Resumen del día y accesos rápidos", visible: true }],
-    },
- {
-      titulo: "Atención",
       enlaces: [
-        { href: "/agenda", icono: "📅", etiqueta: "Agenda", ayuda: "Citas, llegadas y recordatorios", visible: p("agenda.ver") },
+        { href: "/", icono: "🏠", etiqueta: "Inicio", ayuda: "Resumen del día y accesos rápidos", visible: true },
+        { href: "/agenda", icono: "📅", etiqueta: "Agenda", ayuda: "Citas, llegadas, bloqueos y recordatorios", visible: p("agenda.ver") },
         { href: "/pacientes", icono: "🧑‍⚕️", etiqueta: "Pacientes", ayuda: "Fichas, tratamientos y pagos", visible: p("pacientes.ver") },
-        { href: "/agenda/inasistencias", icono: "🚫", etiqueta: "Inasistencias", ayuda: "Pacientes que faltaron: contacto y reagendamiento", visible: p("agenda.gestionar") },
-        { href: "/citas-consentimiento", icono: "✍️", etiqueta: "Consentimientos", ayuda: "Enviar a firma por correo o WhatsApp", visible: p("consentimientos.gestionar") },
-        { href: "/presupuestos-pendientes", icono: "📋", etiqueta: "Presupuestos", ayuda: "Planes activos sin aprobar y seguimiento", visible: p("presupuestos.gestionar") || p("agenda.gestionar") },
+        { href: "/caja", icono: "💰", etiqueta: "Cajas", ayuda: "Abrir, movimientos, arqueo y cierre", visible: p("caja.gestionar") },
+        { href: "/seguimiento", icono: "🔎", etiqueta: "Seguimiento", ayuda: "Inasistencias, presupuestos y saldos por contactar", visible: true },
+        { href: "/perfil", icono: "👤", etiqueta: "Perfil", ayuda: "Datos personales, firma y contraseña", visible: true },
       ],
     },
     {
-      titulo: "Finanzas",
+      titulo: "Mi menú",
       enlaces: [
-        { href: "/caja", icono: "💰", etiqueta: "Caja", ayuda: "Abrir, movimientos, arqueo y cierre", visible: p("caja.gestionar") },
-        { href: "/fonasa-convenios", icono: "🏥", etiqueta: "FONASA y convenios", ayuda: "Bonos, convenios y cuotas", visible: p("fonasa.gestionar") },
-        {
-          href: "/pagos-pendientes",
-          icono: "💳",
-          etiqueta: "Pagos pendientes",
-          ayuda: "Saldos por cobrar y recordatorios por WhatsApp",
-          visible: p("pagos.registrar") || p("caja.gestionar") || usuario.rol === "DENTISTA",
-        },
-        {
-          href: "/liquidaciones",
-          icono: "👩‍⚕️",
-          etiqueta: p("liquidaciones.gestionar") ? "Liquidaciones" : "Mis liquidaciones",
-          ayuda: "Pago a dentistas según su %",
-          visible: p("liquidaciones.ver"),
-        },
+        { href: "/agenda/inasistencias", icono: "🚫", etiqueta: "Inasistencias", ayuda: "Pacientes que faltaron: contacto y reagendamiento", visible: p("agenda.gestionar") },
+        { href: "/citas-consentimiento", icono: "✍️", etiqueta: "Enviar consentimientos", ayuda: "Firma presencial o por correo y WhatsApp", visible: p("consentimientos.gestionar") },
+        { href: "/fonasa-convenios", icono: "🏥", etiqueta: "FONASA y convenios", ayuda: "Bonos, convenios y cuotas", visible: p("fonasa.gestionar") && !admin },
+        { href: "/liquidaciones", icono: "👩‍⚕️", etiqueta: "Mis liquidaciones", ayuda: "Pago según tu porcentaje", visible: p("liquidaciones.ver") && !admin },
+        { href: "/prestaciones", icono: "🦷", etiqueta: "Ver aranceles", ayuda: "Prestaciones y precios por arancel", visible: p("prestaciones.ver") && !admin },
+        { href: "/presupuestos-pendientes", icono: "📋", etiqueta: "Presupuestos sin aprobar", ayuda: "Planes pendientes y seguimiento", visible: p("presupuestos.gestionar") || p("agenda.gestionar") },
+        { href: "/pagos-pendientes", icono: "💳", etiqueta: "Pagos pendientes", ayuda: "Saldos por cobrar y recordatorios por WhatsApp", visible: verPagosPendientes && !admin },
+      ],
+    },
+    {
+      titulo: "Reportes",
+      enlaces: [
         {
           href: "/reportes/desempeno",
           icono: "📊",
-          etiqueta: p("reportes.ver") ? "Reporte de desempeño" : "Mi desempeño",
+          etiqueta: p("reportes.ver") ? "Desempeño" : "Mi desempeño",
           ayuda: "Asistencia, ocupación y producción por dentista",
           visible: p("reportes.ver") || usuario.rol === "DENTISTA",
         },
+        { href: "/reportes/exportar", icono: "📥", etiqueta: "Exportar Excel", ayuda: "Citas, pagos y pacientes en planilla", visible: p("reportes.ver") },
+      ],
+    },
+    {
+      titulo: "Administración",
+      enlaces: [
+        { href: "/administracion", icono: "🏢", etiqueta: "Clínica", ayuda: "Datos de la clínica y parámetros", visible: p("administracion.gestionar") },
+        { href: "/usuarios", icono: "🔐", etiqueta: "Personal", ayuda: "Cuentas, roles y permisos", visible: p("usuarios.gestionar") },
+        { href: "/administracion#especialidades", icono: "🎓", etiqueta: "Especialidades", ayuda: "Especialidades de los profesionales", visible: p("administracion.gestionar") },
+        { href: "/fonasa-convenios", icono: "🏥", etiqueta: "Convenios", ayuda: "FONASA, convenios y cuotas", visible: admin && (p("fonasa.gestionar") || p("convenios.configurar")) },
+        { href: "/agenda/configuracion", icono: "🚪", etiqueta: "Gestión de box", ayuda: "Boxes, horarios y bloqueos", visible: p("agenda.configurar") },
+        { href: "/administracion#laboratorios", icono: "🧪", etiqueta: "Laboratorios", ayuda: "Laboratorios dentales externos", visible: p("administracion.gestionar") },
+        { href: "/liquidaciones", icono: "👩‍⚕️", etiqueta: "Liquidaciones", ayuda: "Pago a dentistas según su %", visible: admin && p("liquidaciones.ver") },
+        { href: "/pagos-pendientes", icono: "💳", etiqueta: "Pagos pendientes", ayuda: "Saldos por cobrar de todos los pacientes", visible: admin && verPagosPendientes },
+        { href: "/administracion/auditoria", icono: "🛡️", etiqueta: "Auditoría y accesos", ayuda: "Bitácora de cambios, firmas y accesos a fichas", visible: p("auditoria.ver") },
       ],
     },
     {
       titulo: "Configuración",
       enlaces: [
-        { href: "/perfil", icono: "👤", etiqueta: "Mi Perfil", ayuda: "Datos personales, firma y contraseña", visible: true },
-        { href: "/prestaciones", icono: "🦷", etiqueta: "Prestaciones y precios", ayuda: "Catálogo, aranceles y códigos", visible: p("prestaciones.ver") },
-        { href: "/agenda/configuracion", icono: "🕘", etiqueta: "Horarios y boxes", ayuda: "Cuándo atiende cada dentista", visible: p("agenda.configurar") },
-        { href: "/usuarios", icono: "🔐", etiqueta: "Usuarios y roles", ayuda: "Cuentas y permisos", visible: p("usuarios.gestionar") },
-        { href: "/administracion", icono: "⚙️", etiqueta: "Administración", ayuda: "Catálogos, métodos de pago y parámetros", visible: p("administracion.gestionar") },
-        { href: "/administracion/plantillas", icono: "📋", etiqueta: "Plantillas y Consentimientos", ayuda: "Consentimientos informados y plantillas con variables", visible: p("plantillas.gestionar") },
-        { href: "/administracion/auditoria", icono: "🛡️", etiqueta: "Auditoría y accesos", ayuda: "Bitácora de cambios y accesos a fichas", visible: p("auditoria.ver") },
+        { href: "/prestaciones", icono: "🦷", etiqueta: "Aranceles y precios", ayuda: "Catálogo de prestaciones, aranceles y códigos", visible: admin && p("prestaciones.ver") },
+        { href: "/administracion/plantillas", icono: "📝", etiqueta: "Plantillas", ayuda: "Plantillas de documentos con variables", visible: p("plantillas.gestionar") },
+        { href: "/administracion#bancos", icono: "🏦", etiqueta: "Bancos", ayuda: "Bancos para transferencias y cheques", visible: p("administracion.gestionar") },
+        { href: "/administracion#metodos-pago", icono: "💳", etiqueta: "Métodos de pago", ayuda: "Formas de pago aceptadas en caja", visible: p("administracion.gestionar") },
+        { href: "/administracion/plantillas?tipo=documentos", icono: "📄", etiqueta: "Docs clínicos", ayuda: "Certificados, indicaciones y derivaciones", visible: p("plantillas.gestionar") },
+        { href: "/administracion/plantillas?tipo=consentimientos", icono: "✍️", etiqueta: "Consentimientos", ayuda: "Textos de los consentimientos informados", visible: p("plantillas.gestionar") },
       ],
     },
     {

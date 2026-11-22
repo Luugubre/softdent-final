@@ -4,6 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 import { limpiarHtmlDocumento } from '@/lib/html-seguro';
 import crypto from 'crypto';
 import { headers } from 'next/headers';
+import { registrarEventoPaciente } from '@/lib/registro-auditoria';
 import { generarPdfConsentimientoBase64 } from '@/lib/pdf-consentimiento';
 
 const supabase = getSupabase();
@@ -108,6 +109,7 @@ export async function procesarFirmaPaciente(
       consentimiento_id,
       consentimiento:consentimientos_paciente (
         id,
+        paciente_id,
         folio,
         titulo,
         estado,
@@ -246,6 +248,17 @@ export async function procesarFirmaPaciente(
     await supabase.from('tokens_firma_consentimiento').update({ usado_at: null }).eq('id', tokenRecord.id);
     return { exito: false, mensaje: 'Error al registrar la firma.' };
   }
+
+  await registrarEventoPaciente({
+    pacienteId: consentimiento.paciente_id,
+    tipo: 'CONSENTIMIENTO',
+    accion: 'FIRMADO',
+    titulo: `Consentimiento firmado en línea · ${consentimiento.titulo} · folio ${consentimiento.folio}`,
+    detalle: `Firmó ${nombreFirmante} desde el enlace (IP ${ip})`,
+    profesional: 'Firma en línea del paciente',
+    tabla: 'consentimientos_paciente',
+    referenciaId: consentimiento.id,
+  });
 
   return { exito: true, mensaje: 'Documento firmado con éxito.' };
 }

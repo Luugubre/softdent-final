@@ -9,8 +9,8 @@ export const CATALOGOS = {
   categorias_prestaciones: {
     titulo: "Categorías de prestaciones",
     icono: "🗂️",
-    que: "Grupos para ordenar el catálogo de prestaciones.",
-    ayuda: "Filtro de Prestaciones y reportes",
+    que: "Carpetas de prestaciones. Cada carpeta define cómo se reparte el pago entre el doctor y la clínica.",
+    ayuda: "Prestaciones, presupuestos y liquidaciones",
     conDescripcion: false,
   },
   boxes: {
@@ -34,10 +34,39 @@ export const CATALOGOS = {
     ayuda: "Agenda › Agendar cita",
     conDescripcion: false,
   },
+  laboratorios: {
+    titulo: "Laboratorios",
+    icono: "🧪",
+    que: "Laboratorios dentales externos (coronas, prótesis…). En la descripción, el contacto.",
+    ayuda: "Ficha de cada prestación que usa laboratorio",
+    conDescripcion: true,
+  },
+  bancos: {
+    titulo: "Bancos",
+    icono: "🏦",
+    que: "Bancos para registrar transferencias, depósitos y cheques.",
+    ayuda: "Registrar pagos con transferencia o cheque",
+    conDescripcion: false,
+  },
 } as const
 export type TablaCatalogo = keyof typeof CATALOGOS
 
 export const TIPOS_PREVISION = ["PARTICULAR", "FONASA", "ISAPRE", "FFAA", "OTRA"] as const
+
+export const REPARTOS = {
+  PROFESIONAL: "% de cada dentista",
+  DOCTOR: "100% doctor",
+  CLINICA: "100% clínica",
+  PORCENTAJE: "x% doctor",
+} as const
+export type Reparto = keyof typeof REPARTOS
+
+export function textoReparto(reparto?: string | null, porcentaje?: number | null) {
+  if (reparto === "PORCENTAJE") return `${Number(porcentaje ?? 0)}% doctor · ${100 - Number(porcentaje ?? 0)}% clínica`
+  if (reparto === "DOCTOR") return "100% doctor"
+  if (reparto === "CLINICA") return "100% clínica"
+  return "% de cada dentista"
+}
 
 export type ItemCatalogo = {
   id: string
@@ -46,6 +75,8 @@ export type ItemCatalogo = {
   descripcion?: string | null
   tipo?: string | null
   duracion_min?: number | null
+  reparto?: string | null
+  porcentaje_doctor?: number | null
 }
 
 export type MetodoPagoCatalogo = {

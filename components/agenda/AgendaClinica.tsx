@@ -9,11 +9,12 @@ import { ModalAgendar, type ConfigAgendar } from "@/components/agenda/ModalAgend
 import { ModalBloqueo } from "@/components/agenda/ModalBloqueo"
 import { ModalAnuladas, ModalBuscarHora, ModalRecordatorios } from "@/components/agenda/ModalesRecepcion"
 import { TarjetaCitaDia, TarjetaCitaSemana, type AccionesCita } from "@/components/agenda/TarjetaCita"
+import { BloqueosDelDia } from "@/components/agenda/BloqueosDelDia"
 import { enlaceWhatsapp } from "@/lib/clinica"
 import { ComoFunciona, Termino } from "@/components/ui/Ayuda"
 import { fechaTitulo, sumarDias } from "@/lib/fechas-agenda"
 import { mensajeInasistencia, mensajeRecordatorio } from "@/lib/mensajes-agenda"
-import { ESTADO_CITA, type Box, type CitaAgenda, type EstadoCita, type InfoPaciente, type PacienteBusqueda, type ProfesionalAgenda, type TipoAtencion } from "@/types/cita"
+import { ESTADO_CITA, type BloqueoAgenda, type Box, type CitaAgenda, type EstadoCita, type InfoPaciente, type PacienteBusqueda, type ProfesionalAgenda, type TipoAtencion } from "@/types/cita"
 import type { CitaHuerfana } from "@/lib/agenda"
 
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
   dias: string[]
   citas: CitaAgenda[]
   huerfanas: CitaHuerfana[] 
+  bloqueos: BloqueoAgenda[]
   info: Record<string, InfoPaciente>
   profesionales: ProfesionalAgenda[]
   boxes: Box[]
@@ -344,6 +346,11 @@ export function AgendaClinica(p: Props) {
       )}
 
       {vista === "dia" && (
+        <div className="mb-3">
+          <BloqueosDelDia bloqueos={p.bloqueos} fecha={fecha} />
+        </div>
+      )}
+      {vista === "dia" && (
         <div className="relative md:pl-[140px] pt-2">
           {filtradas.length > 0 && <div className="absolute left-[100px] top-6 bottom-0 w-[2px] bg-gradient-to-b from-blue-300 to-blue-50 hidden md:block" />}
           {filtradas.length > 0 ? (
@@ -391,6 +398,7 @@ export function AgendaClinica(p: Props) {
                     {delDia.length} cita{delDia.length === 1 ? "" : "s"}
                   </p>
                 </Link>
+                <BloqueosDelDia bloqueos={p.bloqueos} fecha={d} compacto />
                 {delDia.length > 0 ? (
                   delDia.map((c) => (
                     <TarjetaCitaSemana

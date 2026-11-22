@@ -21,6 +21,8 @@ export type ItemCatalogo = {
   id: string
   nombre: string
   activo: boolean
+  reparto?: string | null
+  porcentaje_doctor?: number | null
 }
 
 export type Prestacion = {
@@ -33,6 +35,7 @@ export type Prestacion = {
   especialidad_id: string | null
   duracion_min: number
   icono: string | null
+  laboratorio_id?: string | null
   activo: boolean
   created_at: string
   updated_at: string

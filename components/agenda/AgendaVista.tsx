@@ -456,11 +456,11 @@ function Grilla({
                     <div
                       key={b.id}
                       title={`${TIPO_BLOQUEO[b.tipo]}: ${b.motivo}`}
-                      className="absolute inset-x-0 z-[1] border-y border-slate-300 bg-[repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0_6px,#f8fafc_6px,#f8fafc_12px)] px-2 py-1 overflow-hidden"
+                      className="absolute inset-x-0 z-[1] border-y-2 border-red-400 bg-[repeating-linear-gradient(45deg,#fecaca,#fecaca_6px,#fee2e2_6px,#fee2e2_12px)] px-2 py-1 overflow-hidden"
                       style={{ top: (a - inicio) * PX, height: (z - a) * PX }}
                     >
-                      <span className="text-[10px] font-black uppercase text-slate-600">
-                        🚫 {TIPO_BLOQUEO[b.tipo]}
+                      <span className="text-[10px] font-black uppercase text-red-700">
+                        🔒 {TIPO_BLOQUEO[b.tipo]}
                         {b.profesional && vista === "semana" ? ` · ${b.profesional.nombre_completo}` : ""} · {b.motivo}
                       </span>
                     </div>
@@ -581,7 +581,7 @@ function VistaMes({
           return (
             <div
               key={d}
-              className={`min-h-28 border-b border-r border-gray-100 p-1.5 space-y-1 ${otroMes ? "bg-gray-50/70" : ""} ${bloqueado ? "bg-slate-100" : ""}`}
+              className={`min-h-28 border-b border-r border-gray-100 p-1.5 space-y-1 ${otroMes ? "bg-gray-50/70" : ""} ${bloqueado ? "bg-red-50 ring-1 ring-inset ring-red-300" : ""}`}
             >
               <div className="flex items-center justify-between">
                 <Link

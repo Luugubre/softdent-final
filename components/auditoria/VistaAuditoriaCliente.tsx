@@ -12,7 +12,8 @@ const MODULOS: { valor: string; etiqueta: string }[] = [
   { valor: "TRATAMIENTOS", etiqueta: "Tratamientos" },
   { valor: "CAJA", etiqueta: "Pagos y caja" },
   { valor: "RECETARIO", etiqueta: "Recetario" },
-  { valor: "DOCUMENTOS", etiqueta: "Documentos y consentimientos" },
+  { valor: "DOCUMENTOS", etiqueta: "Documentos, plantillas y consentimientos" },
+  { valor: "USUARIOS", etiqueta: "Perfiles y firmas" },
   { valor: "CONFIGURACION", etiqueta: "Configuración" },
 ]
 const ETIQUETA_MODULO = Object.fromEntries(MODULOS.map((m) => [m.valor, m.etiqueta]))
@@ -22,6 +23,7 @@ const BADGE_ACCION: Record<TipoAccion, { texto: string; clase: string }> = {
   EDITAR: { texto: "Modificación", clase: "bg-blue-100 text-blue-800 border-blue-200" },
   ANULAR: { texto: "Anulación", clase: "bg-rose-100 text-rose-800 border-rose-200" },
   ESTADO: { texto: "Cambio de estado", clase: "bg-slate-100 text-slate-700 border-slate-200" },
+  FIRMA: { texto: "Firma", clase: "bg-violet-100 text-violet-800 border-violet-200" },
 }
 
 function descargarCsv(nombre: string, filas: (string | number | undefined)[][]) {

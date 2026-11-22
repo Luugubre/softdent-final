@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { registrarEventoPaciente } from '@/lib/registro-auditoria';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { generarPdfConsentimientoBase64 } from '@/lib/pdf-consentimiento';
@@ -283,7 +284,7 @@ export async function crearBorradorConsentimiento(payload: PayloadCita) {
 }
 
 // Congela texto -> PENDIENTE_FIRMA y genera token de 32 bytes (guardando solo hash)
-async function crearConsentimientoYToken(payload: PayloadCita & { doctorId: string }) {
+async function crearConsentimientoYToken(payload: PayloadCita & { doctorId: string; usuarioId: string; canal: string }) {
   const base = await prepararDatosBase(payload);
   if ('error' in base) return { exito: false, mensaje: base.error ?? 'Error al preparar datos.' };
 
@@ -331,6 +332,17 @@ async function crearConsentimientoYToken(payload: PayloadCita & { doctorId: stri
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const linkFirma = `${appUrl}/firmar/${tokenRaw}`;
 
+  await registrarEventoPaciente({
+    pacienteId: payload.pacienteId,
+    tipo: 'CONSENTIMIENTO',
+    accion: 'ENVIADO',
+    titulo: `Consentimiento enviado a firma · ${base.titulo}`,
+    detalle: `Enlace de firma por ${payload.canal}, válido por 48 horas`,
+    usuarioId: payload.usuarioId,
+    tabla: 'consentimientos_paciente',
+    referenciaId: consentimiento.id,
+  });
+
   revalidatePath('/citas-consentimiento');
   return {
     exito: true,
@@ -349,7 +361,7 @@ export async function enviarConsentimientoCita(payload: PayloadCita & { emailPac
   const cita = await resolverCita(payload, usuario);
   if ('error' in cita) return { exito: false, mensaje: cita.error };
   try {
-    const resBase = await crearConsentimientoYToken({ ...payload, doctorId: cita.doctorId });
+    const resBase = await crearConsentimientoYToken({ ...payload, doctorId: cita.doctorId, usuarioId: usuario.id, canal: 'correo' });
     if (!resBase.exito || !resBase.paciente || !resBase.plantilla || !resBase.linkFirma) {
       return { exito: false, mensaje: resBase.mensaje || 'Error al procesar el documento.' };
     }
@@ -393,7 +405,7 @@ export async function generarEnlaceWhatsAppConsentimiento(payload: PayloadCita) 
   const cita = await resolverCita(payload, usuario);
   if ('error' in cita) return { exito: false, mensaje: cita.error };
   try {
-    const resBase = await crearConsentimientoYToken({ ...payload, doctorId: cita.doctorId });
+    const resBase = await crearConsentimientoYToken({ ...payload, doctorId: cita.doctorId, usuarioId: usuario.id, canal: 'WhatsApp' });
     if (!resBase.exito || !resBase.paciente || !resBase.plantilla || !resBase.linkFirma) {
       return { exito: false, mensaje: resBase.mensaje || 'Error al procesar el documento.' };
     }
@@ -512,6 +524,17 @@ export async function firmarConsentimientoPresencial(payload: {
       .update({ pdf_base64: pdfBase64 })
       .eq('id', insertado.id);
 
+    await registrarEventoPaciente({
+      pacienteId: payload.pacienteId,
+      tipo: 'CONSENTIMIENTO',
+      accion: 'FIRMADO',
+      titulo: `Consentimiento firmado en consulta · ${base.titulo} · folio ${insertado.folio}`,
+      detalle: `Firmó ${firmanteNombre}${firmanteRut ? ` (${firmanteRut})` : ''}${payload.esApoderado ? ' como apoderado' : ''}`,
+      usuarioId: usuario.id,
+      tabla: 'consentimientos_paciente',
+      referenciaId: insertado.id,
+    });
+
     revalidatePath('/citas-consentimiento');
     return { exito: true, mensaje: 'Consentimiento firmado presencialmente y PDF generado.' };
   } catch (err) {
@@ -544,12 +567,23 @@ export async function revocarConsentimiento(consentimientoId: string, motivo: st
         updated_at: ahora,
       })
       .eq('id', consentimientoId)
-      .select('id')
+      .select('id, paciente_id, titulo, folio')
       .single();
 
     if (error || !consentimiento) {
       return { exito: false, mensaje: 'No se pudo revocar el consentimiento.' };
     }
+
+    await registrarEventoPaciente({
+      pacienteId: consentimiento.paciente_id,
+      tipo: 'CONSENTIMIENTO',
+      accion: 'REVOCADO',
+      titulo: `Consentimiento revocado · ${consentimiento.titulo} · folio ${consentimiento.folio}`,
+      detalle: motivoLimpio,
+      usuarioId: usuario.id,
+      tabla: 'consentimientos_paciente',
+      referenciaId: consentimiento.id,
+    });
 
     await getSupabase()
       .from('tokens_firma_consentimiento')
