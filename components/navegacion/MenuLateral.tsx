@@ -27,6 +27,7 @@ export async function MenuLateral() {
     {
       titulo: "Mi menú",
       enlaces: [
+        { href: "/agenda/web", icono: "web", etiqueta: "Reservas web", ayuda: "Horas reservadas por internet para validar", visible: p("agenda.gestionar") },
         { href: "/agenda/inasistencias", icono: "inasistencias", etiqueta: "Inasistencias", ayuda: "Pacientes que faltaron: contacto y reagendamiento", visible: p("agenda.gestionar") },
         { href: "/citas-consentimiento", icono: "firma", etiqueta: "Enviar consentimientos", ayuda: "Firma presencial o por correo y WhatsApp", visible: p("consentimientos.gestionar") },
         { href: "/fonasa-convenios", icono: "convenios", etiqueta: "FONASA y convenios", ayuda: "Bonos, convenios y cuotas", visible: p("fonasa.gestionar") && !admin },
@@ -58,6 +59,7 @@ export async function MenuLateral() {
         { href: "/administracion/especialidades", icono: "especialidades", etiqueta: "Especialidades", ayuda: "Especialidades de los profesionales", visible: gestionarAdmin },
         { href: "/administracion/previsiones", icono: "previsiones", etiqueta: "Previsiones", ayuda: "FONASA, Isapres y otras", visible: gestionarAdmin },
         { href: "/fonasa-convenios", icono: "convenios", etiqueta: "Convenios", ayuda: "FONASA, convenios y cuotas", visible: admin && (p("fonasa.gestionar") || p("convenios.configurar")) },
+        { href: "/administracion/agenda-online", icono: "web", etiqueta: "Agenda online", ayuda: "Reservas por internet: dentistas, duración y días", visible: gestionarAdmin },
         { href: "/agenda/configuracion", icono: "box", etiqueta: "Gestión de box", ayuda: "Horarios de atención y bloqueos", visible: p("agenda.configurar") },
         { href: "/administracion/laboratorios", icono: "laboratorios", etiqueta: "Laboratorios", ayuda: "Laboratorios dentales externos", visible: gestionarAdmin },
         { href: "/liquidaciones", icono: "liquidaciones", etiqueta: "Liquidaciones", ayuda: "Pago a dentistas", visible: admin && p("liquidaciones.ver") },

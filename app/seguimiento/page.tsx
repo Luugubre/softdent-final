@@ -4,6 +4,7 @@ import { puede } from "@/lib/permisos"
 import { getSupabase } from "@/lib/supabase"
 import { Encabezado } from "@/components/ui/Ayuda"
 import { hoyEnChile, sumarDias } from "@/lib/fechas-agenda"
+import { contarCitasWebPorValidar } from "@/lib/agenda-web"
 
 async function contar(consulta: PromiseLike<{ count: number | null }>) {
   const { count } = await consulta
@@ -26,13 +27,22 @@ export default async function SeguimientoPage() {
     consentimientos = consentimientos.eq("doctor_id", usuario.id)
   }
 
-  const [nInasistencias, nPresupuestos, nConsentimientos] = await Promise.all([
+  const [nInasistencias, nPresupuestos, nConsentimientos, nWeb] = await Promise.all([
     contar(inasistencias),
     contar(presupuestos),
     contar(consentimientos),
+    contarCitasWebPorValidar(soloPropios ? usuario.id : undefined),
   ])
 
   const tarjetas = [
+    {
+      href: "/agenda/web",
+      icono: "🌐",
+      titulo: "Reservas web",
+      detalle: "Horas reservadas por internet que falta validar.",
+      cifra: `${nWeb} por validar`,
+      visible: p("agenda.gestionar"),
+    },
     {
       href: "/agenda/inasistencias",
       icono: "🚫",
@@ -80,7 +90,7 @@ export default async function SeguimientoPage() {
           Tu rol no tiene listas de seguimiento.
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {tarjetas.map((t) => (
             <Link key={t.href} href={t.href} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow">
               <p className="text-3xl">{t.icono}</p>

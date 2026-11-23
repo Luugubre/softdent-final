@@ -29,8 +29,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl
   const esLogin = pathname === "/login" || pathname.startsWith("/login/")
-  // Rutas públicas protegidas por token
-  const esPublica = pathname.startsWith("/firmar/")
+  // Rutas públicas: firma por token y API de agenda online (con clave propia)
+  const esPublica = pathname.startsWith("/firmar/") || pathname.startsWith("/api/publico/")
 
   if (!haySesion && !esLogin && !esPublica) {
     const url = request.nextUrl.clone()

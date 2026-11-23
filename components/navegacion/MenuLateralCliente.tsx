@@ -18,6 +18,7 @@ import {
   FileText,
   FlaskConical,
   FolderTree,
+  Globe,
   GraduationCap,
   Handshake,
   HandCoins,
@@ -78,6 +79,7 @@ const ICONOS: Record<string, LucideIcon> = {
   plantillas: ScrollText,
   documentos: FileText,
   ayuda: LifeBuoy,
+  web: Globe,
 }
 
 const PLEGADOS_DE_INICIO = ["Administración", "Configuración"]
